@@ -366,3 +366,96 @@ struct HUDTimelineTriggerTests {
     }
 }
 
+@Suite("HUD timeline: the pointer over the choice bar")
+struct HUDTimelinePointerTests {
+    /// The last word's bar with the engine's 4 s lifetime.
+    private static func bar(_ current: String = "해", lifetime: TimeInterval = 4) -> HUDRequest {
+        HUDRequest(content: .flipLastWord(HUDChoice(current: HUDReading(text: current, language: .korean),
+                                                    other: HUDReading(text: "go", language: .english),
+                                                    currentFirst: true)),
+                   anchor: .location(10), immediate: true, lifetime: lifetime)
+    }
+
+    @Test("the pointer holds the bar's lifetime; leaving hides it after the grace")
+    func pointerHoldsLifetime() {
+        var t = HUDTimeline()
+        _ = t.receive(Self.bar(), at: 10)
+        t.setPointerInside(true, at: 11)
+        #expect(t.nextDeadline == nil, "held while the user reaches for a reading")
+        #expect(t.advance(to: 14) == nil)
+        t.setPointerInside(false, at: 20)
+        #expect(t.nextDeadline == 20 + timing.pointerExitGrace)
+        #expect(t.advance(to: 20 + timing.pointerExitGrace) == .hide)
+    }
+
+    @Test("a brief hover keeps the rest of the lifetime")
+    func briefHoverKeepsLifetime() {
+        var t = HUDTimeline()
+        _ = t.receive(Self.bar(), at: 10)
+        t.setPointerInside(true, at: 10.5)
+        t.setPointerInside(false, at: 10.8)
+        #expect(t.nextDeadline == 14, "not cut to the 0.8 s grace")
+    }
+
+    @Test("a hide the engine asks for still happens under the pointer")
+    func engineHideWins() {
+        var t = HUDTimeline()
+        _ = t.receive(Self.bar(), at: 10)
+        t.setPointerInside(true, at: 10.2)
+        #expect(t.receive(nil, at: 10.4) == nil)
+        #expect(t.nextDeadline == 10.4 + timing.hideDebounce)
+        t.setPointerInside(false, at: 10.45)
+        #expect(t.nextDeadline == 10.4 + timing.hideDebounce, "leaving does not delay the requested hide")
+        #expect(t.advance(to: 10.4 + timing.hideDebounce) == .hide)
+    }
+
+    @Test("an update under the pointer, such as a click that moved the selection, stays held")
+    func updateUnderPointerStaysHeld() {
+        var t = HUDTimeline()
+        _ = t.receive(Self.bar(), at: 10)
+        t.setPointerInside(true, at: 10.2)
+        let flipped = Self.bar("go")
+        #expect(t.receive(flipped, at: 10.3, trigger: .other) == .update(flipped, pulse: false))
+        #expect(t.nextDeadline == nil)
+    }
+
+    @Test("feedback chips do not take the pointer", arguments: [oneShot,
+        HUDRequest(content: .cannotChange, anchor: .caret, immediate: true, lifetime: 1.2)])
+    func feedbackIgnoresPointer(request: HUDRequest) throws {
+        var t = HUDTimeline()
+        _ = t.receive(request, at: 10)
+        t.setPointerInside(true, at: 10.1)
+        #expect(!t.pointerInside)
+        #expect(t.nextDeadline == 10 + (try #require(request.lifetime)))
+    }
+
+    @Test("a bar replaced by a feedback chip forgets the pointer")
+    func replacedByFeedback() {
+        var t = HUDTimeline()
+        _ = t.receive(Self.bar(), at: 10)
+        t.setPointerInside(true, at: 10.1)
+        let message = HUDRequest(content: .cannotChange, anchor: .caret, immediate: true, lifetime: 1.2)
+        #expect(t.receive(message, at: 10.2, trigger: .feedback) == .update(message, pulse: false))
+        #expect(!t.pointerInside)
+        #expect(t.nextDeadline == 10.2 + 1.2)
+    }
+
+    @Test("a new word hides the bar and forgets the pointer")
+    func newWordForgetsPointer() {
+        var t = HUDTimeline()
+        _ = t.receive(Self.bar(), at: 10)
+        t.setPointerInside(true, at: 10.1)
+        #expect(t.receive(alternative("dk"), at: 10.2) == .hide)
+        #expect(!t.pointerInside)
+        #expect(t.advance(to: 10.2 + timing.appearDelay) == .show(alternative("dk")))
+    }
+
+    @Test("an enter while nothing is on screen is not remembered")
+    func enterWhileHidden() {
+        var t = HUDTimeline()
+        t.setPointerInside(true, at: 9)
+        #expect(!t.pointerInside)
+        _ = t.receive(Self.bar(), at: 10)
+        #expect(t.nextDeadline == 14)
+    }
+}

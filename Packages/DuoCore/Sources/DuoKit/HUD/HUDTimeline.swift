@@ -19,7 +19,9 @@ import Foundation
 ///   HUD composes under it without hiding it.
 /// - `nil` (commit, Esc, …) hides after ``Timing/hideDebounce``; an eligible alternative arriving
 ///   inside the debounce of a visible alternative keeps the HUD up, so continuous typing never blinks.
-/// - `lifetime` hides the request that long after it was shown.
+/// - `lifetime` hides the request that long after it was shown. While the pointer is over the chip
+///   (the choice bar takes clicks) the lifetime does not run out; leaving the chip hides it after
+///   ``Timing/pointerExitGrace``. Hides the engine asks for still happen.
 /// - `pulse` is passed through only for in-place updates (a first appearance already fades in).
 public struct HUDTimeline: Sendable, Equatable {
     /// Durations in seconds.
@@ -34,6 +36,8 @@ public struct HUDTimeline: Sendable, Equatable {
         public var reducedMotionFadeIn: TimeInterval = 0.080
         /// Fade-out once the debounce or the lifetime has elapsed.
         public var fadeOut: TimeInterval = 0.100
+        /// How long a chip whose lifetime ran out under the pointer stays after the pointer leaves.
+        public var pointerExitGrace: TimeInterval = 0.8
 
         public init() {}
 
@@ -76,7 +80,13 @@ public struct HUDTimeline: Sendable, Equatable {
 
     public var timing: Timing
     public private(set) var phase: Phase = .hidden
+    /// The pointer is over the chip.
+    public private(set) var pointerInside = false
     private var lastReceived: HUDRequest?
+    /// The visible chip's `hideAt` is a hide request's debounce, not its lifetime.
+    private var hideIsDebounce = false
+    /// The visible chip's lifetime deadline, paused while the pointer is over it.
+    private var heldHideAt: TimeInterval?
 
     public init(timing: Timing = .standard) { self.timing = timing }
 
@@ -113,7 +123,7 @@ public struct HUDTimeline: Sendable, Equatable {
             switch phase {
             case .visible(let current, nil) where current.isTimelineAlternative:
                 // Latched: the token that earned the HUD is still composing.
-                phase = .visible(request, hideAt: request.lifetime.map { now + $0 })
+                makeVisible(request, at: now)
                 return .update(request, pulse: request.pulse)
             case .visible(let current, nil) where current.content == .bilingualLine:
                 // The persistent Bilingual-line badge stays while a word composes under it; the
@@ -134,15 +144,16 @@ public struct HUDTimeline: Sendable, Equatable {
         switch phase {
         case .visible(let current, _) where !request.immediate && !current.isTimelineAlternative:
             // A chip, badge or message is up: a new word's alternative still waits for the typing
-            // pause (R12), and the chip goes now (ux-spec §7.3).
+            // pause (R12), and the chip goes now (ux-spec §7.3), with whatever pointer was over it.
             phase = .pending(request, showAt: now + timing.appearDelay)
+            forgetPointer()
             return .hide
         case .visible:
-            phase = .visible(request, hideAt: request.lifetime.map { now + $0 })
+            makeVisible(request, at: now)
             return .update(request, pulse: request.pulse)
         case .hidden, .pending:
             if request.immediate {
-                phase = .visible(request, hideAt: request.lifetime.map { now + $0 })
+                makeVisible(request, at: now)
                 return .show(request)
             }
             phase = .pending(request, showAt: now + timing.appearDelay)
@@ -154,10 +165,12 @@ public struct HUDTimeline: Sendable, Equatable {
     public mutating func advance(to now: TimeInterval) -> Command? {
         switch phase {
         case .pending(let request, let showAt) where now >= showAt:
-            phase = .visible(request, hideAt: request.lifetime.map { now + $0 })
+            makeVisible(request, at: now)
             return .show(request)
         case .visible(_, let hideAt?) where now >= hideAt:
+            // A hidden chip has no pointer over it; the next chip starts unheld.
             phase = .hidden
+            forgetPointer()
             return .hide
         default:
             return nil
@@ -169,6 +182,43 @@ public struct HUDTimeline: Sendable, Equatable {
     /// non-keystroke event does not bring the HUD back.
     public mutating func reset() {
         phase = .hidden
+        forgetPointer()
+    }
+
+    /// The pointer entered or left the chip. Only the choice bar takes the pointer: over it, the
+    /// lifetime is held; on leaving, the chip hides at its own deadline but no sooner than
+    /// ``Timing/pointerExitGrace`` from now. Never produces a command by itself: the caller
+    /// reschedules its timer from ``nextDeadline``.
+    public mutating func setPointerInside(_ inside: Bool, at now: TimeInterval) {
+        guard case .visible(let request, let hideAt) = phase, request.takesPointer else {
+            forgetPointer()
+            return
+        }
+        guard inside != pointerInside else { return }
+        pointerInside = inside
+        if inside {
+            if let hideAt, !hideIsDebounce {
+                heldHideAt = hideAt
+                phase = .visible(request, hideAt: nil)
+            }
+        } else if let held = heldHideAt {
+            heldHideAt = nil
+            phase = .visible(request, hideAt: max(held, now + timing.pointerExitGrace))
+        }
+    }
+
+    /// Puts `request` on screen with its lifetime, held while the pointer is over the chip.
+    private mutating func makeVisible(_ request: HUDRequest, at now: TimeInterval) {
+        hideIsDebounce = false
+        if !request.takesPointer { forgetPointer() }
+        let lifetimeEnd = request.lifetime.map { now + $0 }
+        heldHideAt = pointerInside ? lifetimeEnd : nil
+        phase = .visible(request, hideAt: pointerInside ? nil : lifetimeEnd)
+    }
+
+    private mutating func forgetPointer() {
+        pointerInside = false
+        heldHideAt = nil
     }
 
     private mutating func requestHide(at now: TimeInterval) -> Command? {
@@ -181,6 +231,8 @@ public struct HUDTimeline: Sendable, Equatable {
         case .visible(let current, let hideAt):
             let debounced = now + timing.hideDebounce
             phase = .visible(current, hideAt: min(hideAt ?? debounced, debounced))
+            hideIsDebounce = true
+            heldHideAt = nil
             return nil
         }
     }
@@ -196,5 +248,13 @@ private extension HUDRequest {
     var isTimelineAlternative: Bool {
         if case .alternative = content { return true }
         return false
+    }
+
+    /// The choice bar takes clicks, so the pointer can be over it (SPEC §4.11).
+    var takesPointer: Bool {
+        switch content {
+        case .alternative, .flipLastWord: true
+        case .oneShot, .cannotChange, .bilingualLine: false
+        }
     }
 }
