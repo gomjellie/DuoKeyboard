@@ -1,338 +1,527 @@
-# Duo v1 — status (fix round 2 + lead re-review/QA pass, 2026-11-07)
+# Duo v1 진행 상황 (번호 후보 막대, 2차 수정, 리드 재검토, 2026-11-07)
 
-## Summary
+이 문서는 Duo v1이 지금 어디까지 왔는지 적어요. 요약과 테스트 수치 다음의 "최신 작업" 절이 가장 최근
+작업이에요. 그 아래 절들은 2차 수정과 리드 점검의 기록이에요.
 
-- **Fix round 2 is integrated** in one tree: the engine, input method, persistence/installer and host
-  tracks (44 review findings), plus the integration fixes listed below.
-- **Every scheme builds from clean with zero warnings in our sources**: DuoInputMethod, DuoHarness and
-  Duo in Debug; DuoInputMethod and Duo in Release.
-  - The Release IME is signed `adhoc,runtime` and has 0 `com.inkyuoh.Duo.debug` strings, as does the
-    copy embedded in Duo.app. The Debug IME has 4.
-- **Live E2E through real IMK: 51/51 cases pass** (`Tests/E2E/cases.json`: the 40 from round 1 plus
-  11 new ones). The set passed 3 consecutive runs, two of them through `make e2e`. After every run
-  the input source was back on `com.apple.inputmethod.Korean.2SetKorean`.
-- **The Release build is installed for daily use**: the IME embedded in `build/Release/Duo.app` is in
-  `~/Library/Input Methods`, and the host app is at `~/Applications/Duo.app`. Duo is enabled and
-  listed in the input menu; the selected source was left on 2-Set Korean.
-- **Lead pass after round 2** (below): the 7 re-review findings, a flip-alternative fix found in real
-  apps, the enable/approval flow, and a host crash, each verified live.
+## 요약
 
-## Test numbers
+- **최신 작업**: 후보 막대가 읽기를 최대 5개까지 번호와 함께 보여 줌. 숫자 키나 클릭으로 읽기를 고름.
+  - 영어로 고른 단어 뒤에 한국어 조사를 이어 칠 수 있음 (`cmd` + 바꾸기 키 + `fh` = cmd로).
+  - Orca에서 확정한 글자를 바꾸지 않게 했음. HUD 위치와 입력 소스 아이콘도 고쳤음.
+  - 자세한 내용은 아래 "최신 작업" 절에 있음.
+- **2차 수정을 한 트리에 통합했음**: 엔진, 입력기, 저장과 설치 프로그램, 호스트 앱 트랙(검토 지적 44건)과
+  아래에 적은 통합 수정.
+- **모든 스킴이 깨끗한 상태에서 우리 소스 경고 0개로 빌드됨** (2차 수정 때 확인): Debug의 DuoInputMethod,
+  DuoHarness, Duo와 Release의 DuoInputMethod, Duo.
+  - Release 입력기는 `adhoc,runtime`으로 서명되고 `com.inkyuoh.Duo.debug` 문자열이 0개임. Duo.app에 들어간
+    사본도 같음. Debug 입력기에는 4개 있음.
+- **실제 IMK를 거친 live E2E 51/51 통과** (`Tests/E2E/cases.json`: 1차의 40개와 새 11개). 2차 수정에서
+  3번 연속 통과했고, 그중 2번은 `make e2e`로 돌렸음. 매번 실행 뒤 입력 소스가
+  `com.apple.inputmethod.Korean.2SetKorean`으로 돌아와 있었음. 최신 작업 뒤에도 51/51임.
+- **2차 수정 뒤에 Release 빌드를 일상용으로 설치했었음**: `build/Release/Duo.app`에 들어간 입력기를
+  `~/Library/Input Methods`에, 호스트 앱을 `~/Applications/Duo.app`에 두었음. Duo는 켜져 있고 입력 메뉴에
+  나왔음. 선택된 입력 소스는 애플 두벌식(2-Set Korean)으로 두었음.
+  - 지금 `~/Library/Input Methods`의 입력기는 Debug 빌드임 (`com.inkyuoh.Duo.debug` 문자열 4개, `adhoc`
+    서명, 2026-11-07 22:36). `make install`과 `make e2e`가 Debug 입력기를 설치하기 때문임.
+  - `~/Applications/Duo.app`은 그대로 Release 빌드임 (`adhoc,runtime` 서명). 파일 시각은 2026-11-07
+    18:33으로, 최신 작업의 커밋보다 앞섬.
+- **2차 수정 뒤 리드 점검** (아래): 재검토 지적 7건, 실제 앱에서 찾은 바꾸기 대안 수정, 켜기와 허용 흐름,
+  호스트 앱 크래시. 각각 실제 앱에서 확인했음.
 
-| Suite | Result |
+## 테스트 수치
+
+| 묶음 | 결과 |
 |---|---|
-| `swift test` (debug, `build/spm`) | 435 tests in 41 suites passed, 4 known issues, 0 failures |
-| `swift test -c release` (`build/spm-rel`) | 435 tests in 41 suites passed, 4 known issues, 0 failures |
-| Host tests (`xcodebuild test -scheme Duo`) | 50 tests in 11 suites passed |
-| Live E2E (`make e2e`) | 51/51 (3 runs in round 2, 2 more after the lead pass) |
-| E2E mirror (`E2ECaseMirrorTests`) | all 51 cases match the engine in-process |
-| Benchmark, release (run alone) | prefix p99 15.6 µs, final p99 17.1 µs, prefix + final p99 32.7 µs (budget 300 µs) |
-| DET golden vectors | unchanged, all pass (bit-exact; model hash `aa722069c1e3076e`) |
+| `swift test` (debug, `build/spm`) | 46개 묶음의 테스트 491개 통과, 알려진 문제 4개, 실패 0개 |
+| `swift test -c release` (`build/spm-rel`) | 최신 작업 뒤에는 돌리지 않음 (2차 수정 기록: 41개 묶음의 테스트 435개 통과, 알려진 문제 4개, 실패 0개) |
+| 호스트 앱 테스트 (`xcodebuild test -scheme Duo`) | 11개 묶음의 테스트 50개 통과 |
+| live E2E (`make e2e`) | 51/51 (2차 수정에서 3번, 리드 점검 뒤 2번, 최신 작업 뒤에도 통과) |
+| E2E 미러 (`E2ECaseMirrorTests`) | 51개 사례 모두 프로세스 안의 엔진 결과와 같음 |
+| 문자열 카탈로그 (`Duo/Tools/check-strings.py`) | 206/206개 키 통과 |
+| 벤치마크, release (단독 실행) | 최신 작업 뒤에는 다시 재지 않음 (2차 수정 기록: 접두 p99 15.6 µs, 최종 p99 17.1 µs, 접두 + 최종 p99 32.7 µs, 예산 300 µs) |
+| DET 골든 벡터 | 바뀌지 않음, 모두 통과 (비트 단위로 같음, 모델 해시 `aa722069c1e3076e`) |
 
-The 4 known issues are the `withKnownIssue` scenario rows below; there are no other failures.
-Round 1 had 305 package tests in 28 suites and 16 host tests in 5 suites.
+알려진 문제 4개는 아래 "알려진 문제와 한계" 절의 `withKnownIssue` 시나리오 행이에요. 그 밖의 실패는 없어요.
+1차 수정에서는 패키지 테스트가 28개 묶음에 305개, 호스트 앱 테스트가 5개 묶음에 16개였어요.
 
-## Choice bar and HUD position (after the lead pass)
+환경은 macOS 26.6.2, Xcode 27.2, Swift 6.4.2(Swift 6 언어 모드, 엄격한 동시성 검사), XcodeGen 2.46.0이에요.
+모델 빌더(`Tools/ModelBuilder`)는 표준 라이브러리만 쓰는 Python 3로 돌아요.
 
-Two user reports, both handled with tests and checked live.
+## 최신 작업: 번호 후보 막대와 영어 뒤 조사 (2026-11-07)
 
-- **"WORKS came out as 쨰깐."** That was not Duo. The QA wrap-up had left the selected source on
-  Apple's 2-Set Korean, where ⇧W ⇧O ⇧R ⇧K ⇧S is exactly 쨰깐. `AppleInputSourceHistory` showed 2-Set
-  Korean right before Duo was selected again. With the real model Duo types WORKS (and TODO, DONE,
-  README, TEST) at the sentence start, after Korean and after English, in TextEdit and with the
-  Orca profile.
-- **A word with two plausible readings needs a way to choose** (SPEC §4.11). The HUD is now a choice
-  bar: both readings with their badges, the one in the document on a pill tinted with its language,
-  then the flip key. A click on the other reading flips that word (the word being typed, or the word
-  just committed) and teaches like the flip key. It never arms the next word. The bar stays up while
-  the pointer is on it, and the last word's bar now lives 4 s instead of 1.6 s.
-- **"A switch chip shows at the bottom left of the screen."** Some clients (seen in Orca) report a
-  caret far from their text. The HUD now follows a caret rect only inside one of the client's
-  on-screen windows (`HUDGeometry.isInsideClientWindow`, `ClientWindows`); otherwise it stays hidden.
-  `place … caret (x, y, w, h)` debug lines in the `hud` category log every rect it follows.
-- **The last word's chip covered the word in TextEdit.** Right after a commit TextEdit answers
-  `firstRect` a line off (word at y 817, caret line at y 803). `HUDGeometry.wordRect` moves the word
-  rect to the caret's line when the two disagree.
+리드 점검 뒤에 한 작업이에요. 후보 막대가 그럴듯한 읽기를 여러 개 보여 주고, 숫자 키로 고르게 되었어요.
+영어로 고른 단어 뒤에는 한국어 조사를 이어 칠 수 있어요. 코드는
+`Packages/DuoCore/Sources/DuoCore/Engine/CompositionEngine+Choice.swift`, `+Typing.swift`, `+Flip.swift`,
+`+Commit.swift`, `ClientProfile.swift`, `DuoKit/HUD/*`, `DuoInputMethod/Sources/HUD/*`,
+`DuoInputMethod/Sources/Controller/DuoInputController.swift`에 있어요.
 
-Live QA (Debug IME, 2026-11-07):
-- TextEdit: `go` at a sentence start shows [가 해 | A go ⌘] under the marked text. Clicking go flips
-  the marked word while TextEdit stays frontmost and key. After `go␣` the bar sits under the
-  committed word, and clicking 해 replaced it with 해␣. The bar stays with the selection moved, and
-  stays while the pointer is on it.
-- VS Code (Monaco editor): the bar sits under the caret.
-- Not checked live: Orca itself (this session's terminal; never typed into), Chrome and Safari click
-  paths, the VoiceOver announcement after a click.
+### 후보 막대: 읽기 최대 5개 (`CompositionEngine.choiceList`)
 
-## Lead pass after round 2
+전에는 막대가 두 읽기만 보여 주고, 다른 읽기의 확률이 20 % 이상일 때만 떴어요. 그래서 works일수도,
+cmd로처럼 영어 단어에 조사가 붙은 읽기가 후보에 나오지 않았어요.
 
-Re-review findings (all with tests):
-- **R1 (major) VS Code flip away from the word.** `endLocation` is recorded whenever the client
-  reports positions; only a flip *at* the word is refused in Monaco, so `foo();⏎// ` + flip arms the
-  next word again.
-- **R4 Terminal ⌫ over the boundary.** `.beforeCaretOnly` clients re-anchor from the caret (the end
-  recorded at commit trails the echo), so `hello␣` ⌫ flip gives `ㅗ디ㅣㅐ` (verified live in Terminal).
-- **R5 / R3 Bilingual line.** Leaving Direct ends `bilingualLine` and its badge; the badge comes back
-  only after a flip ran, not on a bare flip-key press (no false VoiceOver announcement).
-- **Host:** a refused enable (`status != noErr`) shows its error after a 2 s grace instead of 30 s;
-  the bottom bar no longer locks during 켜기; the strength footer and the unreadable-file message no
-  longer promise what the code does not do.
+- **목록**: K, E, 판별기가 점수를 매긴 모든 M(b) 중 최대 5개(`maxCandidates`). 같은 글자로 보이는 두 읽기는
+  하나만 남김.
+- **순서**: 접두 모드 점수가 높은 순서. 점수가 없는 읽기는 뒤에 둠. 점수가 같으면 `displayRank`(K, M(b), E)를
+  따름.
+- **빼는 읽기**: 두 모드 모두에서 1위보다 10냇(`candidateFloor`) 넘게 뒤지는 읽기.
+  - 보이는 읽기, 바꾸기 키가 가는 읽기(`alternate`), 영어 + 조사 이어 치기 읽기는 항상 남김.
+- **즉시 확정한 Latin과 맞지 않는 읽기**: 클라이언트가 확정한 글자를 다시 열 수 있을 때만 넣음 (`canChoose`).
+- **막대가 HUD에 뜨는 조건** (`alternativeHUD`): 아래 중 하나일 때. 힌트 표시(`showHints`)가 켜져 있어야
+  함. 단어는 2키 이상(또는 1키 충돌 단어 `a e i o u x`)이어야 하고, 자동 반복이 아니어야 함.
+  - 접두 모드에서 목록의 다른 읽기가 보이는 읽기와 `Margins.hudCandidates`(2944, P ≥ 5 %) 안에 있음
+  - M(b) 읽기가 최종 모드(`choiceScores`)에서 그만큼 가까움
+  - 사용자가 읽기를 골랐음 (바꾸기 키나 막대)
+- **나타나는 때**: 입력을 300 ms 멈춘 뒤 (`HUDTimeline.Timing.standard.appearDelay`).
+- **확정 직후 막대** (`.flipLastWord`): 놀라운 확정이나 불확실한 확정(다른 읽기 P ≥ 35 %) 뒤에 뜸. 읽기는
+  둘이고 번호가 없음.
+  - 클라이언트가 확정한 글자를 바꿀 수 있을 때만 뜸 (`canReplaceCommittedText`).
+  - 4초(`chipLifetime`) 동안 보이고, 포인터가 올라가 있는 동안 유지됨.
+  - 다른 읽기를 누르면 확정한 단어를 그 읽기로 바꿈.
 
-Found in real apps:
-- **Flip alternative (R11 refined).** A mixed reading is offered only when it is a real contender
-  (beats the other pure reading and is within `Margins.eagerCommit` of the shown one). Before, 27 %
-  of Korean words flipped to noise (사랑 → `tk랑`, 프로그램 → `vm로그램`) and English words to `tesㅅ`,
-  `thankㄴ`, `wwㅈ`. Now 사랑 → `tkfkd`, test → `ㅅㄷㄴㅅ`, www → `ㅈㅈㅈ`; `PR을` is unchanged.
-- **Enabling goes through macOS's approval prompt** (see Known issues for the history): the installer
-  no longer writes the allow-list, opens System Settings ▸ Keyboard first, re-asks once 4 s into the
-  wait when System Settings was not running (a cold launch can lose the prompt; a second enable
-  never stacks a second prompt), waits up to 60 s, comes back to the front after Allow, and says
-  "macOS의 허용을 받지 못했어요…" instead of "(오류 0)". The checklist step reads "macOS에서 허용".
-- **Host crash on 켜기**: `InputSourceManager` queries (`isEnabled`, `isSelected`, …) ran TIS off the
-  main thread from the installer's background queue and hit macOS 26's `dispatch_assert_queue`
-  (SIGTRAP). Every query now hops to the main thread like the mutations.
+M(b)만 최종 모드로 막대를 띄우는 데는 이유가 있어요. 접두 모드는 단어 끝을 따지지 않아요. 그래서 접두
+모드에서는 층로가 cmd로를 10냇 가까이 앞섰고, 최종 모드로는 2.8냇 차이였어요. 반대로 최종 모드는 덜 친
+음절(감ㅅ)을 끝난 단어로 매겨서 엉뚱한 영어를 띄워요.
 
-Live QA after the pass (real HID events, Release and Debug IME): TextEdit, Safari, Chrome
-textarea and contenteditable, Terminal (zsh line editor), VS Code, the host onboarding (cold start →
-prompt → Allow → selected → try-it tasks → done), Settings ▸ General/Learning, Erase all. Also
-checked: switching the input source while a word is marked commits it once; a click commits once;
-right ⌘ + A is not a flip. The input menu lists 선택한 텍스트 한↔A 변환 (enabled), but the
-conversion itself was not exercised live.
+### 숫자 키와 클릭으로 고르기 (`selectReading(at:on:client:)`)
 
-## What changed in round 2
+후보가 여러 개면 바꾸기 키 한 번으로는 원하는 읽기에 갈 수 없어요. 그래서 병음 입력기처럼 번호로 고르게
+했어요. 결과는 `ReadingChoice`의 `notOnBar`, `refused`, `chosen` 중 하나예요.
 
-### Engine (`Packages/DuoCore/Sources/DuoCore/Engine`)
+- **번호**: 조합 중인 단어의 막대(`.alternative`)에만 1, 2, 3 …을 붙임 (`HUDPresentation.isNumbered`).
+  - 확정 직후 막대에는 붙이지 않음. 확정한 단어 뒤에 친 숫자는 글자이기 때문임.
+- **숫자 키**: 번호 막대가 화면에 보일 때 1~9가 읽기를 고름 (`HUDPresentation.readingIndex(for:)`).
+  - ⌘, ⌃, ⌥와 함께 누른 숫자는 받지 않음.
+  - 입력기는 페이드인이 끝난 막대에서만 숫자를 받음 (`CompositionHUDController.seenRequest`). 그 전에는
+    숫자를 글자로 입력함.
+  - `notOnBar`이면 숫자를 글자로 입력함. 엔진이 사용자가 본 막대를 이미 바꿨거나, 그 번호의 읽기가 없을
+    때임.
+  - `refused`이면 숫자를 글자로 입력하지 않음. 막대를 겨눈 키라서 글자가 아님.
+  - 엔진이 "여기서는 바꿀 수 없어요"(`.cannotChange`)를 띄우면 VoiceOver도 그 안내를 읽어 줌.
+- **고른 결과**: 조합 중인 단어는 고른 읽기로 바뀌고 고정됨.
+  - 보이는 읽기를 고르면 그 읽기를 고정함. 경계에서 확정 점수가 다른 읽기를 골랐을 단어면, 확정할 때
+    고른 읽기를 학습함.
+  - 확정 직후 막대에서 다른 읽기를 고르면 그 단어를 바꿈.
+- **클릭**: 막대의 아무 읽기나 눌러서 고름. 입력기는 IMK 콜백 밖에서 클라이언트를 묶고 엔진을 부름.
+- **바꾸기 키**: 그대로 `alternate` 읽기로 오감.
+- **탭 감지**: 숫자 키나 클릭은 기다리던 바꾸기 키 탭을 취소함 (`FlipTapDetector.noteKeyDown()`). 다른 키를
+  누른 것과 같음.
+- **막대 모양**: 읽기가 셋 이상이면 읽기 글자의 최대 폭을 110 pt로 줄여 막대를 짧게 유지함. 패널이 키 창이
+  되지 않으므로 버튼의 포커스 링을 껐음.
+- **연습장** (`PlaygroundModel`): 같은 번호와 클릭을 씀.
+  - 연습장은 힌트를 더 일찍 보여 주지만, 숫자 키는 HUD 자격을 갖춘 막대가 300 ms 떠 있은 뒤에만 가로챔.
+  - 칩 버튼은 Tab 순서에서 뺐음.
 
-- **Direct mid-word** (engine-1): when the profile becomes Direct while a word is marked, the word is
-  committed before the next key passes.
-- **An explicit Korean choice beats the literal rule** (engine-2): after a flip or a one-shot Korean
-  word, `@`, `_` and `www.` keep that reading (`ㅠ_ㅠ`) instead of entering L.
-- **L ends in more places** (engine-3): besides whitespace, also when Backspace deletes the trigger
-  (tracked as a UTF-16 count), on arrows and navigation keys, on ⌘/⌃/fn shortcuts and on ⌥⌫.
-  Forward Delete keeps L. The flip still does nothing in L.
-- **Explicit commits check the client first** (engine-4): `commit(_:)` asks `markedRange()` for every
-  reason, so nothing is inserted twice and no ghost appears in a cleared field. Caps Lock and fn
-  commits resync after a 1 s pause.
-- **Caps Lock as the flip key** (engine-5, imk-4): with the lock on, the engine inserts letters itself,
-  in their typed case, for the eager English tail, L, Direct and the letter after `.`.
-- **⇧Space as the flip key** (engine-6, engine-7): in L it is a plain space that ends L; autorepeats
-  are swallowed.
-- **Learning store hardening** (safety-2, safety-4): votes are capped at 1000 and raw keys at
-  64 UTF-8 bytes, and non-finite or negative values are dropped. A vote of 1e20 used to crash the
-  IME. Snapshot and eviction sort plain keys: about 5 ms at the 20 000-entry cap, down from about
-  57 ms. Eviction now goes down to 95 %.
-- **Clients that ignore replacement ranges** (qa-3): `ClientProfile.canReplaceCommittedText` is false
-  for the Monaco editors (VS Code, Insiders, Cursor, VSCodium, Windsurf, Code OSS) and for
-  `replacement == .none`. There a flip of committed text shows "cannot change" instead of duplicating
-  it, and no last-word chip is offered.
-- **Terminal last-word flip** (qa-2, the lead's fix): the word is measured back from the caret, and the
-  flip checks the text. New tests model Terminal's trailing `selectedRange`.
+### 영어로 고른 단어 뒤에 한국어 조사 이어 치기 (`continueAfterLatinChoice`)
 
-### Input method (`DuoInputMethod`, `DuoKit/HUD`)
+전에는 cmd를 영어로 바꾼 뒤 로를 치면 cmd로가 아니라 cmdfh가 되었어요. 바꾸기가 단어 전체를 영어로
+고정했기 때문이에요.
 
-- **Modifier routing** (qa-1, imk-1): Chromium's duplicate `flagsChanged` events are dropped. The
-  window-server counters tell a chord (⌘C routed to the menu) from a tap, and a key already counted
-  is carried over to the next change. A global monitor covers clients that never forward modifiers.
-- **Menu**: choosing an app profile commits the word first (imk-2). The selection converter beeps
-  when there is nothing to convert and keeps the composition (hud-5).
-- **Marked-range probe** (imk-5): a client that misreports its marked range is detected after its first
-  mark, and its words are never dropped as if it had cleared them.
-- **DebugInjector** (safety-8): it injects only while DuoHarness is frontmost and its own text view is
-  the client, and it re-checks before every key.
-- **HUD**: the chip is measured after layout and snapped to device pixels (hud-1). The Bilingual badge
-  stays up while you type (hud-2). Feedback no longer lets an alternative skip the 300 ms pause
-  (hud-3). The HUD hides on a Space switch and on a display change (hud-4). VoiceOver announces
-  flip-key feedback: cannot change, the next word's language, one-shot cancelled, Bilingual on/off
-  (hud-6).
+- **`Token.lockedLatin`**: 사용자가 E나 M(b)로 고정한 Latin 키 수.
+- 그 뒤의 키마다 E와 M(b) 중 하나를 다시 고름.
+  - 뒤쪽이 완성된 한글 음절이 아니면 E (낱자모는 영어를 계속 치는 것으로 봄)
+  - M(b)가 E보다 히스테리시스(`HYST`, 1.5냇) 넘게 뒤지지 않으면 M(b)
+  - M(b) 점수가 없으면(Latin이 사전 단어가 아님) E가 1위보다 히스테리시스 넘게 뒤질 때 M(b)
+- 예: `cmd`(영어로 고름) + `fh` = cmd로, + `s` = cmds. `zlqhem` + `dms` = zlqhem은, 여기에 `x`를 치면
+  zlqhemdmsx (은 + ㅌ는 완성된 음절이 아님).
+- **바꾸기 키**: 원래 읽기에서 사용자가 고른 읽기로 돌아감 (`lockedReturn`). cmd로 → 층로 → cmd로.
+- **Backspace**: 점수 없는 M(b) 고정을 풀지 않음 (`isWellFormed`). zlqhem은 ⌫ = zlqhem으.
+- **후보 목록**: 이어 치기 읽기를 항상 남김.
+- 사용자가 영어를 고르지 않았으면 `cmdfh`는 그대로 층로임. cmd를 영어로 만드는 규칙은 없음.
 
-### Persistence and installer (`DuoKit`)
+### 학습: 어간 표와 앞부분 학습 넘기기 (`userCounts(carryLatinPrefixes:)`)
 
-- **`learning.json` recovery** (imk-6, safety-1): bad entries are skipped one at a time and
-  out-of-range values repaired. If anything was left out, or the file is a newer format, the original
-  is copied to `learning.corrupt-<UTC>.json`. An unreadable file is moved there before any write.
-- **Write failures** (safety-6) are logged, and `LearningWriter.flush()` returns whether the file
-  holds everything scheduled.
-- **Settings** (safety-7): `appProfiles` decode one app at a time. Saving keeps keys and profiles this
-  build cannot read, and `update()` writes only what changed. `SettingsContract.swift` changed only
-  inside its decoder; the public API is the same.
-- **Installer** (safety-5, host-6): the bundle is copied to `DuoInputMethod.app.installing`, swapped in
-  with `replaceItemAt`, and only then is the old server stopped. The installer waits up to 4 s for it
-  to exit.
-- **Reconnect after install** (qa-4): after an install, an update or "Duo 다시 시작" while Duo is
-  selected, the host switches to another enabled keyboard source and back about 0.3 s apart, so the
-  frontmost app reconnects. `install-ime.sh` swaps with two renames, waits for the old server, and
-  prints a reminder, because it cannot re-select the source itself.
+학습은 raw 키와 문맥(문장 처음, 한국어 뒤, 영어 뒤, 숫자 뒤)마다 따로 표(vote)를 세요. 그래서 cmd를 영어로 배워도
+`cmdfh`(cmd로)나 `cmdrk`(cmd가)에는 쓰이지 않았어요.
 
-### Host app (`Duo`, `DuoKit/Host`)
+- **학습 기본값** (`LearningStore`): 반감기 60일. 바꾸기 키와 막대의 고르기는 +3(`flipVotes`), 암묵적
+  학습은 +1(`implicitVotes`).
+- **어간 표**: 고른 M(b)(b ≥ 2)를 확정하면 Latin 앞부분(b키)에 M(b) 표를 +3 남김.
+  - b키짜리 단어 자체는 M(b)를 점수로 매기지 않음. 그래서 단독 단어는 영어로 바뀌지 않음.
+- **앞부분 학습 넘기기**: raw의 앞부분(2키 이상)마다, 그 앞부분이 배운 영어 표와 어간 표의 절반(올림)을
+  M(b)에 더함.
+  - 예: cmd에 영어 표 3 → `cmdfh`의 M(3)에 2.
+- **쓰는 곳**: 후보 막대의 점수에만 씀. 화면 표시와 확정에는 쓰지 않음.
+  - cmd를 영어로 배워도 `cmdfh`는 층로로 쳐짐. cmd로는 숫자 키 하나 거리에 있음.
 
-- **Learning edits** (safety-3): one user action is one edit. The commands are planned
-  (`LearningEditor.commands(forgetting:stored:)`) and sent in bursts of 50, each confirmed by
-  ping → pong, which stays below the ~256-post distributed notification queue. Without the IME there is
-  one read and one atomic write. Forgotten rows stay hidden until the file no longer lists them.
-- **Learning pane**: votes are clamped (safety-2, host side). The 횟수 column became 확신도 /
-  Strength, a bar on the detector's log scale (host-12). The table reloads on `learningChanged` and
-  when the app becomes active (host-8).
-- **Practice and playground**: task 3 ticks on any flip of the word being typed (host-1). ⌘/⌃ menu
-  shortcuts reach the engine first, so right ⌘ + C is a chord (host-3). Switching between engine and
-  native mode keeps every character (host-4). The canvas is a VoiceOver text area and announces flips
-  (host-10, VoiceOver half).
-- **Install and onboarding**: a failure the user fixed in the input menu shows as done. The enable
-  step waits for the system prompt, then selects (host-2). The auto-advance moves only from the enable
-  step (host-5). Reopening keeps a minimized onboarding window on its step (host-7). Settings opens
-  from `--duo-show-settings` and `com.inkyuoh.Duo.host.showSettings` (host-7). Polling runs only while
-  someone can see it (host-9). ⏎ and Esc work on the enable step (host-11). The Apps pane always shows
-  its section (host-13). The license link follows the app language (host-14).
+### 검토에서 고친 점
 
-### Integration (this pass)
+이 작업의 검토에서 세 가지가 나왔어요. 모두 테스트로 지켜요.
 
-- **Input menu ▸ "Duo 설정…"** calls `HostRequest.showSettings()`, so Settings opens even before
-  onboarding is finished (host's request). The unused `HostApp` helper is gone.
-- **IME learning writes** (host-8, safety-3, safety-6, safety-4, IME halves):
-  - every `LearningWriter` write posts `learningChanged`, so an open Learning pane also follows what the
-    IME learns while typing;
-  - host commands are applied in memory at once, in order (the ping barrier still holds), and a burst
-    costs one snapshot and one write, 100 ms after it ends. `LearningStore.remove`/`removeAll` (and
-    `LearningStore.apply(_:)`) now return whether anything changed, and a burst that changed nothing
-    writes nothing;
-  - a failed save posts `learningChanged` with `ok = "false"` (`LearningChangedNotice`), and
-    Settings ▸ 학습 says "학습 파일을 저장하지 못했어요. 디스크 공간과 권한을 확인해 주세요.";
-  - the SIGTERM/quit flush logs "learning flushed" only when the write succeeded;
-  - the startup log uses `learning.count` instead of building a snapshot.
-- **Erase all deletes the recovery copies**: `LearningFile.removeBackups(besides:)` runs on a posted
-  `removeAll` and on the host's direct erase-all. The copies hold words the user asked to forget.
-  Removing single words keeps them.
-- **Client calls outside an IMK callback** (risk from engine-4): the TIS source-change commit, menu
-  actions and the global-monitor modifier path bind the client with `outsideCallback`. There a client's
-  "nothing marked" no longer drops our marked word, because answers can be stale (live QA in TextEdit).
-  This keeps the pre-round-2 behaviour on those paths. The marked-range probe is not run outside a
-  callback either.
-- **Bilingual badge after a flip that does nothing** (the IME track's API wish): `handleModifier`
-  restores the badge as `handle` does. Before, a flip-key tap over literal text, or over a word with no
-  other reading, cleared the badge while the line stayed bilingual, and VoiceOver said
-  "직접 입력으로 돌아감".
-- **ModifierRouter's rules moved to DuoKit** (`ModifierRouting.CopyFilter`, `.ActivityCounter`) with
-  unit tests; the IME still has no test target. The behaviour is unchanged. The test for imk-1's
-  carry-over fails with the round-1 rule.
-- **Key DSL**: `{press:rcmd}` … `{release:rcmd}` hold a modifier, so the injector and its mirror can
-  type chords such as right ⌘ + C. The injector and mirror share `KeyScript.flagsMasks`.
-- **11 new E2E cases**: deleting `/` or `@` ends L; ⌘A ⌫ ends L; an arrow ends L; `ㅠ_ㅠ` and `ㅠ@ㅠ`
-  after flips; right ⌘ + C after a word and while composing, then a real tap that still flips;
-  right ⌘ + ⇧; re-opened eager English flipped there and back. Against the round-1 engine, the 6
-  literal cases fail in the mirror. The chord cases guard the engine path, where the injector's keys
-  always reach `engine.handle`.
+- **넘기기를 확정에도 썼음**: 화면에는 층로가 보이는데 cmd로가 확정되었음. 넘기기를 후보 막대 점수에만
+  쓰게 고쳤음 (`cmdTaughtAsEnglishBringsUpCmdRoAndStillTypesCheungRo`).
+- **영어 + 조사를 골라도 단독 단어는 영어가 되면 안 됨**: 어간 표를 단독 단어가 점수로 매기지 않는 M(b)로
+  남김. 그래서 go를을 골라도 다음 go는 그대로 해임 (`choosingGoReulDoesNotTeachTheBareWordGo`).
+- **한글 음절 중간에서 멈춰도 막대가 뜨면 안 됨**: 최종 모드는 감ㅅ을 끝난 단어로 읽어서 rkat(E)이
+  그럴듯해 보였음. 최종 점수로는 M(b)만 막대를 띄우게 했음 (`pausingInsideAKoreanSyllableShowsNoBar`).
 
-## Live-QA facts (verified by the lead in real apps)
+### Orca에서 확정한 글자를 바꾸지 않기 (`ClientProfile.xtermTerminals`)
 
-The apps were TextEdit, Safari, a Chrome textarea and contenteditable, Terminal with the zsh line
-editor, and VS Code.
+Orca 터미널(xterm.js)은 `replacementRange`를 무시해요. 그래서 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에
+붙었어요 (사용자 보고: 이상하게dltkdgkrp).
 
-- Chromium hands every `flagsChanged` to the IME twice, about 2 ms apart. The IMK copy has no device
-  bits and a later timestamp than the global monitor's.
-- IMK client calls made outside an IMK `handle()` callback (for example from a global NSEvent
-  monitor) see a stale cached `selectedRange` and a nil `attributedSubstring` in TextEdit.
-- Terminal positions are UTF-16 units, not cells, but `selectedRange` trails until the shell echoes.
-- VS Code/Monaco ignores `replacementRange` for both `setMarkedText` and `insertText`. Chrome, Safari,
-  TextEdit and Terminal honour it.
-- After the IME is reinstalled, running apps stay bound to the dead server until the source is
-  re-selected while they are frontmost.
+- `ClientProfile.xtermTerminals`에 `com.stablyai.orca`를 넣음. 이 표의 앱은 `canReplaceCommittedText`가
+  false임.
+- 조합 중인 단어는 그대로 바꿀 수 있음.
+- 확정한 단어를 바꾸려 하면 "여기서는 바꿀 수 없어요"(`.cannotChange`)를 띄움. 확정 직후 막대도 띄우지 않음.
+- 테스트: `EngineProfileTests.orcaKeepsMarkedTextButNeverRewritesCommittedText`.
+- 다른 터미널은 직접 확인하지 않아서 그대로 둠.
 
-## Known issues and limitations
+### HUD 위치와 표시
 
-- **Reconnecting after a reinstall.** After `make install` or `install-ime.sh`, apps that were using Duo
-  type plain ABC until Duo is re-selected while they are frontmost (⌃Space twice, or the menu bar), or
-  until focus moves to another app and back. The script prints this reminder. The host app's
-  install, update and restart do the re-selection themselves (`InputSourceManager.reselect`). Even
-  then, apps in the background reconnect only on their next focus change.
-- **Enabling goes through macOS's own prompt (fixed after round 2).** `TISEnableInputSource` on an
-  unapproved third-party source opens System Settings ▸ Keyboard with "Allow “Duo” to enable “Duo”?";
-  Allow writes the `AppleEnabledThirdPartyInputSources` allow-list. The installer used to write that
-  list itself. Duo then typed, but macOS never put it in the menu-bar input menu (its items showed
-  under the "Korean" header, with 2-Set Korean checked), and app switches could drop it. The installer
-  now only calls enable and stops with `.enableFailed(noErr)` while the prompt is up; `InstallRecovery`
-  waits up to 30 s for Allow (a refused enable shows its error after 2 s). Verified live: after
-  disable → enable → Allow, Duo is listed in the menu with no logout, and stays mode-less (R19 not
-  needed). A machine enabled the old way recovers the same way (or through 제거 and 켜기 in the app).
-- **Outside-callback answers.** Menu actions, the TIS source-change commit and the monitor path all
-  run outside `handle()`. They now trust our own mark, but `selectedRange` and `attributedSubstring`
-  there can still be stale. Live check: in TextEdit, select text with the mouse and choose
-  선택한 텍스트 한↔A 변환. If it beeps, the action sees the stale cache. Also switch the input source away
-  while a word is marked; the word must be committed once.
-- **E2E is the injector path**: keys reach the live controller, so marks and inserts travel the real
-  IMK → NSTextInputClient path, but TSM key routing is not exercised (critique U1). What it cannot
-  cover:
-  - the window-server chord check (imk-1), because injected keys are not counted;
-  - Chromium's duplicates;
-  - cases that need other settings: ⇧Space or Caps Lock as the flip key, a Direct profile, autorepeat.
-  These are covered by unit tests only.
-- **Not verified live in this pass** (the rules allow no control of other apps):
-  - HUD: chip size on first show and on a 1x display (hud-1); hiding on a Space switch or display
-    change (hud-4);
-  - VoiceOver: the announcements (hud-6, host-10);
-  - the `misreports its marked range` log line, which a normal client should never trigger (imk-5);
-  - host app: ⌘C/⌘A in the playground in engine mode; deleting 300+ learned rows with the IME running;
-    a minimized onboarding window on step 3 reopened from the Dock; the U5 prompt wait; "Duo 설정…"
-    before onboarding is finished;
-  - Critique U1–U9 remain open.
-- **DET beats the UX expectation** (scenario rows kept as `withKnownIssue`, critique R8):
-  - `gg` and `rt` after English become ㅎㅎ / ㄱㅅ;
-  - `eeee` at sentence start stays Latin;
-  - `roffjrtlS24` becomes 갤럭신24 (Hangul followed by Latin in one token is unsupported).
-- **ㅠㅠ / ㅜㅜ display Latin while typing** (`bb`/`nn`). The commit is correct and the flip chip appears.
-- **SPEC wording trails the engine**, and the lead should update it:
-  - §4.6: the new L endings, and `@`/`_`/`www.` after a Korean choice;
-  - §4.5: ⇧Space in L and its autorepeat;
-  - §4.8.6 / §4.9: commit checks `markedRange()` for every reason; Caps Lock and fn resync;
-  - §4.3.5 / D9: with the Caps Lock flip key and the lock on, the engine inserts letters;
-  - §4.10: `canReplaceCommittedText` and the Monaco list. VSCodeInsiders, VSCodium, Windsurf and Code OSS
-    stay `.automatic`: the table lists only VS Code and Cursor as English-first;
-  - detection.md §5.5: eviction to 95 %, the vote and raw-length caps.
-- **No IME unit-test target.** The pure routing rules are now tested in DuoKit. The IMK adapter
-  (`IMKTextClient` probe, outside-callback binding), the menu, DebugInjector confinement, `DuoRuntime`'s
-  learning writes and the HUD panel are build-verified and covered by live E2E only.
-- **Learning file policy.** A `learning.json` newer than version 1 loads what this build can read, is
-  rewritten as version 1 on the next change, and its original is kept as a `learning.corrupt-*.json`
-  copy. These copies are deleted only by Erase all.
-- **`terminateRunningServer()` blocks** for up to 4 s while it waits for the old server (plus about
-  0.3 s to re-select). The host calls it off the main thread.
-- **Playground model**: `BufferTextClient` treats Caps Lock + ⇧ on a letter as lowercase, but macOS ABC
-  gives uppercase. No test relies on it.
-- **`LearningWriter` debounce tests use real sleeps**: they are stable here but could flake on a loaded
-  CI machine.
+이 절의 수정은 코드 이력으로는 두 읽기 후보 막대보다 먼저 들어갔어요. 아래 "후보 막대와 HUD 위치" 절의
+내용을 더 자세히 적었어요.
 
-## Logs
+- **앱이 잘못 알려 준 캐럿 좌표**: Orca에서 HUD 칩이 글자 아래가 아니라 화면 왼쪽 아래에 떴음. 일부 앱은
+  캐럿이 없을 때 (0, 0) 근처 값, 1.6e-314 같은 XPC 쓰레기 값, 창 모서리 좌표를 돌려줌.
+  - `HUDGeometry.sanitized`가 비정상 값(subnormal)과 주 화면 왼쪽 아래 모서리 근처 좌표를 거부함.
+  - `HUDGeometry.followable`이 창 모서리 좌표를 거부하고, 앱의 화면 위 창 안에 있는 좌표만 따라감. 어느
+    화면에도 없는 좌표는 위아래를 뒤집어 다시 확인함.
+  - `ClientWindows`가 `CGWindowList`로 앱 창의 테두리를 0.5초 동안 캐시함. 창 테두리는 화면 기록 권한 없이
+    읽음. Finder의 데스크톱 이름 바꾸기 칸 때문에 데스크톱 창도 포함함.
+  - 따라갈 수 없는 좌표면 HUD를 띄우지 않음. 엉뚱한 곳에 띄우는 것보다 나음.
+- **확정 직후 막대가 단어를 가렸음**: TextEdit는 확정 직후 `firstRect`를 확정 전 레이아웃으로 답함.
+  `HUDGeometry.wordRect`가 단어 좌표와 캐럿 줄이 다른 줄이면 캐럿 줄을 따름. Return 바로 뒤면 단어 좌표를
+  그대로 씀.
+- **Caps Lock이나 fn으로 확정한 뒤 남은 막대**: `handleModifier()`가 HUD 요청을 지우지 않아, 사라진 단어의
+  막대가 다음 키까지 남았음. `commitFromModifier(client:)`가 확정 전에 요청을 지움.
 
-The subsystem is `com.inkyuoh.inputmethod.Duo`. The categories are `runtime`, `ime`, `menu`, `hud`,
-`learning` (recovery, write failures) and `install` (copy failures, a server that did not exit).
-Typed text is never logged at persisted levels, and no diagnostic logging is left in the sources.
+### 입력 소스 아이콘
+
+macOS 26의 입력 소스 전환 창에서 Duo 아이콘이 거의 보이지 않았어요. Duo가 선택되면 초록 원 안에서
+아이콘이 완전히 사라졌어요. 입력 메뉴에서는 Duo 아이콘의 글자만 가늘었어요.
+
+- 아이콘을 템플릿에서 일반 이미지로 바꿈 (`TISIconIsTemplate` = false).
+- 밝은 타일(#E5E5EA)에 거의 검은(#1C1C1E) "가A"를 그림. 글자는 heavy 굵기로, 타일 폭에 맞는 가장 큰 크기로
+  그림.
+- `Tools/IconGen/make_menu_icon.swift`와 `DuoInputMethod/Resources/MenuIcon.tiff`를 바꿈.
+- 밝은 타일은 어두운 메뉴와 메뉴 막대에서 애플 아이콘과 같아 보임. 밝은 모드에서는 애플 아이콘(검은 타일)과
+  색이 다르지만 글자는 읽힘.
+- 메뉴 막대와 입력 메뉴에서 확인했음. 전환 창(TextInputSwitcher)은 아이콘을 캐시해서 다음 로그인 뒤에 바뀜.
+- 전환 창이 Duo를 빈칸으로 그리는 한계는 남아 있음 ("알려진 문제와 한계" 절 참고).
+
+### 실제 앱 QA (2026-11-07)
+
+- TextEdit: 조합 중인 단어에 번호 막대가 뜨고, 숫자 키로 읽기를 고름.
+- `cmd` + 바꾸기 키 + `fh`가 cmd로가 됨.
+- VS Code 에디터: 막대 위치를 확인함.
+
+## 후보 막대와 HUD 위치 (리드 점검 뒤)
+
+아래 네 가지를 테스트와 함께 처리하고, 실제 앱에서 확인했어요. 이때의 막대는 두 읽기만 보여 줬고, 최신
+작업에서 읽기 최대 5개와 번호로 넓어졌어요.
+
+- **"WORKS가 쨰깐으로 쳐졌음."** Duo 문제가 아니었음.
+  - QA 마무리에서 선택된 입력 소스를 애플 두벌식으로 두었음. 거기서 ⇧W ⇧O ⇧R ⇧K ⇧S는 정확히 쨰깐임.
+  - `AppleInputSourceHistory`를 보면 Duo를 다시 고르기 직전에 두벌식이 선택되어 있었음.
+  - 실제 모델로 Duo는 WORKS(그리고 TODO, DONE, README, TEST)를 문장 처음, 한국어 뒤, 영어 뒤에서 그대로
+    침. TextEdit와 Orca 프로필에서 확인했음.
+- **두 읽기가 모두 그럴듯한 단어에는 고르는 방법이 필요함** (SPEC 4.11절). HUD가 이제 후보 막대임.
+  - 두 읽기와 각각의 배지를 보여 줌. 문서에 들어간 읽기는 그 언어 색 알약 위에 둠. 끝에 바꾸기 키가 옴.
+  - 다른 읽기를 누르면 그 단어(조합 중인 단어나 방금 확정한 단어)를 바꾸고, 바꾸기 키처럼 학습함. 다음
+    단어를 준비하지는 않음.
+  - 포인터가 올라가 있는 동안 막대가 유지됨. 확정 직후 막대는 1.6초 대신 4초 동안 보임.
+- **"화면 왼쪽 아래에 전환 칩이 뜸."** 일부 클라이언트(Orca에서 봄)는 글자에서 먼 캐럿 좌표를 알려 줌.
+  - HUD는 이제 클라이언트의 화면 위 창 안에 있는 캐럿 좌표만 따라감 (`HUDGeometry.isInsideClientWindow`,
+    `ClientWindows`). 아니면 HUD를 띄우지 않음. 지금은 `HUDGeometry.followable`이 이 검사를 함께 함.
+  - HUD가 따라간 좌표는 `hud` 분류의 `place … caret (x, y, w, h)` debug 로그에 남음.
+- **확정 직후 막대가 TextEdit에서 단어를 가렸음.** TextEdit는 확정 직후 `firstRect`를 한 줄 어긋나게 답함
+  (단어 y 817, 캐럿 줄 y 803). `HUDGeometry.wordRect`가 두 좌표가 다른 줄이면 단어 좌표를 캐럿 줄로 옮김.
+
+실제 앱 QA (Debug 입력기, 2026-11-07):
+- TextEdit: 문장 처음에 `go`를 치면 조합 문자열 아래에 [가 해 | A go ⌘]가 뜸.
+  - go를 누르면 TextEdit가 맨 앞의 키 창으로 남은 채 조합 중인 단어가 바뀜.
+  - `go␣` 뒤에는 막대가 확정한 단어 아래에 뜨고, 해를 누르자 해␣로 바뀌었음.
+  - 선택이 옮겨진 채로 막대가 유지되고, 포인터가 올라가 있는 동안에도 유지됨.
+- VS Code(Monaco 에디터): 막대가 캐럿 아래에 뜸.
+- 실제로 확인하지 않은 것: Orca 자체(이 세션의 터미널이라 입력하지 않았음), Chrome과 Safari의 클릭 경로,
+  클릭 뒤 VoiceOver 안내.
+
+## 2차 수정 뒤 리드 점검
+
+재검토 지적 (모두 테스트 있음):
+- **R1 (major) VS Code에서 단어에서 떨어져 바꾸기.** 클라이언트가 위치를 알려 주면 `endLocation`을 늘
+  기록함. Monaco에서 거부하는 것은 단어 *위에서의* 바꾸기뿐임. 그래서 `foo();⏎// ` + 바꾸기는 다시 다음
+  단어를 준비함.
+- **R4 Terminal에서 경계를 넘는 ⌫.** `.beforeCaretOnly` 클라이언트는 캐럿에서 다시 기준을 잡음 (확정 때
+  기록한 끝 위치는 에코보다 뒤처짐). 그래서 `hello␣` ⌫ 바꾸기가 `ㅗ디ㅣㅐ`가 됨 (Terminal에서 실제로
+  확인했음).
+- **R5 / R3 이중 언어 줄.** Direct를 벗어나면 `bilingualLine`과 그 배지가 끝남. 배지는 바꾸기가 실제로
+  일어난 뒤에만 다시 나옴. 바꾸기 키만 눌러서는 나오지 않음 (잘못된 VoiceOver 안내 없음).
+- **호스트 앱:** 거부된 켜기(`status != noErr`)는 30초 대신 2초 유예 뒤에 오류를 보여 줌. 켜기 중에 아래쪽
+  막대가 더 이상 잠기지 않음. 확신도 바닥글과 읽을 수 없는 파일 메시지가 코드가 하지 않는 일을 더 이상
+  약속하지 않음.
+
+실제 앱에서 찾은 것:
+- **바꾸기 대안 (R11 다듬음).** 혼합 읽기는 진짜 경쟁자일 때만 제안함. 다른 순수 읽기를 이기고, 보이는
+  읽기와 `Margins.eagerCommit` 안에 있어야 함.
+  - 전에는 한국어 단어의 27 %가 엉뚱한 읽기로 바뀌었음 (사랑 → `tk랑`, 프로그램 → `vm로그램`). 영어 단어는
+    `tesㅅ`, `thankㄴ`, `wwㅈ`로 바뀌었음.
+  - 이제 사랑 → `tkfkd`, test → `ㅅㄷㄴㅅ`, www → `ㅈㅈㅈ`임. `PR을`은 그대로임.
+- **켜기는 macOS의 허용 창을 거침** (경위는 "알려진 문제와 한계" 절 참고).
+  - 설치 프로그램은 더 이상 허용 목록을 직접 쓰지 않음. 먼저 시스템 설정 ▸ 키보드를 엶.
+  - 시스템 설정이 실행 중이 아니었으면 기다리기 시작한 지 4초 뒤에 한 번 다시 물음. 콜드 실행에서는 허용
+    창이 사라질 수 있음. 두 번째 켜기가 허용 창을 겹쳐 띄우지는 않음.
+  - 최대 60초 기다리고, 허용 뒤에 앞으로 돌아옴. "(오류 0)" 대신 "macOS의 허용을 받지 못했어요…"라고 알림.
+  - 점검 목록 단계 이름은 "macOS에서 허용"임.
+- **켜기에서 호스트 앱 크래시**: `InputSourceManager` 조회(`isEnabled`, `isSelected`, …)가 설치 프로그램의
+  백그라운드 큐에서 메인 스레드 밖으로 TIS를 불렀고, macOS 26의 `dispatch_assert_queue`에 걸렸음
+  (SIGTRAP). 이제 모든 조회가 변경 작업처럼 메인 스레드로 넘어감.
+
+점검 뒤에 실제 HID 이벤트로 Release와 Debug 입력기를 확인했어요. 앱은 TextEdit, Safari, Chrome textarea와
+contenteditable, Terminal(zsh 줄 편집기), VS Code였어요. 호스트 앱 온보딩(콜드 시작 → 허용 창 → 허용 →
+선택됨 → 따라 해 보기 과제 → 완료), 설정 ▸ 일반/학습, 모두 지우기도 확인했어요. 단어가 조합 중일 때 입력
+소스를 바꾸면 한 번만 확정돼요. 클릭하면 한 번만 확정돼요. 오른쪽 ⌘ + A는 바꾸기가 아니에요. 입력 메뉴에
+선택한 텍스트 한↔A 변환이 켜진 상태로 나오지만, 변환 자체는 실제로 실행해 보지 않았어요.
+
+## 2차 수정에서 바뀐 것
+
+### 엔진 (`Packages/DuoCore/Sources/DuoCore/Engine`)
+
+- **단어 중간의 Direct** (engine-1): 단어가 조합 중일 때 프로필이 Direct가 되면, 다음 키를 통과시키기 전에
+  그 단어를 확정함.
+- **명시적인 한국어 선택이 리터럴 규칙보다 앞섬** (engine-2): 바꾸기나 일회성 한국어 단어 뒤에서 `@`, `_`,
+  `www.`는 L로 들어가지 않고 그 읽기를 유지함 (`ㅠ_ㅠ`).
+- **L이 끝나는 곳이 늘었음** (engine-3): 공백 말고도 아래에서 끝남.
+  - Backspace가 트리거를 지울 때 (UTF-16 수로 셈)
+  - 방향키와 이동 키, ⌘/⌃/fn 단축키, ⌥⌫
+  - Forward Delete는 L을 유지함. L에서는 여전히 바꾸기가 아무것도 하지 않음.
+- **명시적 확정은 먼저 클라이언트를 확인함** (engine-4): `commit(_:)`이 모든 이유에서 `markedRange()`를 물음.
+  그래서 두 번 입력되지 않고, 비운 입력란에 유령 글자가 나타나지 않음. Caps Lock과 fn 확정은 1초 멈춤 뒤에
+  다시 맞춤.
+- **Caps Lock을 바꾸기 키로 쓸 때** (engine-5, imk-4): 잠금이 켜져 있으면 엔진이 글자를 친 대소문자 그대로
+  직접 입력함. 즉시 확정하는 영어 끝부분, L, Direct, `.` 뒤 글자가 해당됨.
+- **⇧Space를 바꾸기 키로 쓸 때** (engine-6, engine-7): L에서는 L을 끝내는 보통 공백임. 자동 반복은 삼킴.
+- **학습 저장소 강화** (safety-2, safety-4):
+  - 표는 1000으로, raw 키는 64 UTF-8 바이트로 제한함. 유한하지 않거나 음수인 값은 버림. 전에는 표 1e20이
+    입력기를 죽였음.
+  - 스냅숏과 줄이기(eviction)는 평범한 키로 정렬함. 상한 20 000개에서 약 57 ms이던 것이 약 5 ms로 줄었음.
+  - 이제 줄이기는 95 %까지 줄임.
+- **replacement range를 무시하는 클라이언트** (qa-3): Monaco 에디터(VS Code, Insiders, Cursor, VSCodium,
+  Windsurf, Code OSS)와 `replacement == .none`에서는 `ClientProfile.canReplaceCommittedText`가 false임.
+  - 거기서 확정한 글자를 바꾸면 글자를 겹쳐 넣지 않고 "바꿀 수 없음"을 보여 줌. 확정 직후 칩도 제안하지 않음.
+  - 최신 작업에서 Orca도 같은 규칙을 받았음 (`xtermTerminals`).
+- **Terminal 마지막 단어 바꾸기** (qa-2, 리드의 수정): 단어를 캐럿에서 거꾸로 잼. 바꾸기가 글자를 확인함.
+  새 테스트가 Terminal의 뒤처진 `selectedRange`를 흉내 냄.
+
+### 입력기 (`DuoInputMethod`, `DuoKit/HUD`)
+
+- **수정키 라우팅** (qa-1, imk-1):
+  - Chromium이 겹쳐 보내는 `flagsChanged` 이벤트를 버림.
+  - 윈도 서버 카운터로 동시 누름(메뉴로 가는 ⌘C)과 탭을 구별함. 이미 센 키는 다음 변화로 넘김.
+  - 수정키를 전달하지 않는 클라이언트는 전역 모니터가 맡음.
+- **메뉴**: 앱 프로필을 고르면 먼저 단어를 확정함 (imk-2). 선택 변환기는 바꿀 것이 없으면 삑 소리를 내고
+  조합을 유지함 (hud-5).
+- **조합 범위 검사** (imk-5): 조합 범위를 잘못 알려 주는 클라이언트를 첫 조합 뒤에 알아챔. 그 클라이언트의
+  단어는 클라이언트가 지운 것으로 보고 버리지 않음.
+- **DebugInjector** (safety-8): DuoHarness가 맨 앞에 있고 그 텍스트 뷰가 클라이언트일 때만 키를 주입함.
+  키마다 다시 확인함.
+- **HUD**:
+  - 칩을 레이아웃 뒤에 재고 장치 픽셀에 맞춤 (hud-1).
+  - 이중 언어 배지가 입력하는 동안 유지됨 (hud-2).
+  - 피드백이 대안의 300 ms 멈춤을 건너뛰게 하지 않음 (hud-3).
+  - 데스크톱 공간(Space) 전환과 디스플레이 변경에서 HUD를 숨김 (hud-4).
+  - VoiceOver가 바꾸기 키 피드백을 읽어 줌: 바꿀 수 없음, 다음 단어의 언어, 일회성 취소, 이중 언어 켬/끔
+    (hud-6).
+
+### 저장과 설치 프로그램 (`DuoKit`)
+
+- **`learning.json` 복구** (imk-6, safety-1): 잘못된 항목은 하나씩 건너뛰고, 범위를 벗어난 값은 고침.
+  - 무엇이든 빠졌거나 파일이 더 새 형식이면 원본을 `learning.corrupt-<UTC>.json`으로 복사함.
+  - 읽을 수 없는 파일은 어떤 쓰기보다 먼저 그 이름으로 옮김.
+- **쓰기 실패** (safety-6)는 로그에 남음. `LearningWriter.flush()`는 예약한 내용이 모두 파일에 들어갔는지
+  돌려줌.
+- **설정** (safety-7): `appProfiles`를 앱 하나씩 디코드함.
+  - 저장할 때 이 빌드가 읽지 못하는 키와 프로필을 유지하고, `update()`는 바뀐 것만 씀.
+  - `SettingsContract.swift`는 디코더 안만 바뀌었고 공개 API는 같음.
+- **설치 프로그램** (safety-5, host-6): 번들을 `DuoInputMethod.app.installing`으로 복사하고 `replaceItemAt`으로
+  바꿔 넣은 뒤에야 옛 서버를 멈춤. 서버가 끝나기를 최대 4초 기다림.
+- **설치 뒤 다시 연결** (qa-4):
+  - Duo가 선택된 상태에서 설치, 업데이트, "Duo 다시 시작"을 하면 호스트 앱이 켜진 다른 키보드 입력 소스로
+    바꿨다가 약 0.3초 뒤에 돌아옴. 그래서 맨 앞 앱이 다시 연결됨.
+  - `install-ime.sh`는 이름 바꾸기 두 번으로 교체하고, 옛 서버를 기다리고, 안내를 출력함. 스크립트는 입력
+    소스를 스스로 다시 고를 수 없기 때문임.
+
+### 호스트 앱 (`Duo`, `DuoKit/Host`)
+
+- **학습 편집** (safety-3): 사용자 동작 하나가 편집 하나임.
+  - 명령을 계획하고(`LearningEditor.commands(forgetting:stored:)`) 50개씩 묶어 보냄. 묶음마다 ping → pong으로
+    확인함. 그래서 약 256개인 분산 알림 큐를 넘지 않음.
+  - 입력기가 없으면 한 번 읽고 한 번 원자적으로 씀.
+  - 잊은 행은 파일에 더 이상 없을 때까지 숨김.
+- **학습 패널**: 표를 범위 안으로 자름 (safety-2, 호스트 앱 쪽). 횟수 열이 확신도(Strength)가 되었고,
+  판별기의 로그 척도로 그린 막대임 (host-12). `learningChanged`가 오거나 앱이 활성화되면 목록을 다시 읽음
+  (host-8).
+- **연습 과제와 연습장**:
+  - 과제 3은 조합 중인 단어를 어떻게 바꾸든 완료됨 (host-1).
+  - ⌘/⌃ 메뉴 단축키가 엔진에 먼저 가므로 오른쪽 ⌘ + C는 동시 누름임 (host-3).
+  - 엔진 모드와 네이티브 모드를 오가도 글자가 모두 남음 (host-4).
+  - 캔버스는 VoiceOver 텍스트 영역이고 바꾸기를 알림 (host-10, VoiceOver 부분).
+- **설치와 온보딩**:
+  - 사용자가 입력 메뉴에서 고친 실패는 완료로 보임.
+  - 켜기 단계는 시스템 허용 창을 기다린 뒤에 선택함 (host-2).
+  - 자동 진행은 켜기 단계에서만 움직임 (host-5).
+  - 다시 열면 최소화한 온보딩 창이 그 단계에 머묾 (host-7).
+  - 설정은 `--duo-show-settings`와 `com.inkyuoh.Duo.host.showSettings`로 열림 (host-7).
+  - 폴링은 누군가 볼 수 있을 때만 돎 (host-9).
+  - ⏎와 Esc가 켜기 단계에서 동작함 (host-11).
+  - 앱 패널은 항상 그 섹션을 보여 줌 (host-13).
+  - 라이선스 링크는 앱 언어를 따름 (host-14).
+
+### 통합 (이번 점검)
+
+- **입력 메뉴 ▸ "Duo 설정…"**이 `HostRequest.showSettings()`를 부름. 그래서 온보딩을 마치기 전에도 설정이
+  열림 (호스트 앱 트랙의 요청). 쓰지 않던 `HostApp` 도우미는 지웠음.
+- **입력기의 학습 쓰기** (host-8, safety-3, safety-6, safety-4의 입력기 쪽):
+  - `LearningWriter`가 쓸 때마다 `learningChanged`를 보냄. 그래서 열린 학습 패널이 입력 중에 입력기가 배우는
+    것도 따라감.
+  - 호스트 앱 명령은 메모리에 곧바로 차례대로 적용됨 (ping 장벽은 그대로임). 묶음 하나는 끝난 지 100 ms
+    뒤에 스냅숏 한 번과 쓰기 한 번만 듦.
+  - `LearningStore.remove`/`removeAll`(그리고 `LearningStore.apply(_:)`)은 이제 바뀐 것이 있는지 돌려줌.
+    아무것도 바꾸지 않은 묶음은 아무것도 쓰지 않음.
+  - 저장에 실패하면 `ok = "false"`인 `learningChanged`를 보냄 (`LearningChangedNotice`). 설정 ▸ 학습은
+    "학습 파일을 저장하지 못했어요. 디스크 공간과 권한을 확인해 주세요."라고 알림.
+  - SIGTERM이나 종료 때의 flush는 쓰기에 성공했을 때만 "learning flushed"를 로그에 남김.
+  - 시작 로그는 스냅숏을 만드는 대신 `learning.count`를 씀.
+- **모두 지우기가 복구 사본도 지움**: `LearningFile.removeBackups(besides:)`가 보내진 `removeAll`과 호스트
+  앱의 직접 모두 지우기에서 돎. 사본에는 사용자가 잊으라고 한 단어가 들어 있음. 단어 하나씩 지울 때는 사본을
+  남김.
+- **IMK 콜백 밖의 클라이언트 호출** (engine-4에서 나온 위험):
+  - TIS 입력 소스 변경 확정, 메뉴 동작, 전역 모니터의 수정키 경로는 `outsideCallback`으로 클라이언트를 묶음.
+  - 거기서는 클라이언트의 "조합 없음" 답이 우리 조합 단어를 더 이상 버리지 않음. 답이 낡았을 수 있기 때문임
+    (TextEdit에서 실제 QA).
+  - 이 경로들에서는 2차 수정 전 동작이 유지됨. 조합 범위 검사도 콜백 밖에서는 돌리지 않음.
+- **아무 일도 하지 않은 바꾸기 뒤의 이중 언어 배지** (입력기 트랙의 API 요청): `handleModifier`가 `handle`처럼
+  배지를 되살림. 전에는 리터럴 글자 위나 다른 읽기가 없는 단어 위에서 바꾸기 키를 탭하면, 줄은 이중 언어로
+  남는데 배지가 지워졌음. 그리고 VoiceOver가 "직접 입력으로 돌아감"이라고 말했음.
+- **ModifierRouter의 규칙을 DuoKit으로 옮겼음** (`ModifierRouting.CopyFilter`, `.ActivityCounter`), 단위 테스트
+  포함. 입력기에는 여전히 테스트 타깃이 없음. 동작은 같음. 이미 센 키를 넘기는 imk-1 규칙의 테스트는 1차
+  규칙으로는 실패함.
+- **키 DSL**: `{press:rcmd}` … `{release:rcmd}`가 수정키를 누른 채로 둠. 그래서 인젝터와 그 미러가 오른쪽
+  ⌘ + C 같은 동시 누름을 칠 수 있음. 인젝터와 미러는 `KeyScript.flagsMasks`를 함께 씀.
+- **새 E2E 사례 11개**:
+  - `/`나 `@`를 지우면 L이 끝남. ⌘A ⌫가 L을 끝냄. 방향키가 L을 끝냄.
+  - 바꾸기 뒤의 `ㅠ_ㅠ`와 `ㅠ@ㅠ`.
+  - 단어 뒤와 조합 중의 오른쪽 ⌘ + C, 그다음 여전히 바꾸기가 되는 진짜 탭. 오른쪽 ⌘ + ⇧.
+  - 다시 연 즉시 확정 영어를 거기서 바꿨다가 되돌림.
+  - 1차 엔진으로는 리터럴 사례 6개가 미러에서 실패함. 동시 누름 사례는 엔진 경로를 지킴. 인젝터의 키는 늘
+    `engine.handle`에 닿기 때문임.
+
+## 실제 앱 QA로 확인한 사실 (리드가 실제 앱에서 확인)
+
+앱은 TextEdit, Safari, Chrome textarea와 contenteditable, zsh 줄 편집기를 쓰는 Terminal, VS Code였어요.
+
+- Chromium은 모든 `flagsChanged`를 약 2 ms 간격으로 입력기에 두 번 보냄. IMK 쪽 사본에는 장치 비트가 없고,
+  타임스탬프가 전역 모니터의 것보다 늦음.
+- IMK `handle()` 콜백 밖에서 한 IMK 클라이언트 호출(예: 전역 NSEvent 모니터에서)은 TextEdit에서 낡은 캐시
+  `selectedRange`와 nil `attributedSubstring`을 봄.
+- Terminal의 위치는 칸이 아니라 UTF-16 단위임. 하지만 `selectedRange`는 셸이 에코할 때까지 뒤처짐.
+- VS Code/Monaco는 `setMarkedText`와 `insertText` 모두에서 `replacementRange`를 무시함. Chrome, Safari,
+  TextEdit, Terminal은 따름.
+- 입력기를 다시 설치하면, 실행 중인 앱은 맨 앞에 있을 때 입력 소스를 다시 고를 때까지 죽은 서버에 묶여 있음.
+
+## 알려진 문제와 한계
+
+- **전환 창과 캐럿 옆 표시에서 Duo가 비어 보임.** macOS 26의 입력 소스 전환 창과 캐럿 옆 입력 소스 표시는
+  입력 모드의 라벨을 그림. Duo에는 입력 모드가 없어서 그 자리가 비어 보임.
+  - `DuoInputMethod/Info.plist`에는 입력 소스 수준의 `TISIconLabels`(`Primary` = "가A")가 이미 있음. 그래도
+    그 자리는 비어 보임.
+  - 계획한 수정: 입력 모드 하나를 추가하고 그 모드에 `TISIconLabels` "가A"를 줌.
+  - 입력 모드를 추가하면 macOS의 입력 소스 허용을 다시 받아야 함. 아이콘 수정 때는 이 이유로 미뤘음.
+  - SPEC 5절 C 트랙은 지금 입력 모드 없이 두라고 적고 있음 (R19). 이 수정을 하면 그 규칙도 바꿔야 함.
+- **docs/research/ui-design.md 4.4절은 아직 템플릿 메뉴 아이콘을 적음.** 지금 아이콘은 템플릿이 아님
+  (`TISIconIsTemplate` = false, SPEC 5절 C.5).
+- **Orca 말고 다른 xterm.js 터미널은 확인하지 않았음.** 그래서 `xtermTerminals`에는 Orca만 있음.
+- **재설치 뒤 다시 연결.** `make install`이나 `install-ime.sh` 뒤에는, Duo를 쓰던 앱이 평범한 ABC로 입력함.
+  - 그 앱이 맨 앞에 있을 때 Duo를 다시 고르거나(⌃Space 두 번, 또는 메뉴 막대), 포커스가 다른 앱으로 갔다가
+    돌아오면 풀림. 스크립트가 이 안내를 출력함.
+  - 호스트 앱의 설치, 업데이트, 다시 시작은 다시 고르기를 스스로 함 (`InputSourceManager.reselect`). 그래도
+    뒤에 있는 앱은 다음 포커스 변경 때에야 다시 연결됨.
+- **켜기는 macOS의 허용 창을 거침 (2차 수정 뒤 고쳤음).**
+  - 허용받지 않은 서드파티 입력 소스에 `TISEnableInputSource`를 부르면 시스템 설정 ▸ 키보드가
+    "Allow “Duo” to enable “Duo”?"와 함께 열림. 허용하면 `AppleEnabledThirdPartyInputSources` 허용 목록이 써짐.
+  - 전에는 설치 프로그램이 그 목록을 직접 썼음. 그러면 Duo로 입력은 되었지만 macOS가 Duo를 메뉴 막대의 입력
+    메뉴에 넣지 않았음 (항목이 "Korean" 머리글 아래에 나왔고 두벌식에 체크가 있었음). 앱을 바꾸면 Duo가
+    빠질 수도 있었음.
+  - 이제 설치 프로그램은 켜기만 부르고, 허용 창이 떠 있는 동안 `.enableFailed(noErr)`로 멈춤.
+    `InstallRecovery`가 허용을 최대 60초 기다림 (거부된 켜기는 2초 뒤에 오류를 보여 줌).
+  - 실제로 확인했음: 끄기 → 켜기 → 허용 뒤에 로그아웃 없이 Duo가 메뉴에 나오고, 입력 모드 없이 유지됨 (R19는
+    필요 없음). 옛 방식으로 켠 기기도 같은 방법으로 (또는 앱의 제거와 켜기로) 복구됨.
+- **콜백 밖의 답.** 메뉴 동작, TIS 입력 소스 변경 확정, 모니터 경로는 모두 `handle()` 밖에서 돎.
+  - 이제 우리 조합을 믿지만, 거기서 `selectedRange`와 `attributedSubstring`은 여전히 낡았을 수 있음.
+  - 실제 확인 방법: TextEdit에서 마우스로 글자를 선택하고 선택한 텍스트 한↔A 변환을 고름. 삑 소리가 나면
+    동작이 낡은 캐시를 본 것임. 단어가 조합 중일 때 입력 소스를 바꿔 보기도 함. 단어는 한 번만 확정되어야 함.
+- **E2E는 인젝터 경로임.** 키가 실제 컨트롤러에 닿으므로 조합과 입력은 실제 IMK → NSTextInputClient 경로를
+  지남. 하지만 TSM 키 라우팅은 거치지 않음 (critique U1). E2E가 다루지 못하는 것:
+  - 윈도 서버의 동시 누름 검사 (imk-1). 주입한 키는 세지 않기 때문임
+  - Chromium의 겹친 이벤트
+  - 다른 설정이 필요한 사례: 바꾸기 키로 쓰는 ⇧Space나 Caps Lock, Direct 프로필, 자동 반복
+  - 이 항목들은 단위 테스트로만 다룸.
+- **2차 수정 점검에서 실제로 확인하지 않은 것** (규칙상 다른 앱을 조작할 수 없었음):
+  - HUD: 처음 뜰 때와 1x 디스플레이에서의 칩 크기 (hud-1), 데스크톱 공간 전환이나 디스플레이 변경 때 숨기기
+    (hud-4)
+  - VoiceOver: 안내 (hud-6, host-10)
+  - `misreports its marked range` 로그 줄. 정상 클라이언트는 이 줄을 남기지 않아야 함 (imk-5)
+  - 호스트 앱: 연습장 엔진 모드의 ⌘C/⌘A, 입력기가 실행 중일 때 학습한 행 300개 이상 지우기, 3단계에서
+    최소화한 온보딩 창을 Dock에서 다시 열기, U5의 허용 창 기다리기, 온보딩을 마치기 전의 "Duo 설정…"
+  - critique U1–U9는 아직 열려 있음
+- **DET가 UX 기대와 다르게 판별함** (`withKnownIssue`로 남긴 시나리오 행, critique R8):
+  - 영어 뒤의 `gg`와 `rt`가 ㅎㅎ / ㄱㅅ이 됨
+  - 문장 처음의 `eeee`가 Latin으로 남음
+  - `roffjrtlS24`가 갤럭신24가 됨 (한 토큰 안에서 한글 뒤에 Latin이 오는 경우는 지원하지 않음)
+- **ㅠㅠ / ㅜㅜ는 입력하는 동안 Latin으로 보임** (`bb`/`nn`). 확정은 맞고, 확정 직후 막대도 나타남.
+- **입력기 단위 테스트 타깃이 없음.** 순수한 라우팅 규칙은 이제 DuoKit에서 테스트함. IMK 어댑터(`IMKTextClient`
+  검사, 콜백 밖 묶기), 메뉴, DebugInjector 제한, `DuoRuntime`의 학습 쓰기, HUD 패널은 빌드로만 확인했고
+  live E2E로만 다룸.
+- **학습 파일 정책.** 버전 1보다 새 `learning.json`은 이 빌드가 읽을 수 있는 것만 불러옴. 다음 변경 때 버전
+  1로 다시 쓰고, 원본은 `learning.corrupt-*.json` 사본으로 남김. 이 사본은 모두 지우기로만 지워짐.
+- **`terminateRunningServer()`가 막힘.** 옛 서버를 기다리는 동안 최대 4초(다시 고르기에 약 0.3초 더) 막힘.
+  호스트 앱은 메인 스레드 밖에서 부름.
+- **연습장 모델**: `BufferTextClient`는 Caps Lock + ⇧ + 글자를 소문자로 다루지만, macOS ABC는 대문자를 줌. 이
+  동작에 기대는 테스트는 없음.
+- **`LearningWriter` 디바운스 테스트는 실제로 잠듦.** 여기서는 안정적이지만, 바쁜 CI 기기에서는 흔들릴 수
+  있음.
+
+## 로그
+
+하위 시스템은 `com.inkyuoh.inputmethod.Duo`예요. 분류는 `runtime`, `ime`, `menu`, `hud`, `learning`(복구,
+쓰기 실패), `install`(복사 실패, 끝나지 않은 서버)이에요. 입력한 글자는 저장되는 수준의 로그에 남기지
+않아요. 소스에 진단용 로그도 남겨 두지 않았어요.
 
 ```sh
 /usr/bin/log stream --level debug --predicate 'subsystem == "com.inkyuoh.inputmethod.Duo"'
 ```
 
-## How to run
+## 실행 방법
 
 ```sh
+make help                         # 작업 목록
 make project                      # xcodegen generate --quiet
-Tools/scripts/build.sh DuoInputMethod Debug   # also DuoHarness, Duo; Duo Release
-make test                         # swift test (debug), scratch build/spm
-cd Packages/DuoCore && swift test -c release --scratch-path ../../build/spm-rel   # + benchmarks
+make build                        # DuoInputMethod, DuoHarness, Duo를 Debug로 빌드
+Tools/scripts/build.sh DuoInputMethod Debug   # DuoHarness, Duo도 같음. Duo는 Release도
+make build-release                # Duo(호스트 앱과 안에 든 입력기)를 Release로 빌드
+make test                         # swift test (debug), 작업 폴더 build/spm
+cd Packages/DuoCore && swift test -c release --scratch-path ../../build/spm-rel   # + 벤치마크
 xcodebuild test -project Duo.xcodeproj -scheme Duo -destination 'platform=macOS' -derivedDataPath build/dd
-make install                      # Debug IME → ~/Library/Input Methods (stops the old server)
-make e2e                          # install + harness + live run; report in build/e2e/report.json
-Tools/scripts/e2e.sh -e "dkssud{space}"       # one-off live script
+make install                      # Debug 입력기 → ~/Library/Input Methods (옛 서버를 멈춤)
+make e2e                          # 설치 + 하네스 + live 실행, 보고서는 build/e2e/report.json
+Tools/scripts/e2e.sh -e "dkssud{space}"       # 한 번만 돌리는 live 스크립트
+make app                          # Release 호스트 앱 → build/Release/Duo.app
+make model                        # 말뭉치로 언어 모델을 다시 만듦 (Tools/ModelBuilder/build_model.py)
+make clean                        # build와 Duo.xcodeproj를 지움
 Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/Duo.build
 ```
 
-- **Before a live run**: `make e2e` selects Duo and takes focus for under a minute. The harness restores
-  the previous input source afterwards. Learning is isolated, and the user's `learning.json` is put back.
-- **If a run is killed**: restore the source by hand by selecting
-  `com.apple.inputmethod.Korean.2SetKorean` with TIS.
-- **New E2E cases**: add them to `Tests/E2E/cases.json` and run `make test` first.
-  `E2ECaseMirrorTests` replays them in-process with the real model, with the same learning order as the
-  live run. A flip in one case is learned for the later ones, so use a word no earlier case flips.
-- **Key DSL** (`DuoKit/KeyScript.swift`):
-  - literal characters;
-  - `{space} {S-space} {ret} {tab} {esc} {bs} {del}` and the arrows;
-  - modifier taps such as `{rcmd}`, and `{caps}`;
-  - chords such as `{cmd+a}`;
-  - held modifiers: `{press:rcmd}c{release:rcmd}`;
-  - `{wait:ms}` and `{click}`.
+- **live 실행 전**: `make e2e`는 Duo를 선택하고 1분이 안 되는 동안 포커스를 가져감. 하네스는 끝나면 이전 입력
+  소스를 되돌림. 학습은 격리되고, 사용자의 `learning.json`은 제자리로 돌아옴.
+- **실행이 중단되면**: TIS로 `com.apple.inputmethod.Korean.2SetKorean`을 골라 입력 소스를 손으로 되돌림.
+- **새 E2E 사례**: `Tests/E2E/cases.json`에 넣고 먼저 `make test`를 돌림.
+  - `E2ECaseMirrorTests`가 실제 모델로, live 실행과 같은 학습 순서로 사례를 프로세스 안에서 다시 돌림.
+  - 한 사례의 바꾸기는 뒤 사례에 학습됨. 그래서 앞 사례가 바꾸지 않는 단어를 씀.
+- **키 DSL** (`DuoKit/KeyScript.swift`):
+  - 글자는 그대로 씀
+  - `{space} {S-space} {ret} {tab} {esc} {bs} {del}`과 방향키
+  - `{rcmd}` 같은 수정키 탭과 `{caps}`
+  - `{cmd+a}` 같은 동시 누름
+  - 누른 채로 두는 수정키: `{press:rcmd}c{release:rcmd}`
+  - `{wait:ms}`와 `{click}`
