@@ -49,6 +49,7 @@ final class PlaygroundModel {
     @ObservationIgnored private var session: PlaygroundSession?
     @ObservationIgnored private var flipSerial = 0
     @ObservationIgnored private var hudExpiry: Task<Void, Never>?
+    @ObservationIgnored private var pointerOverHUD = false
     @ObservationIgnored private var flipObserver: (any NSObjectProtocol)?
     @ObservationIgnored private weak var nativeTextView: NSTextView?
     /// Called after every change the canvas view has to draw.
@@ -100,6 +101,24 @@ final class PlaygroundModel {
         guard let session, let key = KeyEventMapper.keyEvent(from: event) else { return }
         session.noteShortcut(key)
         sync()
+    }
+
+    /// The other reading on the playground's choice bar for `shown` was clicked.
+    func chooseOtherReading(on shown: HUDRequest) {
+        guard let session else { return }
+        session.chooseOtherReading(on: shown)
+        sync()
+    }
+
+    /// The pointer entered or left the playground's chip: like the IME's HUD, the choice bar's
+    /// lifetime is held while the pointer is on it, and it hides 0.8 s after the pointer leaves.
+    func setPointerOverHUD(_ inside: Bool) {
+        guard inside != pointerOverHUD else { return }
+        pointerOverHUD = inside
+        guard hud?.lifetime != nil else { return }
+        hudExpiry?.cancel()
+        hudExpiry = nil
+        if !inside { expireHUD(after: Self.pointerExitGrace) }
     }
 
     /// Commits the word being typed (click, focus loss).
@@ -178,13 +197,24 @@ final class PlaygroundModel {
         guard request != hud else { return }
         hud = request
         hudExpiry?.cancel()
-        guard let lifetime = request?.lifetime else { return }
+        hudExpiry = nil
+        // A chip that went away may never report the pointer leaving.
+        if request == nil { pointerOverHUD = false }
+        guard let lifetime = request?.lifetime, !pointerOverHUD else { return }
+        expireHUD(after: lifetime)
+    }
+
+    private func expireHUD(after delay: TimeInterval) {
         hudExpiry = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(lifetime))
+            try? await Task.sleep(for: .seconds(delay))
             guard !Task.isCancelled else { return }
             self?.hud = nil
+            self?.pointerOverHUD = false
         }
     }
+
+    /// `HUDTimeline.Timing.pointerExitGrace`.
+    private static let pointerExitGrace: TimeInterval = 0.8
 
     private func recordFlip(to language: ScriptLanguage, whileComposing: Bool, word: String = "") {
         flipSerial += 1

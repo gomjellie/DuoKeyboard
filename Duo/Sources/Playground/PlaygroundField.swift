@@ -44,10 +44,12 @@ struct PlaygroundField: View {
         .overlay(alignment: .topLeading) {
             if let hud = model.hud, usesEngine {
                 let flipKey = app.settings.value.flipKey
-                PlaygroundHUDChip(request: hud, flipKey: flipKey)
+                PlaygroundHUDChip(request: hud, flipKey: flipKey,
+                                  onChooseOther: { model.chooseOtherReading(on: hud) },
+                                  onPointer: model.setPointerOverHUD)
                     .offset(x: max(0, anchor.minX - 8), y: anchor.maxY + 6)
                     .transition(.opacity)
-                    .allowsHitTesting(false)
+                    .allowsHitTesting(HUDPresentation(hud.content, flipKey: flipKey).isClickable)
             }
         }
         .animation(.easeOut(duration: 0.14), value: model.hud)
@@ -195,7 +197,10 @@ private struct NativeTextView: NSViewRepresentable {
 struct PlaygroundHUDChip: View {
     let request: HUDRequest
     let flipKey: FlipKey
+    var onChooseOther: () -> Void = {}
+    var onPointer: (Bool) -> Void = { _ in }
 
+    @State private var hovering = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var pill
 
@@ -224,12 +229,16 @@ struct PlaygroundHUDChip: View {
         .padding(.trailing, 6)
         .frame(height: 28)
         .duoGlass(.regular, in: Capsule())
+        .onHover { inside in
+            hovering = inside
+            onPointer(inside)
+        }
         .accessibilityElement(children: .combine)
     }
 
-    private var isChoice: Bool { HUDPresentation(request.content, flipKey: flipKey).choice != nil }
+    private var isChoice: Bool { HUDPresentation(request.content, flipKey: flipKey).isClickable }
 
-    /// Both readings, the one in the text on the selection pill.
+    /// Both readings, the one in the text on the selection pill; a click on the other switches.
     private func choiceBar(_ choice: HUDChoice) -> some View {
         HStack(spacing: 2) {
             ForEach(Array(choice.readings.enumerated()), id: \.offset) { index, reading in
@@ -240,7 +249,8 @@ struct PlaygroundHUDChip: View {
                                 .matchedGeometryEffect(id: "pill", in: pill)
                         }
                 } else {
-                    readingLabel(reading, prominent: false)
+                    Button(action: onChooseOther) { readingLabel(reading, prominent: hovering) }
+                        .buttonStyle(PlaygroundOtherReadingStyle(highlighted: hovering))
                 }
             }
         }
@@ -257,5 +267,17 @@ struct PlaygroundHUDChip: View {
         .padding(.trailing, 8)
         .frame(height: 22)
         .contentShape(Capsule())
+    }
+}
+
+/// The reading a click switches to: a faint pill under the pointer, a firmer one while pressed.
+private struct PlaygroundOtherReadingStyle: ButtonStyle {
+    let highlighted: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                Capsule().fill(Color.primary.opacity(configuration.isPressed ? 0.14 : highlighted ? 0.06 : 0))
+            }
     }
 }
