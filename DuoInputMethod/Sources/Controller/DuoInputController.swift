@@ -350,7 +350,20 @@ extension DuoInputController: HUDAnchorProvider {
         return usable(proxy.firstRect(forCharacterRange: range, actualRange: nil))
     }
 
+    /// A caret rect the HUD may follow (`HUDGeometry.followable`): sane, not a "no caret" answer,
+    /// and inside one of the client's windows.
     private func usable(_ rect: NSRect) -> CGRect? {
-        HUDGeometry.sanitized(rect) == nil ? nil : rect
+        let windows = ClientWindows.frames(ofApp: bundleIdentifier)
+        let screens = NSScreen.screens.map {
+            HUDScreen(frame: $0.frame, visibleFrame: $0.visibleFrame, scale: $0.backingScaleFactor)
+        }
+        guard let followed = HUDGeometry.followable(rect, windows: windows, screens: screens) else {
+            Log.hud.debug("""
+                caret \(rect.debugDescription, privacy: .public) is not followable \
+                (\(windows.count, privacy: .public) window(s) of \(self.bundleIdentifier, privacy: .public))
+                """)
+            return nil
+        }
+        return followed
     }
 }

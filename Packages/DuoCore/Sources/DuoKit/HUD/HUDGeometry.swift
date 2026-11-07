@@ -149,17 +149,64 @@ public enum HUDGeometry {
     }
 
     /// Normalises a client caret rect, or returns `nil` for rects that cannot be a caret:
-    /// non-finite values, an origin of exactly (0, 0) (what clients without geometry report, with or
-    /// without a size), negative sizes, or rects larger than ``maximumCaretExtent``.
-    /// A zero height becomes ``fallbackLineHeight``.
+    /// non-finite or subnormal values (XPC marshalling garbage such as 1.6e-314), an origin at the
+    /// primary display's bottom-left corner (what clients without geometry report, with or without
+    /// a size, exactly or within a point), negative sizes, or rects larger than
+    /// ``maximumCaretExtent``. A zero height becomes ``fallbackLineHeight``.
     public static func sanitized(_ rect: CGRect) -> CGRect? {
         let values = [rect.origin.x, rect.origin.y, rect.size.width, rect.size.height]
-        guard values.allSatisfy(\.isFinite), rect.origin != .zero,
+        guard values.allSatisfy({ $0.isZero || $0.isNormal }), !isScreenOrigin(rect),
               rect.size.width >= 0, rect.size.height >= 0,
               rect.size.width <= maximumCaretExtent, rect.size.height <= maximumCaretExtent else { return nil }
         var caret = rect
         if caret.height < 1 { caret.size.height = fallbackLineHeight }
         return caret
+    }
+
+    /// The rect the HUD may follow for a client caret rect, or `nil`: sane (``sanitized(_:)``), not
+    /// a window's corner (what Chromium reports without geometry), and inside one of the client's
+    /// windows. A rect on no display is tried with top-left-origin y first, as ``place`` does.
+    public static func followable(_ rect: CGRect, windows: [CGRect], screens: [HUDScreen]) -> CGRect? {
+        guard let caret = sanitized(rect) else { return nil }
+        var candidate = rect
+        if let primary = screens.first, !screens.contains(where: { $0.frame.contains(probe(caret)) }) {
+            var flipped = rect
+            flipped.origin.y = primary.frame.height - caret.maxY
+            if screens.contains(where: { $0.frame.contains(probe(flipped)) }) { candidate = flipped }
+        }
+        guard !isWindowCorner(candidate, windows: windows),
+              isInsideClientWindow(candidate, windows: windows) else { return nil }
+        return candidate
+    }
+
+    /// Whether `caret` lies in one of the client's on-screen windows, with `tolerance` points of
+    /// slack. Some clients report a caret far from their text (a screen corner, a position relative
+    /// to the window) when they have none; a HUD there floats away from what the user types.
+    /// No known windows means "cannot tell": the caret is accepted.
+    public static func isInsideClientWindow(_ caret: CGRect, windows: [CGRect], tolerance: CGFloat = 8) -> Bool {
+        guard !windows.isEmpty else { return true }
+        let point = probe(caret)
+        return windows.contains { $0.insetBy(dx: -tolerance, dy: -tolerance).contains(point) }
+    }
+
+    /// Within a point of a window's bottom-left or top-left corner: Chromium converts an empty rect at
+    /// its view's origin when it has no caret, and no real caret sits exactly on a window's corner.
+    static func isWindowCorner(_ rect: CGRect, windows: [CGRect]) -> Bool {
+        windows.contains { w in
+            abs(rect.minX - w.minX) < 1
+                && (abs(rect.minY - w.minY) < 1 || abs(rect.minY - w.maxY) < 1 || abs(rect.maxY - w.maxY) < 1)
+        }
+    }
+
+    /// At the primary display's bottom-left corner: x within a point of 0 and y within a line of it.
+    static func isScreenOrigin(_ rect: CGRect) -> Bool {
+        abs(rect.minX) < 1 && abs(rect.minY) < fallbackLineHeight + 4
+    }
+
+    /// A `CGWindowListCopyWindowInfo` bounds rect (origin at the top left of the primary display,
+    /// y down) in Cocoa global coordinates. `primaryHeight` is the primary display's height.
+    public static func cocoaRect(fromWindowBounds bounds: CGRect, primaryHeight: CGFloat) -> CGRect {
+        CGRect(x: bounds.minX, y: primaryHeight - bounds.maxY, width: bounds.width, height: bounds.height)
     }
 
     /// The point used to pick a display: the leading edge at mid-line.

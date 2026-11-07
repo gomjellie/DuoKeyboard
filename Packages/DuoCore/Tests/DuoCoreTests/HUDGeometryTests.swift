@@ -203,3 +203,79 @@ struct HUDWindowLevelTests {
                                         shieldingLevel: Self.shielding) == expected)
     }
 }
+
+@Suite("HUD geometry: the caret must be in the client's windows")
+struct HUDClientWindowTests {
+    private let window = CGRect(x: 200, y: 300, width: 800, height: 600)
+
+    @Test("a caret inside the window, or a few points outside, is followed")
+    func inside() {
+        #expect(HUDGeometry.isInsideClientWindow(CGRect(x: 400, y: 500, width: 2, height: 17), windows: [window]))
+        #expect(HUDGeometry.isInsideClientWindow(CGRect(x: 196, y: 500, width: 2, height: 17), windows: [window]))
+    }
+
+    @Test("a caret at a screen corner, away from every window, is not followed")
+    func screenCorner() {
+        #expect(!HUDGeometry.isInsideClientWindow(CGRect(x: 0, y: 2, width: 0, height: 17), windows: [window]))
+        #expect(!HUDGeometry.isInsideClientWindow(CGRect(x: 1200, y: 40, width: 2, height: 17),
+                                                  windows: [window, CGRect(x: 0, y: 900, width: 100, height: 100)]))
+    }
+
+    @Test("without known windows the caret is accepted")
+    func unknownWindows() {
+        #expect(HUDGeometry.isInsideClientWindow(CGRect(x: 0, y: 2, width: 0, height: 17), windows: []))
+    }
+
+    @Test("window-list bounds flip to Cocoa coordinates")
+    func cocoaConversion() {
+        let bounds = CGRect(x: 10, y: 25, width: 300, height: 200)   // top-left origin, y down
+        #expect(HUDGeometry.cocoaRect(fromWindowBounds: bounds, primaryHeight: 1000)
+            == CGRect(x: 10, y: 775, width: 300, height: 200))
+    }
+}
+
+@Suite("HUD geometry: carets the HUD must not follow")
+struct HUDFollowableTests {
+    private let screens = [HUDScreen(frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+                                     visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1055), scale: 2)]
+    private let window = CGRect(x: 179, y: 27, width: 1654, height: 847)
+
+    @Test("XPC garbage and the screen's corner are not carets", arguments: [
+        CGRect(x: 1.6080749353e-314, y: 0, width: 1.6080749353e-314, height: 1.6080749353e-314),
+        CGRect(x: 0.4, y: 0.2, width: 0, height: 17),
+        CGRect(x: 0, y: 3, width: 1, height: 17),
+    ])
+    func screenOrigin(rect: CGRect) {
+        #expect(HUDGeometry.sanitized(rect) == nil)
+        let fullScreen = [CGRect(x: 0, y: 0, width: 1920, height: 1080)]
+        #expect(HUDGeometry.followable(rect, windows: fullScreen, screens: screens) == nil,
+                "even when a window covers the corner")
+    }
+
+    @Test("a window's corner is the client's 'no caret' answer")
+    func windowCorner() {
+        let bottomLeft = CGRect(x: 179, y: 27, width: 0, height: 0)
+        let topLeft = CGRect(x: 179, y: 874 - 17, width: 0, height: 17)
+        #expect(HUDGeometry.followable(bottomLeft, windows: [window], screens: screens) == nil)
+        #expect(HUDGeometry.followable(topLeft, windows: [window], screens: screens) == nil)
+    }
+
+    @Test("a caret in the window is followed as it is")
+    func inside() {
+        let caret = CGRect(x: 400, y: 500, width: 1, height: 17)
+        #expect(HUDGeometry.followable(caret, windows: [window], screens: screens) == caret)
+    }
+
+    @Test("a top-left-origin caret is flipped before the window check")
+    func flipped() {
+        // A second display above the primary one, with the client's window on it.
+        let twoScreens = screens + [HUDScreen(frame: CGRect(x: 0, y: 1080, width: 1920, height: 1080),
+                                              visibleFrame: CGRect(x: 0, y: 1080, width: 1920, height: 1055), scale: 2)]
+        let upper = CGRect(x: 100, y: 1200, width: 800, height: 600)
+        // The caret is at y 1500; the client reports it top-left-origin: 1080 - 1500 - 17 = -437.
+        let reported = CGRect(x: 400, y: -437, width: 1, height: 17)
+        #expect(HUDGeometry.followable(reported, windows: [upper], screens: twoScreens)
+            == CGRect(x: 400, y: 1500, width: 1, height: 17))
+    }
+
+}

@@ -111,6 +111,7 @@ final class CompositionHUDController {
         }
         let caret = stabilize && lastAnchor == request.anchor
             ? HUDGeometry.stabilized(previous: lastCaret, current: raw) : raw
+        Log.hud.debug("place \(String(describing: request.anchor), privacy: .public) caret \(raw.debugDescription, privacy: .public)")
         // The model was just changed; measure what SwiftUI will draw, not the previous content.
         let chip = HUDSizing.chipSize(in: hosting, margin: Self.panelMargin)
         let screens = NSScreen.screens.map {
