@@ -111,7 +111,7 @@ struct EngineChoiceTests {
         #expect(choice.readings.map(\.text) == ["층로", "cmd로"], "E is more than 10 nats behind")
     }
 
-    @Test func aDigitChoosesAReadingAndCommittingTeachesIt() throws {
+    @Test func aDigitChoosesAReadingAndCommittingTeachesTheLatinWord() throws {
         let h = EngineHarness()
         Self.typeCmdFh(h)
         let bar = try #require(h.hud)
@@ -121,6 +121,8 @@ struct EngineChoiceTests {
         h.press(.space)
         #expect(h.text == "cmd로 ")
         #expect(h.learned("cmdfh", .start) == [.mixed(latin: 3): 3])
+        #expect(h.learned("cmd", .start) == [.mixed(latin: 3): 3],
+                "a stem vote: it lifts cmd's other endings on the bar, never the bare word")
     }
 
     @Test func choosingTheShownReadingKeepsIt() throws {
@@ -184,6 +186,19 @@ struct EngineChoiceTests {
         #expect(h.marked == "zlqhem은")
         h.type("x")
         #expect(h.marked == "zlqhemdmsx", "은 + ㅌ is no whole syllable: back to English")
+    }
+
+    @Test func aLatinPrefixTaughtAsEnglishHelpsItsEndingsOnTheBarOnly() {
+        let h = EngineHarness()
+        h.store.record(raw: "cmd", context: .start, hypothesis: .english, votes: 3)
+        h.store.record(raw: "zlqhem", context: .start, hypothesis: .mixed(latin: 6), votes: 3)
+        let carried = h.engine.userCounts("cmdfh", .start, carryLatinPrefixes: true)
+        #expect(carried?[.mixed(latin: 3)] == 2, "half the 3 votes, rounded up")
+        #expect(carried?[.korean] == 0, "층로 keeps its own score")
+        #expect(h.engine.userCounts("cmdfh", .start) == nil, "display and commit see only the word's own learning")
+        #expect(h.engine.userCounts("zlqhemdms", .start, carryLatinPrefixes: true)?[.mixed(latin: 6)] == 2,
+                "a stem vote carries too")
+        #expect(h.engine.userCounts("zlqhem", .start)?[.english] == 0, "the bare word never scores its stem vote")
     }
 
     @Test func theFlipKeyReturnsToTheLatinPlusEndingAfterAFlipBack() {

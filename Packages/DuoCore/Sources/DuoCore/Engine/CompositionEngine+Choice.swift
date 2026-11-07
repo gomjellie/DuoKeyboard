@@ -26,9 +26,9 @@ extension CompositionEngine {
     struct ChoiceList {
         var hypotheses: [Hypothesis]
         var choice: HUDChoice
-        /// Prefix-mode scores.
+        /// Prefix-mode scores, with learned Latin words carried to their endings.
         var prefix: HypothesisScores
-        /// Final-mode scores (what a boundary would commit).
+        /// Final-mode scores (what a boundary would commit), with the same carry.
         var final: HypothesisScores
         var selected: Int { choice.selected }
     }
@@ -38,11 +38,15 @@ extension CompositionEngine {
     /// - K, E and every M(b) the detector scored, without two that render alike.
     /// - Readings inconsistent with eagerly committed Latin only where the client can re-open it.
     /// - At most ``maxCandidates``; the shown reading and the flip key's target always stay.
+    /// - The scores carry a Latin word's learned English to its endings (`userCounts` with
+    ///   `carryLatinPrefixes`), so cmd로 rises on the bar; what is shown and committed does not.
     func choiceList(_ t: Token, _ shownScores: HypothesisScores) -> ChoiceList? {
         guard let flipTarget = flipTarget(t, shownScores) else { return nil }
-        let prefix = shownScores
-        let final = detector.choiceScores(raw: t.raw, context: t.context, user: userCounts(t.raw, t.context),
-                                          biasKO: biasKO)
+        let plain = userCounts(t.raw, t.context)
+        let carried = userCounts(t.raw, t.context, carryLatinPrefixes: true)
+        let prefix = carried == plain ? shownScores
+            : detector.prefixScores(raw: t.raw, context: t.context, user: carried, biasKO: biasKO)
+        let final = detector.choiceScores(raw: t.raw, context: t.context, user: carried, biasKO: biasKO)
 
         var kept: [Hypothesis] = [t.shown, flipTarget]
         if let b = t.lockedLatin, b < t.count, !t.raw.contains("'") { kept.append(.mixed(latin: b)) }

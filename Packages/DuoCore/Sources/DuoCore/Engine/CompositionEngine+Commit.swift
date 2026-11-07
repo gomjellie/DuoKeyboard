@@ -62,6 +62,13 @@ extension CompositionEngine {
                 if let original = t.lockedOriginal, locked != original {
                     votes.append(learning.record(raw: t.raw, context: t.context, hypothesis: locked,
                                                  votes: LearningStore.flipVotes))
+                    // Latin + ending chosen (cmd로): a stem vote on the Latin part, M(b) on a raw of b
+                    // keys, which the bare word (cmd) never scores. It lifts the word's other endings
+                    // (cmd가) on the choice bar through `userCounts(carryLatinPrefixes:)`.
+                    if case .mixed(let b) = locked, b >= 2 {
+                        votes.append(learning.record(raw: String(t.raw.prefix(b)), context: t.context,
+                                                     hypothesis: .mixed(latin: b), votes: LearningStore.flipVotes))
+                    }
                 } else if t.keptByChoice, let would = detector.finalScores(
                     raw: t.raw, context: t.context, terminator: terminator, user: userCounts(t.raw, t.context),
                     biasKO: biasKO).best?.hypothesis, would != locked {

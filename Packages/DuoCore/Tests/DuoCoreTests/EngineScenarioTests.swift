@@ -352,6 +352,28 @@ struct EngineScenarioTests {
         #expect(h.text == "층로 ", "층 stays possible: no rule makes cmd English")
     }
 
+    @Test func cmdTaughtAsEnglishBringsUpCmdRoAndStillTypesCheungRo() throws {
+        // Learning is per context: teach cmd at the sentence start, where cmdfh is typed.
+        let h = Self.harness()
+        h.store.record(raw: "cmd", context: .start, hypothesis: .english, votes: LearningStore.flipVotes)
+        let bar = try #require(Self.listed(h, "cmdfh"))
+        #expect(bar.texts.prefix(2) == ["층로", "cmd로"], "the shown reading first, cmd로 one digit away")
+        #expect(bar.eligible, "the learned cmd brings the bar up")
+        h.press(.space)
+        #expect(h.text == "층로 ", "what is typed stays the model's: 층 is still possible")
+    }
+
+    @Test func choosingGoReulDoesNotTeachTheBareWordGo() {
+        // Review: a Latin + ending choice must never make the bare word English (해 stays 해).
+        let h = Self.harness()
+        h.type("dkssud go")
+        h.flip()
+        h.type("fmf ")
+        #expect(h.text == "안녕 go를 ")
+        h.type("go ")
+        #expect(h.text == "안녕 go를 해 ")
+    }
+
     @Test func pausingInsideAKoreanSyllableShowsNoBar() {
         // Review: final mode reads 감ㅅ as a finished word, so rkat (E) looked likely.
         let h = Self.harness()

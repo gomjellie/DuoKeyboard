@@ -417,8 +417,26 @@ public final class CompositionEngine {
 
     var biasKO: Int { clientProfile.biasKO(settings) }
 
-    func userCounts(_ raw: String, _ context: LanguageContext) -> UserCounts? {
-        settings.learningEnabled ? learning.counts(raw: raw, context: context) : nil
+    /// Learned counts for `raw`.
+    ///
+    /// - Parameter carryLatinPrefixes: also add half (rounded up) of what each Latin prefix of
+    ///   `raw` learned: its English votes and its stem votes (a chosen cmd로 records M(3) on `cmd`,
+    ///   which the bare word never scores). Only the choice bar asks for this (docs/SPEC.md
+    ///   4.11절): cmd learned as English lifts cmd로 on the bar, while what is shown and committed
+    ///   stays the model's and the word's own learning, so 층로 is still typed as 층로.
+    func userCounts(_ raw: String, _ context: LanguageContext, carryLatinPrefixes: Bool = false) -> UserCounts? {
+        guard settings.learningEnabled else { return nil }
+        var counts = learning.counts(raw: raw, context: context)?.counts ?? [:]
+        if carryLatinPrefixes {
+            var prefix = ""
+            for (i, ch) in raw.dropLast().enumerated() {
+                prefix.append(ch)
+                guard i >= 1, ch != "'", let learned = learning.counts(raw: prefix, context: context) else { continue }
+                let latin = learned[.english] + learned[.mixed(latin: i + 1)]
+                if latin > 0 { counts[.mixed(latin: i + 1), default: 0] += (latin + 1) / 2 }
+            }
+        }
+        return counts.isEmpty ? nil : UserCounts(counts)
     }
 
     func prefixScores(_ raw: String, _ context: LanguageContext) -> HypothesisScores {
