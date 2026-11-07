@@ -32,6 +32,37 @@
 The 4 known issues are the `withKnownIssue` scenario rows below; there are no other failures.
 Round 1 had 305 package tests in 28 suites and 16 host tests in 5 suites.
 
+## Choice bar and HUD position (after the lead pass)
+
+Two user reports, both handled with tests and checked live.
+
+- **"WORKS came out as 쨰깐."** That was not Duo. The QA wrap-up had left the selected source on
+  Apple's 2-Set Korean, where ⇧W ⇧O ⇧R ⇧K ⇧S is exactly 쨰깐. `AppleInputSourceHistory` showed 2-Set
+  Korean right before Duo was selected again. With the real model Duo types WORKS (and TODO, DONE,
+  README, TEST) at the sentence start, after Korean and after English, in TextEdit and with the
+  Orca profile.
+- **A word with two plausible readings needs a way to choose** (SPEC §4.11). The HUD is now a choice
+  bar: both readings with their badges, the one in the document on a pill tinted with its language,
+  then the flip key. A click on the other reading flips that word (the word being typed, or the word
+  just committed) and teaches like the flip key. It never arms the next word. The bar stays up while
+  the pointer is on it, and the last word's bar now lives 4 s instead of 1.6 s.
+- **"A switch chip shows at the bottom left of the screen."** Some clients (seen in Orca) report a
+  caret far from their text. The HUD now follows a caret rect only inside one of the client's
+  on-screen windows (`HUDGeometry.isInsideClientWindow`, `ClientWindows`); otherwise it stays hidden.
+  `place … caret (x, y, w, h)` debug lines in the `hud` category log every rect it follows.
+- **The last word's chip covered the word in TextEdit.** Right after a commit TextEdit answers
+  `firstRect` a line off (word at y 817, caret line at y 803). `HUDGeometry.wordRect` moves the word
+  rect to the caret's line when the two disagree.
+
+Live QA (Debug IME, 2026-11-07):
+- TextEdit: `go` at a sentence start shows [가 해 | A go ⌘] under the marked text. Clicking go flips
+  the marked word while TextEdit stays frontmost and key. After `go␣` the bar sits under the
+  committed word, and clicking 해 replaced it with 해␣. The bar stays with the selection moved, and
+  stays while the pointer is on it.
+- VS Code (Monaco editor): the bar sits under the caret.
+- Not checked live: Orca itself (this session's terminal; never typed into), Chrome and Safari click
+  paths, the VoiceOver announcement after a click.
+
 ## Lead pass after round 2
 
 Re-review findings (all with tests):

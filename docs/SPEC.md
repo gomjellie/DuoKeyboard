@@ -21,7 +21,7 @@ this file wins. UX-spec numeric constants are superseded by DET `meta.params` (R
    is committed with the DET final-mode argmax (R2). Eager **English** commit is allowed (R1.2).
    Eager Korean is off in v1.
 3. **Never silently different.** If the committed reading differs from what was shown, or the final
-   margin is ≤ 619, show the "↺ flip last word" chip (R2).
+   margin is ≤ 619, show the last word's choice bar (R2, §4.11).
 4. **Flip** = right ⌘ tap by default (R3). Three cases: the token being composed, the word just
    committed (verified replace), or nothing to flip (one-shot next-word language) (ux §5.2, R11).
 5. **Learning** follows R7: votes keyed by `(raw, ctx)`, flip +3, an ambiguous implicit commit +1,
@@ -158,9 +158,10 @@ on every call.
    - `score(E) − max(other consistent) ≥ Margins.eagerCommit` (prefix mode).
    - **Then** `insertText(raw[c...])` (consume), `c = raw.count`.
    - **Else** `setMarkedText(render(shown).dropFirst(c))` (consume).
-7. **HUD.** If the token is marked and `settings.showHints`, emit `.alternative`:
-   - the text is `render(alt)`; `eligible` = `!isRepeat` and margin ≤ 1386 and (≥ 2 keys or the
-     1-key collision set `a e i o u x`);
+7. **HUD.** If the token is marked and `settings.showHints`, emit `.alternative` with the choice
+   bar (§4.11):
+   - the readings are `render(shown)` and `render(alt)`; `eligible` = `!isRepeat` and margin ≤ 1386
+     and (≥ 2 keys or the 1-key collision set `a e i o u x`);
    - otherwise `hud = nil` while composing.
    - The alternative (R11), always with a render that differs from the shown one:
      - shown K → E, or the best M if it is a real contender;
@@ -279,8 +280,8 @@ Triggers:
 3. **Chip:**
    - condition: `settings.offerUndoAfterCommit`, `canReplaceCommittedText`, not locked, and
      (`h != shown` or the final margin to the best other render ≤ 619);
-   - `hud = .flipLastWord(render(alt))` with `immediate`, `lifetime 1.6`, anchor
-     `.location(end − len)`;
+   - `hud = .flipLastWord` with the choice bar of the committed and the alternative reading
+     (§4.11), `immediate`, `lifetime 4`, anchor `.location(end − len)`;
    - else `hud = nil`.
 4. **Learning.**
    - **Locked:** if `locked != lockedOriginal`, add +3 to `locked`. Flipping back to the original
@@ -333,6 +334,52 @@ Direct is never a default; it is opt-in through the menu or Settings.
 `com.exafunction.windsurf`, `com.visualstudio.code.oss`. They keep eager English (IntelliSense needs
 real text) but never re-open, flip committed text, or show the chip. Only VS Code and Cursor are
 English-first by default.
+
+### 4.11 Choice bar (`HUDChoice`)
+
+A word with two plausible readings shows both of them, so the user can pick one instead of
+learning the flip key first.
+
+1. **Content.** `.alternative` and `.flipLastWord` carry a `HUDChoice`: two `HUDReading`s (text and
+   language) and the index of the one in the document (`selected`).
+2. **Order.** K, then M(b) by Latin length, then E (`CompositionEngine.displayRank`). The order
+   depends only on the hypotheses, so a flip moves the selection and never swaps the readings.
+3. **Drawing** (IME HUD and host playground alike):
+   - each reading with its 16 pt language badge;
+   - the selected reading on a pill tinted with its language colour (가 orange, A blue);
+   - the other reading plain, on a faint neutral pill while the pointer is over the bar;
+   - then the flip key's keycaps.
+4. **Click.** A click on the other reading calls `chooseOtherReading(on: shown, client:)`, where
+   `shown` is the request on screen. When the engine has replaced it (the panel still fades out an
+   older bar) the click is ignored.
+   - `.alternative`: flip the token as in §4.7 (a), after asking `markedRange()`. A client that
+     no longer has the marked text drops the token, and nothing changes.
+   - `.flipLastWord`: flip the last word as in §4.7 (b). When it changed, show the bar again with
+     the new selection (same lifetime), so the user sees the result and can undo it. When it could
+     not (the flip window is over, the caret moved), show `.cannotChange`.
+   - It never arms the next word (case c): the click arrives outside any key event, so a word
+     that is gone is left alone. Learning is the same as for the flip key.
+5. **Panel.** The HUD panel takes clicks only while it shows the choice bar and the pointer is over
+   the capsule itself, so the transparent margin never swallows a click meant for the text. It
+   accepts the first click without becoming key, so the client keeps focus. The IME follows the
+   pointer with mouse-moved monitors (global and local, no permission needed) while a bar is up,
+   because the input method process is never the active app.
+6. **Pointer.** While the pointer is over the bar, its lifetime does not run out. Leaving hides it
+   at its own deadline, but no sooner than 0.8 s from then. A hide the engine asks for (the next
+   key, a commit) still happens. Feedback chips do not take the pointer, and a chip that goes away
+   forgets it.
+7. **Position** (`HUDGeometry.followable`). The HUD follows a caret rect only when:
+   - every value is finite and not subnormal (XPC garbage such as 1.6e-314);
+   - it is not at the primary display's bottom-left corner (within a point horizontally and a
+     line vertically) or at a client window's corner (Chromium's "no caret" answers);
+   - it is inside one of the client's on-screen windows (`ClientWindows`, desktop windows
+     included for Finder). A rect on no display is tried with top-left-origin y first.
+   Otherwise the HUD does not show. For `.location` anchors the word's rect is moved to the
+   caret's line when the two disagree (`HUDGeometry.wordRect`): TextEdit answers `firstRect` a line
+   off right after a commit. After a Return the caret is really on the next line, and the word
+   keeps its rect.
+8. **Modifier commits.** Caps Lock and fn commit the word with its bar cleared first, as every key
+   does, so no bar is left for a word that is gone.
 
 ---
 
@@ -408,6 +455,7 @@ Each track works in its **own copy** of the repo and syncs only the paths it own
    - level `max(client.windowLevel()+1, popUpMenu)`;
    - 300 ms appear delay for non-immediate requests, latch while composing, 140 ms hide debounce;
    - lifetimes and pulse; tested placement geometry;
+   - the choice bar takes clicks and holds its lifetime under the pointer (§4.11);
    - caret rect fetched only when showing or updating;
    - hide on screen sleep or session resign;
    - Reduce Motion and Increase Contrast.
