@@ -49,6 +49,22 @@ struct EngineProfileTests {
         #expect(p.needsMarkBeforeInsert == java)
     }
 
+    @Test func orcaKeepsMarkedTextButNeverRewritesCommittedText() {
+        // xterm.js ignores replacement ranges: the flipped word landed after the old one
+        // (user report: 이상하게dltkdgkrp).
+        let p = ClientProfile.forBundleIdentifier("com.stablyai.orca")
+        #expect(p.replacement == .full)
+        #expect(!p.canReplaceCommittedText)
+        let h = EngineHarness(bundleIdentifier: "com.stablyai.orca")
+        h.buffer.ignoresReplacementRanges = true
+        h.detector.korean("dltkdgkrp")
+        h.type("dltkdgkrp ")
+        let before = h.text
+        h.flip()
+        #expect(h.text == before, "nothing appended")
+        #expect(h.hud?.content == .cannotChange)
+    }
+
     @Test func directIsNeverADefault() {
         let ids = Array(ClientProfile.terminals.keys) + Array(ClientProfile.codeEditors) + Array(ClientProfile.koreanFirst)
         #expect(ids.allSatisfy { ClientProfile.forBundleIdentifier($0).defaultAppProfile != .direct })

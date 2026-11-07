@@ -40,7 +40,7 @@ public struct ClientProfile: Sendable, Hashable {
     public static func forBundleIdentifier(_ id: String) -> ClientProfile {
         if let terminal = terminals[id] {
             return ClientProfile(bundleIdentifier: id, defaultAppProfile: .englishFirst, replacement: terminal,
-                                 isTerminal: true)
+                                 isTerminal: true, canReplaceCommittedText: !xtermTerminals.contains(id))
         }
         if isJava(id) {
             return ClientProfile(bundleIdentifier: id, defaultAppProfile: .englishFirst, replacement: .none,
@@ -86,6 +86,13 @@ public struct ClientProfile: Sendable, Hashable {
         "org.alacritty": .full,
         "com.github.wez.wezterm": .full,
         "co.zeit.hyper": .none,
+    ]
+
+    /// Terminals drawn with xterm.js: text committed to the shell cannot be replaced, so a
+    /// replacement range is ignored and the new reading lands after the old one (Orca, user report
+    /// 2026-11-07: 이상하게dltkdgkrp). Marked text works.
+    static let xtermTerminals: Set<String> = [
+        "com.stablyai.orca",
     ]
 
     static let codeEditors: Set<String> = [
