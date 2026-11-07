@@ -234,6 +234,45 @@ struct HUDClientWindowTests {
     }
 }
 
+@Suite("HUD geometry: the word just committed")
+struct HUDWordRectTests {
+    @Test("on the caret's line the word's own rect is used")
+    func sameLine() {
+        let word = CGRect(x: 276, y: 803, width: 6.7, height: 14)
+        let caret = CGRect(x: 289.3, y: 803, width: 1, height: 14)
+        #expect(HUDGeometry.wordRect(word: word, caretLine: caret) == word)
+    }
+
+    @Test("a word rect a line off (TextEdit right after a commit) moves to the caret's line")
+    func staleLine() {
+        let word = CGRect(x: 276, y: 817, width: 6.7, height: 14)   // live QA, 2026-11-07
+        let caret = CGRect(x: 289.3, y: 803, width: 1, height: 14)
+        #expect(HUDGeometry.wordRect(word: word, caretLine: caret) == CGRect(x: 276, y: 803, width: 6.7, height: 14))
+    }
+
+    @Test("a word rect after the caret on another line starts at the caret")
+    func wrapped() {
+        let word = CGRect(x: 600, y: 817, width: 6.7, height: 14)
+        let caret = CGRect(x: 290, y: 803, width: 1, height: 14)
+        #expect(HUDGeometry.wordRect(word: word, caretLine: caret)?.minX == 290)
+    }
+
+    @Test("either rect alone is used as it is")
+    func oneMissing() {
+        let r = CGRect(x: 10, y: 20, width: 5, height: 14)
+        #expect(HUDGeometry.wordRect(word: r, caretLine: nil) == r)
+        #expect(HUDGeometry.wordRect(word: nil, caretLine: r) == r)
+        #expect(HUDGeometry.wordRect(word: nil, caretLine: nil) == nil)
+    }
+
+    @Test("after a Return the word keeps its own line")
+    func afterReturn() {
+        let word = CGRect(x: 276, y: 817, width: 6.7, height: 14)
+        let caret = CGRect(x: 276, y: 803, width: 1, height: 14)
+        #expect(HUDGeometry.wordRect(word: word, caretLine: caret, caretFollowsNewline: true) == word)
+    }
+}
+
 @Suite("HUD geometry: carets the HUD must not follow")
 struct HUDFollowableTests {
     private let screens = [HUDScreen(frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),

@@ -179,6 +179,21 @@ public enum HUDGeometry {
         return candidate
     }
 
+    /// The rect of a word that ends at the caret, from the word's own rect and the caret's line rect.
+    ///
+    /// Right after a commit TextEdit still answers `firstRect(forCharacterRange:)` from the layout
+    /// before the commit, one line off, while the caret's line rect is current. When the two are on
+    /// different lines the caret's line wins; the word's x is kept unless it lies after the caret.
+    /// After a Return the caret really is on the next line, so the word keeps its own rect.
+    public static func wordRect(word: CGRect?, caretLine: CGRect?, caretFollowsNewline: Bool = false) -> CGRect? {
+        guard let word else { return caretLine }
+        guard let caretLine, !caretFollowsNewline else { return word }
+        let halfLine = max(word.height, caretLine.height) / 2
+        guard abs(word.midY - caretLine.midY) > halfLine else { return word }
+        return CGRect(x: min(word.minX, caretLine.minX), y: caretLine.minY, width: word.width,
+                      height: caretLine.height)
+    }
+
     /// Whether `caret` lies in one of the client's on-screen windows, with `tolerance` points of
     /// slack. Some clients report a caret far from their text (a screen corner, a position relative
     /// to the window) when they have none; a HUD there floats away from what the user types.

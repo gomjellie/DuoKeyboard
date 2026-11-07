@@ -326,7 +326,11 @@ extension DuoInputController: HUDAnchorProvider {
             if let rect = lineRectAtSessionStart(proxy) { return rect }
             return firstRect(proxy, of: NSRange(location: proxy.selectedRange().location, length: 0))
         case .location(let location):
-            return firstRect(proxy, of: NSRange(location: location, length: 1)) ?? lineRectAtSessionStart(proxy)
+            // The word ends at the caret: its line is the caret's (TextEdit answers a line off
+            // right after a commit), unless a Return put the caret on the next line.
+            return HUDGeometry.wordRect(word: firstRect(proxy, of: NSRange(location: location, length: 1)),
+                                        caretLine: lineRectAtSessionStart(proxy),
+                                        caretFollowsNewline: caretFollowsNewline(proxy))
         }
     }
 
@@ -348,6 +352,16 @@ extension DuoInputController: HUDAnchorProvider {
     private func firstRect(_ proxy: Proxy, of range: NSRange) -> CGRect? {
         guard range.location != NSNotFound, range.location >= 0 else { return nil }
         return usable(proxy.firstRect(forCharacterRange: range, actualRange: nil))
+    }
+
+    /// The character before the caret is a line break (a Return just committed the word).
+    private func caretFollowsNewline(_ proxy: Proxy) -> Bool {
+        let caret = proxy.selectedRange().location
+        guard caret != NSNotFound, caret > 0,
+              let before = proxy.attributedSubstring(from: NSRange(location: caret - 1, length: 1))?.string else {
+            return false
+        }
+        return before.rangeOfCharacter(from: .newlines) != nil
     }
 
     /// A caret rect the HUD may follow (`HUDGeometry.followable`): sane, not a "no caret" answer,
