@@ -8,15 +8,22 @@ let package = Package(
     products: [
         // Pure, platform-independent engine: 두벌식 automaton, language model, composition state machine.
         .library(name: "DuoCore", targets: ["DuoCore"]),
+        // macOS integration shared by the input method and the host app: TIS install/select, settings, IPC.
+        .library(name: "DuoKit", targets: ["DuoKit"]),
     ],
     targets: [
         .target(
             name: "DuoCore",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
+        .target(
+            name: "DuoKit",
+            dependencies: ["DuoCore"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
         .testTarget(
             name: "DuoCoreTests",
-            dependencies: ["DuoCore"],
+            dependencies: ["DuoCore", "DuoKit"],
             resources: [.copy("Resources")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
