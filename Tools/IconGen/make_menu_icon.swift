@@ -1,7 +1,13 @@
-// Renders the input-source (menu bar) icon as a template TIFF in Apple's format (ui-design §4.4):
-// a full-bleed 16 pt rounded tile, black, with "가A" knocked out to transparent; one 16×16 px rep at
-// 72 dpi and one 32×32 px rep at 144 dpi, combined with `tiffutil -cathidpicheck` like
-// KoreanIM's 2SetKorean.tiff. Info.plist sets TISIconIsTemplate so the system tints it.
+// Renders the input-source icon as a TIFF in Apple's format (ui-design 4.4절): a full-bleed 16 pt
+// rounded tile with "가A" on it; one 16×16 px rep at 72 dpi and one 32×32 px rep at 144 dpi,
+// combined with `tiffutil -cathidpicheck` like KoreanIM's 2SetKorean.tiff.
+//
+// Not a template (Info.plist: TISIconIsTemplate = false). macOS 26's input source switcher shows
+// Apple's sources by their mode labels and tints a mode-less source's template icon with its own
+// background (dark on the dark panel, green on the green selection), so a template icon vanished.
+// The tile is drawn the way the system draws Apple's template tiles in dark menus and menu bars:
+// a light tile with dark glyphs. Two glyphs share the tile, so they are heavy and as large as the
+// tile allows, to match the stroke weight of Apple's single glyphs (한, A, 拼).
 //
 // Usage: swift Tools/IconGen/make_menu_icon.swift <out.tiff> [--preview <dir>]
 //   --preview writes 16x-enlarged PNGs of both reps on light and dark backdrops for inspection.
@@ -20,15 +26,31 @@ enum Metrics {
     static let size: CGFloat = 16
     /// Apple's tiles are full-bleed with a ~3.5 pt corner radius.
     static let cornerRadius: CGFloat = 3.5
-    /// Glyph run size; "가A" fills the tile width minus ~1.5 pt per side.
-    static let fontSize: CGFloat = 8.6
-    static let tracking: CGFloat = -0.15
+    /// Widest ink run of "가A": the tile minus ~1 pt per side.
+    static let maximumInkWidth: CGFloat = 13.8
+    static let tracking: CGFloat = -0.2
+    /// The tile: Apple's template tiles as dark menus draw them (systemGray6 light, #E5E5EA).
+    static let tile = CGColor(srgbRed: 0xE5 / 255, green: 0xE5 / 255, blue: 0xEA / 255, alpha: 1)
+    /// The glyphs: near black (#1C1C1E), like the dark menu showing through Apple's knocked-out glyphs.
+    static let glyph = NSColor(srgbRed: 0x1C / 255, green: 0x1C / 255, blue: 0x1E / 255, alpha: 1)
 }
 
-func glyphLine() -> CTLine {
-    let font = NSFont.systemFont(ofSize: Metrics.fontSize, weight: .bold)
-    let text = NSAttributedString(string: "가A", attributes: [.font: font, .kern: Metrics.tracking])
+func glyphLine(size: CGFloat) -> CTLine {
+    let font = NSFont.systemFont(ofSize: size, weight: .heavy)
+    let text = NSAttributedString(string: "가A", attributes: [.font: font, .kern: Metrics.tracking,
+                                                              .foregroundColor: Metrics.glyph])
     return CTLineCreateWithAttributedString(text)
+}
+
+/// The largest glyph run whose ink fits ``Metrics/maximumInkWidth`` (in 0.1 pt steps).
+func fittedGlyphLine(in cg: CGContext) -> CTLine {
+    var size: CGFloat = 12
+    while size > 6 {
+        let line = glyphLine(size: size)
+        if CTLineGetImageBounds(line, cg).width <= Metrics.maximumInkWidth { return line }
+        size -= 0.1
+    }
+    return glyphLine(size: 6)
 }
 
 func render(scale: CGFloat) -> NSBitmapImageRep {
@@ -46,16 +68,15 @@ func render(scale: CGFloat) -> NSBitmapImageRep {
     let tile = CGPath(roundedRect: CGRect(x: 0, y: 0, width: Metrics.size, height: Metrics.size),
                       cornerWidth: Metrics.cornerRadius, cornerHeight: Metrics.cornerRadius, transform: nil)
     cg.addPath(tile)
-    cg.setFillColor(NSColor.black.cgColor)
+    cg.setFillColor(Metrics.tile)
     cg.fillPath()
 
-    // Glyphs, knocked out and optically centred on their ink bounds, snapped to the pixel grid.
-    let line = glyphLine()
+    // Glyphs, optically centred on their ink bounds, snapped to the pixel grid.
+    let line = fittedGlyphLine(in: cg)
     let ink = CTLineGetImageBounds(line, cg)
     func snap(_ v: CGFloat) -> CGFloat { (v * scale).rounded() / scale }
     let x = snap((Metrics.size - ink.width) / 2 - ink.minX)
     let y = snap((Metrics.size - ink.height) / 2 - ink.minY)
-    cg.setBlendMode(.destinationOut)
     cg.textPosition = CGPoint(x: x, y: y)
     CTLineDraw(line, cg)
 
