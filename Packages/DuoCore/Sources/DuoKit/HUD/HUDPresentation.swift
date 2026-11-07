@@ -55,6 +55,9 @@ public struct HUDPresentation: Hashable, Sendable {
     /// Nothing to draw (the panel is hidden).
     public static let empty = HUDPresentation(kind: .alternative)
 
+    /// The chip offers a reading to click. Every other chip lets clicks through to the app below.
+    public var isClickable: Bool { choice != nil }
+
     /// The chip is just the badge (a 28 pt glass circle).
     public var isBadgeOnly: Bool { badge != nil && choice == nil && kind != .cannotChange }
 

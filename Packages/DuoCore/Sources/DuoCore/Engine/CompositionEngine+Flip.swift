@@ -37,23 +37,68 @@ extension CompositionEngine {
         flipNextWord()
     }
 
+    // MARK: The choice bar
+
+    /// The other reading on the choice bar was clicked (docs/SPEC.md §4.11): flip the word the bar
+    /// belongs to, as the flip key does. A click arrives outside any key event, so when that word is
+    /// gone nothing happens: the click never arms the next word's language.
+    ///
+    /// - Parameter shown: the request whose bar was clicked. The panel can still show a bar the
+    ///   engine has replaced (a hide debounce or fade-out); such a click is ignored.
+    /// - Returns: whether a word changed.
+    @discardableResult
+    public func chooseOtherReading(on shown: HUDRequest, client: any TextClient) -> Bool {
+        guard !literal, let request = hud, request == shown else { return false }
+        switch request.content {
+        case .alternative:
+            hud = nil
+            guard let t = token else { return false }
+            let marked = t.marked.isEmpty ? nil : client.markedRange()
+            guard t.marked.isEmpty || marked != nil else {
+                dropToken()
+                return false
+            }
+            return flipToken(t, markedRange: marked, checked: true, client: client)
+        case .flipLastWord:
+            hud = nil
+            guard let lc = lastCommit else { return false }
+            guard isFresh(lc), flipLastCommit(lc, client: client) else {
+                // The bar still offered the switch (it outlived the flip window under the pointer,
+                // or the caret moved): say why nothing happened.
+                if hud == nil { hud = cannotChangeHUD(anchor: .caret) }
+                return false
+            }
+            guard let flipped = lastCommit, flipped.hypothesis != lc.hypothesis, let end = flipped.endLocation else {
+                return false
+            }
+            // Keep the bar up with the selection moved, so the user sees the change and can undo it.
+            hud = lastWordChoiceHUD(flipped, start: end - flipped.length)
+            return true
+        case .oneShot, .cannotChange, .bilingualLine:
+            return false
+        }
+    }
+
     // MARK: (a) the token being composed
 
-    private func flipToken(_ token: Token, markedRange knownMarked: NSRange?, checked: Bool, client: any TextClient) {
+    /// - Returns: whether the token changed to another reading.
+    @discardableResult
+    private func flipToken(_ token: Token, markedRange knownMarked: NSRange?, checked: Bool,
+                           client: any TextClient) -> Bool {
         var t = token
         if t.scores == nil { t.scores = prefixScores(t.raw, t.context) }
-        guard let scores = t.scores else { return }
+        guard let scores = t.scores else { return false }
 
         let target: Hypothesis
         if let locked = t.locked, let original = t.lockedOriginal {
             if locked != original {
                 target = original
             } else {
-                guard let alt = alternative(of: original, raw: t.raw, in: scores) else { return }
+                guard let alt = alternative(of: original, raw: t.raw, in: scores) else { return false }
                 target = alt
             }
         } else {
-            guard let alt = alternative(of: t.shown, raw: t.raw, in: scores) else { return }
+            guard let alt = alternative(of: t.shown, raw: t.raw, in: scores) else { return false }
             target = alt
             t.lockedOriginal = t.shown
         }
@@ -64,14 +109,14 @@ extension CompositionEngine {
             guard clientProfile.canReplaceCommittedText else {
                 // The client would ignore the range and add the new reading after the old one.
                 hud = cannotChangeHUD(anchor: t.marked.isEmpty ? .caret : .markedText)
-                return
+                return false
             }
             let marked = checked ? knownMarked : (t.marked.isEmpty ? nil : client.markedRange())
             let c = t.committed
             guard let anchor = marked?.location ?? client.selectedRange()?.location, anchor >= c,
                   client.string(in: NSRange(location: anchor - c, length: c)) == String(t.committedPrefix) else {
                 hud = cannotChangeHUD(anchor: t.marked.isEmpty ? .caret : .markedText)
-                return
+                return false
             }
             let text = render(t.raw, target)
             client.setMarkedText(text, replacementRange: NSRange(location: anchor - c, length: c + (marked?.length ?? 0)))
@@ -86,6 +131,7 @@ extension CompositionEngine {
         self.token = t
         notify(.flipped(to: target.language))
         hud = alternativeHUD(t, pulse: false, isRepeat: false)
+        return true
     }
 
     // MARK: (b) the word just committed

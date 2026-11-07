@@ -119,6 +119,13 @@ public final class PlaygroundSession {
         engine.handleModifier(event, client: buffer)
     }
 
+    /// The other reading on the playground's choice bar for `shown` was clicked. Returns whether a
+    /// word changed.
+    @discardableResult
+    public func chooseOtherReading(on shown: HUDRequest) -> Bool {
+        engine.chooseOtherReading(on: shown, client: buffer)
+    }
+
     /// A ⌘ or ⌃ key-down about to be taken by a menu (⌘C, ⌘A), which then never reaches the canvas's
     /// `keyDown`. The engine sees it as the IME would: the word is committed and a held flip key
     /// becomes a chord instead of a tap. Seeing the same key again in `keyDown` is harmless.

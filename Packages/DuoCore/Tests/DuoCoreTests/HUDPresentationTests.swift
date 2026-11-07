@@ -16,6 +16,7 @@ struct HUDPresentationTests {
         #expect(p.choice == choice)
         #expect(p.badge == nil)
         #expect(p.keycaps == flipKey.keycaps)
+        #expect(p.isClickable)
         #expect(!p.isBadgeOnly)
         #expect(p.opacity == 1)
     }
@@ -37,20 +38,22 @@ struct HUDPresentationTests {
         #expect(a == b)
     }
 
-    @Test("the last word's choice bar shows both readings too")
+    @Test("the last word's choice bar takes clicks too")
     func flipLastWord() {
         let p = HUDPresentation(.flipLastWord(choice), flipKey: .rightCommand)
         #expect(p.kind == .flipLastWord)
         #expect(p.choice == choice)
+        #expect(p.isClickable)
         #expect(p.keycaps == ["⌘"])
     }
 
-    @Test("one-shot is a badge only", arguments: [ScriptLanguage.korean, .english])
+    @Test("one-shot is a badge only and lets clicks through", arguments: [ScriptLanguage.korean, .english])
     func oneShot(language: ScriptLanguage) {
         let p = HUDPresentation(.oneShot(language), flipKey: .doubleShift)
         #expect(p.kind == .oneShot)
         #expect(p.badge == language)
         #expect(p.isBadgeOnly)
+        #expect(!p.isClickable)
         #expect(p.keycaps.isEmpty)
     }
 
@@ -61,6 +64,7 @@ struct HUDPresentationTests {
         #expect(p.badge == nil)
         #expect(p.keycaps.isEmpty)
         #expect(!p.isBadgeOnly)
+        #expect(!p.isClickable)
     }
 
     @Test("the Bilingual-line badge is a dimmed 가 badge")
