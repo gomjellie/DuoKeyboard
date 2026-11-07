@@ -304,4 +304,17 @@ struct EngineRobustnessTests {
         }
         #expect(h.text == "안녕하세요 hello 반갑습니다.")
     }
+    // MARK: Commits by a modifier
+
+    @Test(arguments: [(UInt16(57), FlipTapDetector.Flags.capsLock), (UInt16(63), FlipTapDetector.Flags.function)])
+    func aCommitByCapsLockOrFnTakesTheAlternativeAway(_ keyCode: UInt16, _ flag: UInt) {
+        let h = EngineHarness()
+        EngineFlipTests.scriptGo(h.detector)
+        h.type("go")
+        #expect(h.hud?.isEligible == true)
+        h.engine.handleModifier(ModifierEvent(keyCode: keyCode, flags: flag, timestamp: h.now), client: h.client)
+        #expect(!h.engine.isComposing)
+        #expect(h.hud.map { if case .alternative = $0.content { true } else { false } } != true,
+                "no alternative is left for a word that is gone")
+    }
 }

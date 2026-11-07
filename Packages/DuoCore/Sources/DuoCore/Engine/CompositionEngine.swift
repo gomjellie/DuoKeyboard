@@ -341,14 +341,14 @@ public final class CompositionEngine {
             if on, !capsLockOn, settings.flipKey != .capsLock, token != nil {
                 // After a pause the app may have cleared the field (R18 #7): no ghost insert.
                 resyncIfNeeded(at: event.timestamp, client: client)
-                commitToken(terminator: .space, boundaryLength: 0, client: client)
+                commitFromModifier(client: client)
             }
             capsLockOn = on
         }
         if event.keyCode == FlipTapDetector.KeyCode.function, flags & FlipTapDetector.Flags.function != 0, token != nil {
             // Globe/fn opens the emoji picker or dictation: the word lands before what it inserts.
             resyncIfNeeded(at: event.timestamp, client: client)
-            commitToken(terminator: .space, boundaryLength: 0, client: client)
+            commitFromModifier(client: client)
         }
         if tap.handle(event) {
             flip(client: client, at: event.timestamp)
@@ -358,6 +358,14 @@ public final class CompositionEngine {
             // input". Only after a flip: a bare press must not announce the line again.
             if bilingualLine, hud == nil { hud = Self.bilingualBadge }
         }
+    }
+
+    /// Commits the word for Caps Lock or fn. The word's choice bar goes with it, as before every key
+    /// (`handle`): only the commit may put up a new request (the last word's chip).
+    private func commitFromModifier(client: any TextClient) {
+        hud = nil
+        commitToken(terminator: .space, boundaryLength: 0, client: client)
+        if bilingualLine, hud == nil { hud = Self.bilingualBadge }
     }
 
     // MARK: - Explicit commits
