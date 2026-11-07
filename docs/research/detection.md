@@ -1,118 +1,117 @@
-# Duo — Korean/English language detection: algorithm, data, model format
+# Duo — 한국어/영어 언어 감지: 알고리즘, 데이터, 모델 형식
 
-Status: research track deliverable (prototype in `Tools/ModelBuilder/`, Python 3.12, stdlib only).
-Owner paths: `Tools/ModelBuilder/` (scripts, curated data, outputs in `out/`), `Tools/data/raw/` (downloaded corpora, gitignored).
+상태: 리서치 트랙 산출물(프로토타입은 `Tools/ModelBuilder/`, Python 3.12, 표준 라이브러리만 씀).
+담당 경로: `Tools/ModelBuilder/`(스크립트, 직접 고른 데이터, `out/`의 결과물), `Tools/data/raw/`(내려받은 말뭉치, gitignore 대상).
 
-## TL;DR
+## 요약 (TL;DR)
 
-* **Hypotheses per word**: Korean (`K`, 두벌식 automaton), English (`E`, keys as typed), and
-  **Latin word + attached Korean** (`M(b)`: `PR을`, `iOS에서`, `push했어요`, `LG전자`). Korean attaches
-  particles to Latin words with no space, so this third reading is needed: removing it costs 1.2 pt on
-  dev-chat text.
-* **Model**: two order-5 modified-Kneser-Ney character LMs over a shared 37-symbol keystroke
-  alphabet (Korean as 두벌식 keystrokes, `Q W E R T O P` = shifted jamo), plus top-100 k Korean eojeol /
-  top-60 k English lexicons, orphan-jamo penalty, shift/case model, 1 684 Latin-attached suffixes,
-  context prior (START / KO / EN / NUM), terminator cue and per-user counts. These are combined as an
-  integer log-linear score in millinats, so the Swift port can be **bit-exact**.
-* **Measured** on the shipped 5.63 MB file, on registers never used in training:
-  * single words, no context: Korean 99.48 %, English-in-Korean-text 99.44 %, English news 99.89 %
-  * running text with context: Korean news **99.90 %**, Korean Wikipedia **99.89 %**, English news
-    **99.99 %**, hand-written mixed dev-chat set **99.86 %** (2 errors: `so`, `go`)
-  * display: Korean words never flicker (0.000 flips/word); English in English context 0.012
-    flips/word; 100 % robust to Shift-rollover typos.
-* **Runtime format**: one mmap-able little-endian file `duo-model.bin` (DUOM v1: sorted packed
-  n-gram keys u32/u64, u8 codebook indices, FNV-1a-64 lexicon hashes, small JSON meta). Each keystroke
-  costs 6–106 binary searches (well under 10 µs in Swift).
-* **Golden vectors**: `Tools/ModelBuilder/out/test_vectors.json` (696 automaton cases, 1 069 final
-  decisions × 6 contexts, 642 incremental traces, LM/lexicon/hash/apostrophe/user vectors). Section 8 has the details.
-* **License**: the model is derived from CC-BY-SA-4.0 data (OpenSubtitles via FrequencyWords, Korean
-  Wikipedia, wordfreq), so ship it with attribution under CC-BY-SA-4.0 (section 2).
+* **단어마다 세우는 가설**: 한국어(`K`, 두벌식 오토마톤), 영어(`E`, 친 키 그대로),
+  **라틴 단어 + 붙은 한국어**(`M(b)`: `PR을`, `iOS에서`, `push했어요`, `LG전자`). 한국어는 라틴 단어에
+  조사를 띄어 쓰지 않고 바로 붙임. 그래서 세 번째 읽기가 필요함. 이 읽기를 빼면 개발자 채팅
+  글에서 1.2 pt가 떨어짐.
+* **모델**: 5차(order-5) modified Kneser-Ney 문자 언어 모델(LM) 두 개를 씀. 두 LM은 37개 기호로 된
+  키 입력 알파벳을 함께 씀(한국어는 두벌식 키 입력으로 적고, `Q W E R T O P` = Shift 자모). 여기에
+  한국어 어절 상위 100 k개 / 영어 상위 60 k개 어휘 사전, 외톨이 자모 벌점, Shift/대소문자 모델,
+  라틴 뒤 접미사 1 684개, 문맥 사전 확률(START / KO / EN / NUM), 종결 키 단서, 사용자별 횟수를 더함.
+  이것들을 millinats 단위의 정수 로그 선형 점수로 합침. 그래서 Swift 포팅이 **비트 단위로 똑같을(bit-exact)** 수 있음.
+* **측정 결과**: 실제로 배포하는 5.63 MB 파일로, 학습에 한 번도 쓰지 않은 문체(register)에서 잼.
+  * 문맥 없는 낱단어: 한국어 99.48 %, 한국어 글 속 영어 99.44 %, 영어 뉴스 99.89 %
+  * 문맥 있는 이어진 글: 한국어 뉴스 **99.90 %**, 한국어 위키백과 **99.89 %**, 영어 뉴스
+    **99.99 %**, 직접 쓴 혼합 개발자 채팅 세트 **99.86 %**(오류 2개: `so`, `go`)
+  * 표시: 한국어 단어는 절대 깜빡이지 않음(0.000 바뀜/단어). 영어 문맥 속 영어는 0.012
+    바뀜/단어. Shift 롤오버(rollover) 오타에 100 % 견딤.
+* **런타임 형식**: mmap할 수 있는 리틀 엔디언 파일 하나, `duo-model.bin`(DUOM v1: 정렬해 묶은
+  n-gram 키 u32/u64, u8 코드북 인덱스, FNV-1a-64 어휘 사전 해시, 작은 JSON meta). 키 입력 하나에
+  이진 탐색이 6–106번 듦(Swift에서는 10 µs보다 훨씬 짧음).
+* **골든 벡터(golden vectors)**: `Tools/ModelBuilder/out/test_vectors.json`(오토마톤 사례 696개, 최종 판정 1 069개 ×
+  문맥 6개, 점진 추적 642개, LM/어휘 사전/해시/아포스트로피/사용자 벡터). 자세한 내용은 8절에 있음.
+* **라이선스**: 모델은 CC-BY-SA-4.0 데이터(FrequencyWords를 거친 OpenSubtitles, 한국어
+  위키백과, wordfreq)에서 나왔음. 그래서 CC-BY-SA-4.0으로, 저작자 표시와 함께 배포해야 함(2절).
 
 ---
 
-## 1. Problem statement and hypothesis space
+## 1. 문제 정의와 가설 공간
 
-The engine sees the keystrokes of the current word as the string the **ABC (US) layout would have
-produced**: lowercase letter = unshifted key, uppercase letter = Shift+key. `PRdmf` means
-Shift+P, Shift+R, d, m, f. This string (`raw`) is the only input to detection; the two
-interpretations are derived from it:
+엔진은 현재 단어의 키 입력을 **ABC (US) 자판이 만들었을 문자열**로 봐요. 소문자는 Shift 없이
+누른 키이고, 대문자는 Shift+키예요. `PRdmf`는 Shift+P, Shift+R, d, m, f를 뜻해요. 이 문자열(`raw`)이
+감지의 유일한 입력이에요. 두 가지 해석은 이 문자열에서 만들어요.
 
-| hypothesis | rendered text | example raw → text |
+| 가설 | 보여 주는 글자 | 예: raw → 글자 |
 |---|---|---|
-| `K` (Korean) | 두벌식 automaton applied to `raw` (section 3) | `dkssud` → 안녕 |
-| `E` (English) | `raw` itself (case as typed) | `meeting` → meeting |
-| `M(b)` (Latin word + attached Korean, 1 ≤ b < len) | `raw[0..<b]` + automaton(`raw[b...]`) | `PRdmf` → PR을, `pushgoTdjdy` → push했어요, `LGwjswk` → LG전자 |
+| `K` (한국어) | `raw`에 두벌식 오토마톤을 적용함(3절) | `dkssud` → 안녕 |
+| `E` (영어) | `raw` 그대로(친 대소문자 그대로) | `meeting` → meeting |
+| `M(b)` (라틴 단어 + 붙은 한국어, 1 ≤ b < len) | `raw[0..<b]` + automaton(`raw[b...]`) | `PRdmf` → PR을, `pushgoTdjdy` → push했어요, `LGwjswk` → LG전자 |
 
-`M(b)` exists because Korean attaches particles/endings directly to Latin words with **no space**
-(`PR을`, `API를`, `iOS에서`, `merge해주세요`, `A씨는`, `LG화학`). In Korean news 1.44 % of tokens
-contain Latin letters and **34 % of those carry an attached Korean suffix** — a pure per-word K/E
-switch would get every one of them wrong. Hangul followed by Latin inside one token (`카톡ID`) is
-not supported (0.045 % of Korean-news tokens).
+`M(b)`가 있는 이유는 한국어가 라틴 단어 바로 뒤에 조사/어미를 **띄어 쓰지 않고** 붙이기 때문이에요
+(`PR을`, `API를`, `iOS에서`, `merge해주세요`, `A씨는`, `LG화학`). 한국어 뉴스에서 단어의 1.44 %에
+라틴 글자가 들어 있어요. 그리고 **그중 34 %에는 한국어 접미사가 붙어 있어요**. 단어마다 K/E만
+고르는 방식이라면 이것들을 모두 틀려요. 한 단어 안에서 한글 뒤에 라틴 글자가 오는 경우(`카톡ID`)는
+지원하지 않아요(한국어 뉴스 단어의 0.045 %).
 
-The detector produces, for every hypothesis, an integer log-score (millinats = 1/1000 natural-log
-unit). Two scoring modes exist:
+감지기는 가설마다 정수 로그 점수를 내요(millinats = 자연로그 단위의 1/1000). 점수 모드는 두 가지예요.
 
-* **final mode** — used when the word is committed (space, punctuation, digit, Return, focus loss):
-  the word is complete (`</s>` scored, lexicon used).
-* **prefix mode** — used after every keystroke for the marked-text display: the word may continue
-  (no `</s>`, no lexicon; probability of all words that start with these keys).
+* **최종 모드(final mode)** — 단어를 확정할 때 씀(스페이스, 문장 부호, 숫자, Return, 포커스 잃음).
+  단어가 끝났다고 봄(`</s>` 점수를 넣고, 어휘 사전을 씀).
+* **접두 모드(prefix mode)** — 조합 문자열(marked text) 표시를 위해 키를 누를 때마다 씀. 단어가 더 이어질 수
+  있다고 봄(`</s>` 없음, 어휘 사전 없음. 이 키들로 시작하는 모든 단어의 확률).
 
-All arithmetic is integer (`Int32` is sufficient; Swift should use `Int`), so the Swift port can be
-**bit-exact** with `Tools/ModelBuilder/out/test_vectors.json`.
+모든 계산은 정수예요(`Int32`면 충분하고, Swift에서는 `Int`를 쓰면 돼요). 그래서 Swift 포팅이
+`Tools/ModelBuilder/out/test_vectors.json`과 **비트 단위로 똑같을** 수 있어요.
 
 ---
 
-## 2. Data sources and licenses
+## 2. 데이터 출처와 라이선스
 
-| corpus | used for | size | license | file(s) in `Tools/data/raw/` |
+| 말뭉치 | 용도 | 크기 | 라이선스 | `Tools/data/raw/` 안의 파일 |
 |---|---|---|---|---|
-| hermitdave/FrequencyWords, OpenSubtitles 2018 `ko_full` | KO training (spoken register, eojeol tokens) | 688 129 types / 6.33 M tokens (660 810 Hangul types) | content **CC-BY-SA-4.0**, code MIT | `fw_ko_full.txt`, `fw_ko_50k.txt` |
-| Korean Wikipedia dump, chunk 1 (`kowiki-latest-pages-articles1.xml-p1p82407.bz2`, 94 MB) | KO training (written register) | 1.39 M Hangul eojeol types / 14.3 M tokens (types with count ≥ 2 used) | **CC-BY-SA-4.0** (Wikimedia) | `kowiki/` |
-| hermitdave/FrequencyWords `en_full` | EN training (spoken) | 1.66 M types / 735 M tokens (count ≥ 3, `^[a-z]+('[a-z]+)*$`) | **CC-BY-SA-4.0** | `fw_en_full.txt`, `fw_en_50k.txt` |
-| rspeer/wordfreq 3.x `large_en.msgpack.gz` | EN training (web, Wikipedia, news, subtitles, Reddit, Twitter mix) | 321 180 words, centibel buckets | data **CC-BY-SA-4.0** (code Apache-2.0); project is sunset (no updates) | `wordfreq/` |
-| Leipzig Corpora Collection `kor_news_2022_100K`, `kor_wikipedia_2021_100K`, `eng_news_2023_100K` | **evaluation only** (held-out register, real sentences with case, digits, punctuation, Latin-in-Korean) | 100 k sentences each (1.63 M / 1.40 M / 1.96 M letter tokens) | LCC terms of use (site is behind an anti-bot wall, could not be re-verified; treat as research/eval-only, **do not ship anything derived from it**) | `lcc_*/` |
-| Peter Norvig `count_1w.txt` | not used (inspected only) | 333 k words | derived from Google Web 1T (LDC) — **redistribution status unclear, do not ship** | `norvig_count_1w.txt` |
-| project-authored lists | tech terms with canonical case, chat jamo, Latin-attached suffixes, mixed test set | see `Tools/ModelBuilder/data/` | project (CC0) | — |
+| hermitdave/FrequencyWords, OpenSubtitles 2018 `ko_full` | KO 학습(구어체, 어절 단위) | 688 129 종류 / 6.33 M 단어(한글 660 810 종류) | 내용 **CC-BY-SA-4.0**, 코드 MIT | `fw_ko_full.txt`, `fw_ko_50k.txt` |
+| 한국어 위키백과 덤프, 1번 조각(`kowiki-latest-pages-articles1.xml-p1p82407.bz2`, 94 MB) | KO 학습(문어체) | 한글 어절 1.39 M 종류 / 14.3 M 단어(횟수 ≥ 2인 종류만 씀) | **CC-BY-SA-4.0** (Wikimedia) | `kowiki/` |
+| hermitdave/FrequencyWords `en_full` | EN 학습(구어체) | 1.66 M 종류 / 735 M 단어(횟수 ≥ 3, `^[a-z]+('[a-z]+)*$`) | **CC-BY-SA-4.0** | `fw_en_full.txt`, `fw_en_50k.txt` |
+| rspeer/wordfreq 3.x `large_en.msgpack.gz` | EN 학습(웹, 위키백과, 뉴스, 자막, Reddit, Twitter 혼합) | 321 180 단어, 센티벨(centibel) 구간 | 데이터 **CC-BY-SA-4.0**(코드 Apache-2.0). 프로젝트는 종료됨(업데이트 없음) | `wordfreq/` |
+| Leipzig Corpora Collection `kor_news_2022_100K`, `kor_wikipedia_2021_100K`, `eng_news_2023_100K` | **평가 전용**(학습에서 뺀 문체. 대소문자, 숫자, 문장 부호, 한국어 속 라틴 글자가 있는 실제 문장) | 각 100 k 문장(글자로 된 단어 1.63 M / 1.40 M / 1.96 M) | LCC 이용 약관(사이트가 봇 차단 장벽 뒤에 있어서 다시 확인하지 못했음. 연구/평가 전용으로 다룸. **여기서 나온 것은 아무것도 배포하지 말 것**) | `lcc_*/` |
+| Peter Norvig `count_1w.txt` | 쓰지 않음(살펴보기만 함) | 333 k 단어 | Google Web 1T (LDC)에서 나옴 — **재배포 가능 여부가 불분명함. 배포하지 말 것** | `norvig_count_1w.txt` |
+| 프로젝트에서 직접 만든 목록 | 정식 대소문자를 가진 기술 용어, 채팅 자모, 라틴 뒤 접미사, 혼합 테스트 세트 | `Tools/ModelBuilder/data/` 참고 | 프로젝트(CC0) | — |
 
-Rejected: wordfreq `ko` (it is **MeCab-tokenised** into morphemes, but users type eojeols),
-Norvig (license), Leipzig for training (license unverifiable).
+뺀 것: wordfreq `ko`(**MeCab으로 형태소 단위로 나뉘어** 있음. 하지만 사용자는 어절 단위로 침),
+Norvig(라이선스), 학습용 Leipzig(라이선스를 확인할 수 없음).
 
-**Shipping obligation**: the model file is an adaptation of CC-BY-SA-4.0 data, so `duo-model.bin`
-must be distributed under CC-BY-SA-4.0 with attribution ("Contains information from
+**배포 의무**: 모델 파일은 CC-BY-SA-4.0 데이터를 변형한 저작물이에요. 그래서 `duo-model.bin`은
+CC-BY-SA-4.0으로, 저작자 표시와 함께 배포해야 해요("Contains information from
 OpenSubtitles2018 via FrequencyWords by Hermit Dave, Korean Wikipedia, and wordfreq by Robyn Speer,
-CC-BY-SA 4.0"). This does **not** affect the app's code license; put the notice in the About
-window / acknowledgements and next to the resource in the repo.
+CC-BY-SA 4.0"). 이 의무는 앱 코드의 라이선스에는 영향을 **주지 않아요**. 고지문은 About 창 /
+감사의 글(acknowledgements)에 넣고, 저장소 안에서도 리소스 옆에 두세요.
 
-### Training mixtures (see `model_data.py`)
+### 학습 데이터 혼합 (`model_data.py` 참고)
 
-* **Korean**: `count(w) = 2 × OpenSubtitles(w) + kowiki(w)` over pure-Hangul eojeols that survive the
-  keys→Hangul round trip and consist of complete syllables only (jamo-only corpus tokens such as `ㄲ`, `ㄷ` are stutter noise and were dropped) — 1 104 134 types, 26.3 M pseudo-tokens, 48 % subtitles / 52 % Wikipedia — plus 32 chat-jamo tokens
-  (`ㅋㅋ`, `ㅎㅎ`, `ㅠㅠ`, `ㅇㅋ`, `ㄱㄱ` …, `data/ko_chat.txt`, given per-million rates).
-* **English**: OpenSubtitles(count ≥ 3) + wordfreq scaled to the same total (509 482 types),
-  plus 260 tech/office terms (`data/en_terms.txt`: API, PR, iOS, macOS, GitHub, Slack, Figma, LGTM …)
-  at 50 / 10 / 2 per million by tier. Canonical-case forms (iOS, GitHub, API) form the **case lexicon**.
-* **Suffixes after Latin**: Hangul tails of `^[A-Za-z]+[가-힣]+$` tokens in kowiki (74 k tokens) and
-  OpenSubtitles (×5), plus `data/suffix_extra.txt` (dev-chat endings: 해주세요, 했습니다, 할게요 …);
-  suffixes with pseudo-count ≥ 5 kept → 1 684 suffixes.
+* **한국어**: 순수 한글 어절에 대해 `count(w) = 2 × OpenSubtitles(w) + kowiki(w)`로 셈. 키→한글 왕복
+  변환을 통과하고 완성된 음절로만 된 어절만 씀(`ㄲ`, `ㄷ`처럼 자모만 있는 말뭉치 단어는 말더듬 잡음이라 버림) — 1 104 134 종류, 26.3 M 의사 단어(pseudo-token), 자막 48 % / 위키백과 52 %. 여기에 채팅 자모 단어 32개를 더함
+  (`ㅋㅋ`, `ㅎㅎ`, `ㅠㅠ`, `ㅇㅋ`, `ㄱㄱ` …, `data/ko_chat.txt`, 백만 단어당 비율로 줌).
+* **영어**: OpenSubtitles(횟수 ≥ 3) + 같은 총량으로 맞춘 wordfreq(509 482 종류). 여기에 기술/사무
+  용어 260개(`data/en_terms.txt`: API, PR, iOS, macOS, GitHub, Slack, Figma, LGTM …)를 등급별로 백만 단어당
+  50 / 10 / 2로 더함. 정식 대소문자 형태(iOS, GitHub, API)가 **대소문자 어휘 사전**이 됨.
+* **라틴 뒤 접미사**: kowiki(74 k 단어)와 OpenSubtitles(×5)에서 `^[A-Za-z]+[가-힣]+$` 단어의 한글
+  꼬리를 모음. 여기에 `data/suffix_extra.txt`(개발자 채팅 어미: 해주세요, 했습니다, 할게요 …)를 더함.
+  의사 횟수 ≥ 5인 접미사만 남김 → 접미사 1 684개.
 
-### Evaluation sets (`evaluate.py prepare`)
+### 평가 세트 (`evaluate.py prepare`)
 
-* **Held-out types** — 10 % of word types (CRC32(word) % 10 == 0) of the training mixtures, never
-  seen by the n-grams or the lexicon of the `train`-split model. Measures OOV generalisation.
-* **Cross-corpus** — Leipzig sentences, even lines = dev, odd lines = test. Every token is typed
-  exactly as written (case, digits as boundaries, `’` → `'`). Gold label from script:
-  Hangul → K, Latin → E, Latin+Hangul → M(b).
-* **Mixed dev-chat set** — `data/mixed_sentences.txt`, 417 hand-written sentences / 1 385 tokens
-  typical of Korean developers and office workers ("PR을 올렸는데 CI가 깨졌네요", "push했어요 확인해 주세요",
-  "Thank you so much", "ㅋㅋ 그러게요"). Test only, never tuned on.
-* **Rollover noise** — Korean news words re-typed with Shift held too long (P = 0.3 on the key after a
-  shifted QWERTOP key) or pressed too early (P = 0.1 on the key before).
+* **제외한 종류(held-out types)** — 학습 혼합 데이터에서 단어 종류의 10 %(CRC32(word) % 10 == 0).
+  `train` 분할 모델의 n-gram과 어휘 사전은 이 단어들을 한 번도 보지 않음. 사전에 없는 단어(OOV)에
+  대한 일반화를 잼.
+* **교차 말뭉치(cross-corpus)** — Leipzig 문장. 짝수 줄 = dev, 홀수 줄 = test. 모든 단어를 쓰인
+  그대로 침(대소문자 그대로, 숫자는 경계, `’` → `'`). 정답 표시는 글자 체계로 정함:
+  한글 → K, 라틴 → E, 라틴+한글 → M(b).
+* **혼합 개발자 채팅 세트** — `data/mixed_sentences.txt`, 직접 쓴 417 문장 / 1 385 단어. 한국 개발자와
+  사무직이 흔히 쓰는 글임("PR을 올렸는데 CI가 깨졌네요", "push했어요 확인해 주세요",
+  "Thank you so much", "ㅋㅋ 그러게요"). 테스트 전용이고 튜닝에는 한 번도 쓰지 않음.
+* **롤오버 잡음** — 한국어 뉴스 단어를 Shift를 너무 오래 누르거나(Shift한 QWERTOP 키 다음 키에서
+  P = 0.3) 너무 일찍 눌러서(그 앞 키에서 P = 0.1) 다시 친 것.
 
 ---
 
-## 3. 두벌식 automaton (normative; `hangul.py`)
+## 3. 두벌식 오토마톤 (규범; `hangul.py`)
 
-Key map (KS X 5002):
+키 배치(KS X 5002):
 
 ```
 q ㅂ  w ㅈ  e ㄷ  r ㄱ  t ㅅ  y ㅛ  u ㅕ  i ㅑ  o ㅐ  p ㅔ
@@ -121,93 +120,94 @@ z ㅋ  x ㅌ  c ㅊ  v ㅍ  b ㅠ  n ㅜ  m ㅡ
 Shift: Q ㅃ  W ㅉ  E ㄸ  R ㄲ  T ㅆ  O ㅒ  P ㅖ ; every other shifted letter = its unshifted jamo
 ```
 
-**Korean normalisation** `kno = koreanNormalize(raw)`: every uppercase letter whose lowercase is not
-in `{q,w,e,r,t,o,p}` is lowercased; everything else unchanged. (So `Hello` → `hello`, `PRdmf` stays.)
+**한국어 정규화** `kno = koreanNormalize(raw)`: 대문자 가운데 소문자가 `{q,w,e,r,t,o,p}`에 없는 것은
+모두 소문자로 바꿔요. 나머지는 그대로 둬요. (그래서 `Hello` → `hello`가 되고, `PRdmf`는 그대로예요.)
 
-State = (cho, jung, jong), each possibly empty; `out` = emitted characters; `orphans` = number of
-compatibility jamo emitted. `flush()`: if cho and jung → emit syllable `U+AC00 + (cho·21 + jung)·28 + jong`;
-else if only cho or only jung → emit that compatibility jamo and `orphans += 1`; clear state.
+상태 = (cho, jung, jong)이에요(초성, 중성, 종성). 각각 비어 있을 수 있어요. `out` = 내보낸 글자이고,
+`orphans` = 내보낸 호환 자모의 수예요. `flush()`: cho와 jung이 둘 다 있으면 음절
+`U+AC00 + (cho·21 + jung)·28 + jong`을 내보내요. cho만 있거나 jung만 있으면 그 호환 자모를 내보내고
+`orphans += 1`을 해요. 그다음 상태를 비워요.
 
-Consonant C:
-1. state has cho and jung:
-   * no jong: if C ∈ {ㄸ, ㅃ, ㅉ} → flush, cho = C; else jong = C.
-   * jong set: if (jong, C) ∈ FINAL_COMBINE → jong = combined; else flush, cho = C.
-2. otherwise (empty / cho only / vowel only): flush, cho = C.  *(consonants never combine without a vowel: r t → ㄱㅅ)*
+자음 C:
+1. 상태에 cho와 jung이 있음:
+   * jong 없음: C ∈ {ㄸ, ㅃ, ㅉ}이면 → flush, cho = C. 아니면 jong = C.
+   * jong 있음: (jong, C) ∈ FINAL_COMBINE이면 → jong = 합친 것. 아니면 flush, cho = C.
+2. 그 밖의 경우(비었음 / cho만 있음 / 모음만 있음): flush, cho = C.  *(자음은 모음 없이 절대 합쳐지지 않음: r t → ㄱㅅ)*
 
-Vowel V:
-1. jong set (도깨비불): if jong is compound (ㄳ ㄵ ㄶ ㄺ ㄻ ㄼ ㄽ ㄾ ㄿ ㅀ ㅄ) → jong = first part, moved = second
-   part; else moved = jong, jong = ∅. flush; cho = moved; jung = V.
-2. jung set (no jong): if (jung, V) ∈ VOWEL_COMBINE → jung = combined; else flush, jung = V (cho empty → orphan vowel).
-3. otherwise (empty or cho only): jung = V.
+모음 V:
+1. jong 있음(도깨비불): jong이 겹받침(ㄳ ㄵ ㄶ ㄺ ㄻ ㄼ ㄽ ㄾ ㄿ ㅀ ㅄ)이면 → jong = 앞부분, moved = 뒷부분.
+   아니면 moved = jong, jong = ∅. flush; cho = moved; jung = V.
+2. jung 있음(jong 없음): (jung, V) ∈ VOWEL_COMBINE이면 → jung = 합친 것. 아니면 flush, jung = V(cho가 비었으면 외톨이 모음).
+3. 그 밖의 경우(비었음 또는 cho만 있음): jung = V.
 
-`VOWEL_COMBINE`: ㅗ+ㅏ=ㅘ, ㅗ+ㅐ=ㅙ, ㅗ+ㅣ=ㅚ, ㅜ+ㅓ=ㅝ, ㅜ+ㅔ=ㅞ, ㅜ+ㅣ=ㅟ, ㅡ+ㅣ=ㅢ (applies with or without cho; `hk` → ㅘ).
+`VOWEL_COMBINE`: ㅗ+ㅏ=ㅘ, ㅗ+ㅐ=ㅙ, ㅗ+ㅣ=ㅚ, ㅜ+ㅓ=ㅝ, ㅜ+ㅔ=ㅞ, ㅜ+ㅣ=ㅟ, ㅡ+ㅣ=ㅢ(cho가 있든 없든 적용돼요. `hk` → ㅘ).
 `FINAL_COMBINE`: ㄱ+ㅅ=ㄳ, ㄴ+ㅈ=ㄵ, ㄴ+ㅎ=ㄶ, ㄹ+ㄱ=ㄺ, ㄹ+ㅁ=ㄻ, ㄹ+ㅂ=ㄼ, ㄹ+ㅅ=ㄽ, ㄹ+ㅌ=ㄾ, ㄹ+ㅍ=ㄿ, ㄹ+ㅎ=ㅀ, ㅂ+ㅅ=ㅄ.
-ㄲ and ㅆ are single keys (R, T) and therefore simple finals (있+ㅓ → 이써).
-Apostrophe (the only non-letter allowed inside a token): flush, emit `'` literally.
+ㄲ과 ㅆ은 키 하나(R, T)라서 홑받침이에요(있+ㅓ → 이써).
+아포스트로피(단어 안에 들어갈 수 있는 유일한 비문자 키): flush하고 `'`를 그대로 내보내요.
 
-Outputs used by detection: `text`, `orphans` = orphans emitted + (1 if the pending state is cho-only
-or jung-only), `trailingLoneConsonant` = pending state is cho-only. Rendering of the pending block
-does not flush (display shows the composing syllable).
+감지에 쓰는 출력: `text`, `orphans` = 내보낸 외톨이 수 + (남은 상태가 cho만 있거나 jung만 있으면 1),
+`trailingLoneConsonant` = 남은 상태에 cho만 있음. 남은 블록을 그릴 때는 flush하지 않아요(표시는
+조합 중인 음절을 보여 줘요).
 
-Examples (all in the test vectors): `ekfrrhrl` 닭고기, `rkqtdl` 값이, `rkqtl` 갑시, `sjrtl` 넉시,
+예시(모두 테스트 벡터에 있어요): `ekfrrhrl` 닭고기, `rkqtdl` 값이, `rkqtl` 갑시, `sjrtl` 넉시,
 `dlTdj` 있어, `goTtmqslek` 했습니다, `rkE` 가ㄸ, `rkk` 가ㅏ, `zzz` ㅋㅋㅋ, `rt` ㄱㅅ, `hk` ㅘ, `Ehrqo` 똑배.
-Backspace in the engine = drop the last keystroke and recompute (each key is one jamo, so this is
-jamo-wise deletion and matches what Korean users expect, e.g. 과 → 고).
+엔진의 Backspace는 마지막 키 입력을 지우고 다시 계산하는 거예요. 키 하나가 자모 하나라서 자모 단위로
+지워져요. 한국어 사용자가 기대하는 동작과 같아요(예: 과 → 고).
 
 ---
 
-## 4. Tokenisation and engine integration rules
+## 4. 단어 나누기와 엔진 연동 규칙
 
-* A **token** is a maximal run of `[A-Za-z]` keystrokes, optionally with internal apostrophes. Any
-  other key (space, Return, Tab, digit, punctuation including `-`, arrows, mouse click, focus change)
-  is a **boundary**: it commits the token (final mode) and is then handled normally.
-* **Apostrophe rule**: when `'` is typed after a non-empty token, compute the prefix-mode scores of
-  `raw + "'"` (the KO LM gives `'` a tiny probability after Korean keys; `M(b)` is disabled for tokens
-  containing `'`). If the argmax is `E`, the apostrophe becomes part of the token (`don't`, `it's`,
-  `didn't`, `she's`; margins +10…+50 nats), and `shown` becomes `E`. Otherwise commit the token
-  (final mode, without the apostrophe) and output `'` literally (`'사랑'이라는`: `tkfkd'` → K by
-  −9…−15 nats). A token never starts with `'`. This beats "append iff E is currently shown", which fails
-  for `didn`/`she` after a Korean word because `야우` and `녿` are valid syllables. Vectors: `apostrophe[]`.
-* **Caps Lock on** → bypass detection, behave like the ABC layout (matches macOS' own Korean IME).
-* **Context state** `ctx` for the next token:
-  `START` at the beginning of the field, after `.` `!` `?` newline, and after any cursor movement /
-  focus change; `NUM` if the character immediately before the token is a digit (`3개`, `10mm`, `20th`);
-  otherwise `KO` if the previous committed token was `K` or `M(b)`, `EN` if it was `E`.
-  Spaces, commas, quotes, brackets keep the previous context.
-* **Terminator** `term` (final mode only) = the boundary key that ended the token: `S` (space,
-  Return, end), `D` (digit: `Q1`, `iOS17`), `H` (hyphen: `co-founder`, `e-mail`), `P` (other punctuation).
-* Display: the marked text shows `render(raw, shown)` (section 5.6). Commit inserts
-  `render(raw, final)` and records it for user adaptation.
+* **단어(token)**는 `[A-Za-z]` 키 입력이 가장 길게 이어진 묶음임. 안에 아포스트로피가 있을 수 있음.
+  그 밖의 키(스페이스, Return, Tab, 숫자, `-`를 포함한 문장 부호, 화살표, 마우스 클릭, 포커스 변경)는
+  **경계**임. 경계는 단어를 확정하고(최종 모드), 그다음 평소처럼 처리됨.
+* **아포스트로피 규칙**: 비어 있지 않은 단어 뒤에 `'`를 치면 `raw + "'"`의 접두 모드 점수를 계산함
+  (KO LM은 한국어 키 뒤의 `'`에 아주 작은 확률을 줌. `'`가 든 단어에서는 `M(b)`를 끔). argmax가
+  `E`이면 아포스트로피는 단어의 일부가 됨(`don't`, `it's`, `didn't`, `she's`; 차이 +10…+50 nats).
+  그리고 `shown`이 `E`가 됨. 아니면 단어를 확정하고(최종 모드, 아포스트로피 없이) `'`를 그대로
+  출력함(`'사랑'이라는`: `tkfkd'` → −9…−15 nats 차이로 K). 단어는 절대 `'`로 시작하지 않음. 이 규칙은
+  "지금 E가 보이면 붙이기"보다 나음. 그 방식은 한국어 단어 뒤의 `didn`/`she`에서 실패함. `야우`와
+  `녿`이 올바른 음절이기 때문임. 벡터: `apostrophe[]`.
+* **Caps Lock 켬** → 감지를 건너뛰고 ABC 자판처럼 동작함(macOS 기본 한국어 입력기와 같음).
+* **문맥 상태** `ctx`(다음 단어에 씀):
+  필드 시작, `.` `!` `?` 줄바꿈 뒤, 그리고 커서 이동 / 포커스 변경 뒤에는 `START`. 단어 바로 앞
+  글자가 숫자이면 `NUM`(`3개`, `10mm`, `20th`). 그 밖에는 앞서 확정한 단어가 `K`나 `M(b)`였으면
+  `KO`, `E`였으면 `EN`.
+  스페이스, 쉼표, 따옴표, 괄호는 이전 문맥을 그대로 둠.
+* **종결 키(terminator)** `term`(최종 모드 전용) = 단어를 끝낸 경계 키: `S`(스페이스,
+  Return, 끝), `D`(숫자: `Q1`, `iOS17`), `H`(하이픈: `co-founder`, `e-mail`), `P`(그 밖의 문장 부호).
+* 표시: 조합 문자열은 `render(raw, shown)`을 보여 줌(5.6절). 확정하면 `render(raw, final)`을 넣고,
+  사용자 적응을 위해 그것을 기록함.
 
 ---
 
-## 5. Scoring (normative; `detector.py`)
+## 5. 점수 계산 (규범; `detector.py`)
 
-### 5.1 Symbol alphabet (shared by both language models)
+### 5.1 기호 알파벳 (두 언어 모델이 함께 씀)
 
-| id | symbol | | id | symbol |
+| id | 기호 | | id | 기호 |
 |---|---|---|---|---|
-| 0 | pad (never stored) | | 3…28 | `a`…`z` |
-| 1 | `<s>` | | 29…35 | `Q W E R T O P` (shifted; produced only by Korean normalisation) |
+| 0 | pad(저장하지 않음) | | 3…28 | `a`…`z` |
+| 1 | `<s>` | | 29…35 | `Q W E R T O P` (Shift한 키. 한국어 정규화만 만들어 냄) |
 | 2 | `</s>` | | 36 | `'` |
 
-`V = 35` predictable symbols (ids 2…36). An n-gram (s₀ … sₙ₋₁) is **packed** as
-`key = Σ sᵢ << 6·(n−1−i)` (oldest symbol in the high bits); orders ≤ 5 fit in `UInt32`, order 6 needs `UInt64`.
+예측 대상 기호는 `V = 35`개예요(id 2…36). n-gram (s₀ … sₙ₋₁)은
+`key = Σ sᵢ << 6·(n−1−i)`로 **묶어요(pack)**(가장 오래된 기호가 높은 비트에 가요). order ≤ 5는 `UInt32`에 들어가고, order 6은 `UInt64`가 필요해요.
 
-The KO LM reads `kno` (section 3), the EN LM reads `low = raw.lowercased()`.
+KO LM은 `kno`(3절)를 읽고, EN LM은 `low = raw.lowercased()`를 읽어요.
 
-### 5.2 Character n-gram LMs
+### 5.2 문자 n-gram LM
 
-Training (`kn.py`): interpolated **modified Kneser-Ney** (Chen & Goodman; three discounts per order
-from count-of-counts of the adjusted counts, KenLM conventions: one `<s>`, n-grams starting with
-`<s>` and highest-order n-grams use raw counts, others use continuation counts; unigram interpolated
-with uniform 1/V), word types weighted by their token frequency, then converted to backoff form
-(`lp(h,w) = ln P_interp(w|h)`, `bow(h) = ln γ(h)`), pruned by weighted difference
-`count(h,w)·(ln P(w|h) − ln(bow(h)·P(w|h′))) < θₙ` with prefix closure and exact backoff
-re-normalisation, and quantised with a 256-entry Lloyd-Max codebook per (model, order, field)
-(the bow codebook always contains exact 0).
+학습(`kn.py`): 보간한 **modified Kneser-Ney**를 써요. Chen & Goodman 방식으로, order마다 할인값 세 개를
+조정된 횟수의 count-of-counts에서 구해요. KenLM 관례를 따라요. `<s>`는 하나만 두고, `<s>`로 시작하는
+n-gram과 최고 order n-gram은 원래 횟수를 쓰고, 나머지는 연속 횟수(continuation count)를 써요. unigram은
+균등 분포 1/V와 보간해요. 단어 종류는 단어 빈도로 가중해요. 그다음 백오프(backoff) 형태로 바꿔요
+(`lp(h,w) = ln P_interp(w|h)`, `bow(h) = ln γ(h)`). 가중 차이
+`count(h,w)·(ln P(w|h) − ln(bow(h)·P(w|h′))) < θₙ`로 가지치기(pruning)하고, 접두 닫힘(prefix closure)과
+정확한 백오프 재정규화를 지켜요. 마지막으로 (모델, order, 필드)마다 256개 항목의 Lloyd-Max 코드북으로
+양자화해요(bow 코드북에는 항상 정확한 0이 들어 있어요).
 
-Runtime conditional log-probability — **this is the only LM operation**:
+런타임 조건부 로그 확률 — **LM 연산은 이것 하나뿐이에요**.
 
 ```
 cond(hist, w):                       // hist = [<s>, s1, ..., sk]; w in 2...36
@@ -225,10 +225,10 @@ cond(hist, w):                       // hist = [<s>, s1, ..., sk]; w in 2...36
 score(keys, eos) = Σ cond(<s> s1..s(i-1), si)  [+ cond(<s> s1..sn, </s>) if eos]
 ```
 
-`find` = binary search in the sorted key array of that order. The unigram table also contains key
-`1` (`<s>`) whose only purpose is to carry `bow(<s>)`.
+`find` = 해당 order의 정렬된 키 배열에서 하는 이진 탐색이에요. unigram 표에는 키
+`1`(`<s>`)도 들어 있어요. 이 키는 `bow(<s>)`를 담는 데만 써요.
 
-### 5.3 Per-token features
+### 5.3 단어별 특징(feature)
 
 ```
 kno = koreanNormalize(raw); low = raw.lowercased()
@@ -247,12 +247,12 @@ lexKO[kno], lexEN[low] : optional Int (ln P(word|lang), quantised), FNV-1a-64 ha
 numUnitsEn             : 56 lowercase tokens that follow digits (th st nd rd km kg mm cm gb mb ms fps px x k …)
 ```
 
-### 5.4 Hypothesis scores
+### 5.4 가설 점수
 
-`word(lm, lex, ng, lx) = lex == nil ? lm + ng : max(lm + ng, lex + lx)` (max = Viterbi
-approximation of the mixture "in-lexicon word or novel word", keeps integer arithmetic).
+`word(lm, lex, ng, lx) = lex == nil ? lm + ng : max(lm + ng, lex + lx)`(max는 "어휘 사전에 있는 단어
+또는 새 단어" 혼합의 Viterbi 근사예요. 정수 계산을 그대로 유지해요).
 
-**Final mode**
+**최종 모드**
 
 ```
 S_K = word(scoreKO(kno, eos) + ORPHAN·orph, lexKO[kno], NG_KO, LEX_KO)
@@ -275,30 +275,30 @@ for b in 1 ..< len(raw), only if raw contains no apostrophe:
              + PRIOR[ctx].EN
 ```
 
-**Prefix mode** (display): identical except
+**접두 모드**(표시): 다음만 빼고 같아요.
 `S_K = scoreKO(kno, no eos) + ORPHAN·(orph − (lone ? 1 : 0)) + ROLLOVER·nr + STRAY·ns + PRIOR[ctx].KO`
-(no lexicon, no NG/LEX offsets), `S_E = scoreEN(low, no eos) + CASE[…] + PRIOR[ctx].EN`
-(+ `NUM_UNIT_EN` as in final mode; no lexicon/offsets/terminator), and for `M(b)` the table is `suffixPrefix` (ln of the summed probability
-of all suffixes starting with `ks`) and `gen` uses `scoreKO(ks, no eos)` with the trailing lone
-consonant not counted as an orphan. The Latin part of `M(b)` is always scored complete (with `</s>`).
+(어휘 사전 없음, NG/LEX 오프셋 없음), `S_E = scoreEN(low, no eos) + CASE[…] + PRIOR[ctx].EN`
+(`NUM_UNIT_EN`은 최종 모드처럼 더함. 어휘 사전/오프셋/종결 키는 없음). `M(b)`에서는 표가 `suffixPrefix`예요
+(`ks`로 시작하는 모든 접미사의 확률을 더한 값의 ln). 그리고 `gen`은 `scoreKO(ks, no eos)`를 쓰고,
+끝에 홀로 남은 자음은 외톨이로 세지 않아요. `M(b)`의 라틴 부분은 항상 완성된 단어로 점수를 매겨요(`</s>` 포함).
 
-**Decision**: candidates are enumerated in the order `K, E, M(1), M(2), …`; the winner is the first
-candidate with the strictly greatest score (ties → earlier).
+**판정**: 후보를 `K, E, M(1), M(2), …` 순서로 늘어놓아요. 점수가 엄격하게 가장 큰 첫 번째
+후보가 이겨요(동점이면 → 앞선 후보).
 
-### 5.5 User adaptation (per-user, on-device)
+### 5.5 사용자 적응 (사용자별, 기기 안에서)
 
-Store `userCounts[raw] = {K: n, E: n, M<b>: n}` (key = exact raw keystroke string, case-sensitive).
-On commit, increment the committed hypothesis by 1; on a **manual flip** (user presses the flip key on
-a committed or composing word) increment the chosen hypothesis by 3 (and do not decrement others).
-In final mode add `userBonus(n) = (USER_UNIT · USER_LOG2[min(n, 15)]) / 1000` (integer division,
+`userCounts[raw] = {K: n, E: n, M<b>: n}`을 저장해요(키 = 정확한 raw 키 입력 문자열, 대소문자 구분).
+확정하면 확정된 가설을 1 올려요. **수동 바꾸기**(사용자가 확정했거나 조합 중인 단어에서 바꾸기 키를
+누름)를 하면 고른 가설을 3 올려요(다른 가설은 내리지 않아요). 최종 모드에서는 각 가설의 점수에
+`userBonus(n) = (USER_UNIT · USER_LOG2[min(n, 15)]) / 1000`을 더해요(정수 나눗셈,
 `USER_LOG2[n] = round(1000·log2(1+n))` = 0, 1000, 1585, 2000, 2322, 2585, 2807, 3000, 3170, 3322,
-3459, 3585, 3700, 3807, 3907, 4000) to each hypothesis' score. With `USER_UNIT = 2500` one flip
-(n = 3) is worth +5.0 nats, enough to override the typical margin of an ambiguous short word
-(`go`/해 ≈ 2–4 nats). Cap the store (e.g. LRU 20 000 entries) and expose "Reset learned words".
-Duo evicts down to 95 % of the cap (19 000) when it is exceeded, caps each count at 1000 votes and each
-raw at 64 UTF-8 bytes, and drops non-finite or non-positive counts read from disk.
+3459, 3585, 3700, 3807, 3907, 4000). `USER_UNIT = 2500`이면 바꾸기 한 번(n = 3)은 +5.0 nats만큼의 값이에요.
+이 정도면 애매한 짧은 단어의 보통 차이(`go`/해 ≈ 2–4 nats)를 뒤집기에 충분해요. 기록 크기에 상한을
+두고(예: LRU 20 000 항목) "학습한 단어 초기화"를 제공하세요.
+Duo는 상한을 넘으면 상한의 95 %(19 000)까지 줄여요. 횟수는 각각 1000표로, raw는 각각 64 UTF-8 바이트로
+제한해요. 디스크에서 읽은 횟수가 유한하지 않거나 양수가 아니면 버려요.
 
-### 5.6 Incremental display with hysteresis
+### 5.6 히스테리시스를 둔 점진 표시
 
 ```
 shown = (ctx == EN) ? E : K          // "context init": before the first key the display is in the
@@ -314,94 +314,94 @@ render(raw, K) = automaton(raw).text ; render(raw, E) = raw ;
 render(raw, M(b)) = raw[0..<b] + automaton(raw[b...]).text
 ```
 
-`shown` is re-initialised when the token is reset (commit, cancel, cursor move). Why prefix mode and
-not "show what a commit would produce now": with final-mode display Korean words flip 1.18× per word
-(every incomplete syllable looks like an English fragment), prefix mode gives 0.00 flips (section 9.3). If the user presses the flip
-key while composing, `shown` cycles K → E → best M → K and the token is locked to that choice
-(the commit then uses it, and counts as a flip for adaptation).
+`shown`은 단어를 초기화할 때(확정, 취소, 커서 이동) 다시 정해요. 왜 "지금 확정하면 나올 것을
+보여 주기" 대신 접두 모드를 쓸까요? 최종 모드로 표시하면 한국어 단어가 단어당 1.18번 바뀌어요
+(완성되지 않은 음절이 모두 영어 조각처럼 보이기 때문이에요). 접두 모드는 0.00번이에요(9.3절). 조합 중에
+사용자가 바꾸기 키를 누르면 `shown`이 K → E → 가장 좋은 M → K 순서로 돌아요. 그리고 단어는 그 선택으로
+고정돼요(확정할 때 그 선택을 쓰고, 적응에서는 바꾸기로 쳐요).
 
-Complexity per keystroke with full recomputation: O(n) LM calls for K and E, O(n) for the Latin
-prefixes of M (one pass with `</s>` at each position), O(n²) for the generic M tails. For n ≤ 20 this
-is < 1 000 `cond` calls ≈ 4 000 binary searches in ≤ 1 M-entry arrays — tens of microseconds in Swift.
+키 입력마다 전체를 다시 계산할 때의 복잡도는 이래요. K와 E에 O(n)번의 LM 호출, M의 라틴
+접두에 O(n)(각 위치에서 `</s>`를 붙여 한 번 훑음), 일반 M 꼬리에 O(n²)이에요. n ≤ 20이면
+`cond` 호출이 1 000번 미만이에요. 이는 항목 ≤ 1 M개인 배열에서 이진 탐색 ≈ 4 000번이에요. Swift에서는 수십 마이크로초예요.
 
 ---
 
-## 6. Parameters (tuned; source of truth = `meta.params` in the model file)
+## 6. 매개변수 (튜닝함; 기준 = 모델 파일의 `meta.params`)
 
-Tuned by parallel coordinate descent (`evaluate.py run --tune`, 2 rounds) on dev data only:
-held-out **dev** types (type-level, weight ¼), 6 000 kowiki-dev + 6 000 ko-news-dev + 5 000
-en-news-dev sentences (greedy, predicted context). `ROLLOVER`/`STRAY`/`HYST`/`USER_UNIT` were set by
-analysis (no training signal for them in the corpora; see 9.4). Values in millinats.
+dev 데이터만으로 병렬 좌표 하강법(`evaluate.py run --tune`, 2라운드)을 써서 튜닝했어요. 쓴 데이터는
+제외한 **dev** 종류(종류 단위, 가중치 ¼), 그리고 kowiki-dev 6 000 + ko-news-dev 6 000 +
+en-news-dev 5 000 문장이에요(greedy, 예측한 문맥). `ROLLOVER`/`STRAY`/`HYST`/`USER_UNIT`은 분석으로
+정했어요(말뭉치에 이것들을 위한 학습 신호가 없어요. 9.4 참고). 값의 단위는 millinats예요.
 
-| param | value | meaning |
+| 매개변수 | 값 | 뜻 |
 |---|---|---|
-| `NG_KO` / `NG_EN` | −3000 / 0 | offset of the n-gram ("novel word") path |
-| `LEX_KO` / `LEX_EN` | −300 / −600 | offset of the lexicon path |
-| `ORPHAN` | −6000 | per orphan jamo (KO n-gram path) |
-| `ROLLOVER` / `STRAY` | −1500 / −7000 | Shift on a non-QWERTOP key next to a shifted QWERTOP key / elsewhere (KO) |
-| `CASE_LOWER` / `INITCAP` / `ALLCAPS` / `MIXED` / `EXACT` | 0 / −800 / −1500 / −8000 / −300 | EN case pattern |
-| `MIX` / `MIX_GENERIC` | −7000 / −12000 | Latin + suffix from the table / + any Korean continuation |
-| `MIX_MIN_LATIN` | 2 (letters) | shorter Latin parts only if uppercase, or after a digit |
-| `TERM_DIGIT_EN` / `TERM_HYPHEN_EN` | +2000 / +5000 | token ended by a digit / hyphen |
-| `NUM_UNIT_EN` | +5000 | ctx NUM and token in `numUnitsEn` |
+| `NG_KO` / `NG_EN` | −3000 / 0 | n-gram("새 단어") 경로의 오프셋 |
+| `LEX_KO` / `LEX_EN` | −300 / −600 | 어휘 사전 경로의 오프셋 |
+| `ORPHAN` | −6000 | 외톨이 자모 하나당(KO n-gram 경로) |
+| `ROLLOVER` / `STRAY` | −1500 / −7000 | QWERTOP가 아닌 키에 Shift가 걸림: Shift한 QWERTOP 키 옆 / 그 밖의 위치(KO) |
+| `CASE_LOWER` / `INITCAP` / `ALLCAPS` / `MIXED` / `EXACT` | 0 / −800 / −1500 / −8000 / −300 | EN 대소문자 패턴 |
+| `MIX` / `MIX_GENERIC` | −7000 / −12000 | 라틴 + 표에 있는 접미사 / + 아무 한국어 이어짐 |
+| `MIX_MIN_LATIN` | 2 (글자) | 이보다 짧은 라틴 부분은 대문자이거나 숫자 뒤일 때만 허용 |
+| `TERM_DIGIT_EN` / `TERM_HYPHEN_EN` | +2000 / +5000 | 숫자 / 하이픈으로 끝난 단어 |
+| `NUM_UNIT_EN` | +5000 | ctx가 NUM이고 단어가 `numUnitsEn`에 있음 |
 | `PRIOR_START_{KO,EN}` | −200 / −1000 | |
-| `PRIOR_KO_{KO,EN}` | −200 / −5000 | after a Korean (or M) word |
-| `PRIOR_EN_{KO,EN}` | −1300 / −200 | after an English word |
-| `PRIOR_NUM_{KO,EN}` | −100 / −3500 | right after a digit |
-| `HYST` | 1500 | display hysteresis |
-| `USER_UNIT` | 2500 | user bonus scale |
+| `PRIOR_KO_{KO,EN}` | −200 / −5000 | 한국어(또는 M) 단어 뒤 |
+| `PRIOR_EN_{KO,EN}` | −1300 / −200 | 영어 단어 뒤 |
+| `PRIOR_NUM_{KO,EN}` | −100 / −3500 | 숫자 바로 뒤 |
+| `HYST` | 1500 | 표시 히스테리시스 |
+| `USER_UNIT` | 2500 | 사용자 보너스 크기 |
 
-Several values sit at the edge of the search grid (`PRIOR_KO_EN`, `MIX`, `NG_KO`, `CASE_MIXED`,
-`TERM_HYPHEN_EN`); widening the grid would fit the news register even harder, so they were left there
-deliberately. `PRIOR_KO_EN = −5` nats reflects news text, where 98.6 % of tokens after a Korean word are
-Korean. It mostly affects short words that are valid in both readings (`go`/해, `so`/내, `to`/새);
-unambiguous English (meeting, deploy, Slack) wins regardless (section 9.2). On the mixed dev-chat set,
-moving it anywhere in −5000…−2300 changes nothing (99.86 % at every value).
+여러 값이 탐색 격자의 끝에 있어요(`PRIOR_KO_EN`, `MIX`, `NG_KO`, `CASE_MIXED`,
+`TERM_HYPHEN_EN`). 격자를 넓히면 뉴스 문체에 더 심하게 맞춰질 거예요. 그래서 일부러 그대로 뒀어요.
+`PRIOR_KO_EN = −5` nats는 뉴스 글을 반영해요. 뉴스에서는 한국어 단어 뒤에 오는 단어의 98.6 %가
+한국어예요. 이 값은 주로 두 읽기 모두 말이 되는 짧은 단어에 영향을 줘요(`go`/해, `so`/내, `to`/새).
+애매하지 않은 영어(meeting, deploy, Slack)는 이 값과 상관없이 이겨요(9.2절). 혼합 개발자 채팅 세트에서는
+이 값을 −5000…−2300 안에서 어디로 옮겨도 달라지는 게 없어요(모든 값에서 99.86 %).
 
 ---
 
-## 7. Runtime model file — `duo-model.bin` (DUOM v1)
+## 7. 런타임 모델 파일 — `duo-model.bin` (DUOM v1)
 
-One little-endian file, every section 8-byte aligned, designed to be `mmap`ped read-only and used
-in place (no parsing except one small JSON section). Built by `Tools/ModelBuilder/build_model.py`
-into `Tools/ModelBuilder/out/`; copy `duo-model.bin` into the app bundle (`Resources/`).
+리틀 엔디언 파일 하나이고, 모든 섹션은 8바이트 정렬이에요. 읽기 전용으로 `mmap`해서 그 자리에서
+쓰도록 설계했어요(작은 JSON 섹션 하나 말고는 파싱이 없어요). `Tools/ModelBuilder/build_model.py`가
+`Tools/ModelBuilder/out/`에 만들어요. `duo-model.bin`을 앱 번들(`Resources/`)에 복사하세요.
 
-### 7.1 Header (32 bytes) and directory
+### 7.1 헤더(32바이트)와 디렉터리
 
-| offset | type | value |
+| 오프셋 | 타입 | 값 |
 |---|---|---|
 | 0 | `[4]u8` | `"DUOM"` |
-| 4 | `u16` | major = 1 (reject other majors) |
+| 4 | `u16` | major = 1(다른 major는 거부함) |
 | 6 | `u16` | minor = 0 |
-| 8 | `u32` | section count `S` |
-| 12 | `u32` | directory offset (= 32) |
-| 16 | `u64` | content hash = FNV-1a-64 over all bytes from the first section's offset to EOF |
-| 24 | `u64` | reserved (0) |
+| 8 | `u32` | 섹션 수 `S` |
+| 12 | `u32` | 디렉터리 오프셋(= 32) |
+| 16 | `u64` | 내용 해시 = 첫 섹션의 오프셋부터 EOF까지 모든 바이트의 FNV-1a-64 |
+| 24 | `u64` | 예약(0) |
 
-Directory: `S` entries of 48 bytes: `name [24]u8` (ASCII, NUL-padded), `offset u64`, `length u64`
-(bytes), `elemSize u32`, `count u32`.
+디렉터리: 48바이트 항목 `S`개예요. 각 항목은 `name [24]u8`(ASCII, NUL로 채움), `offset u64`, `length u64`
+(바이트), `elemSize u32`, `count u32`예요.
 
-### 7.2 Sections
+### 7.2 섹션
 
-| name | element | content |
+| 이름 | 원소 | 내용 |
 |---|---|---|
-| `meta` | UTF-8 JSON | params, codebooks, suffix tables, case lexicon, symbol table, provenance (≈ 100 KB) |
-| `ko.{n}.key`, `en.{n}.key` | `u32` (n ≤ 5) / `u64` (n = 6) | sorted ascending packed n-grams of order n (5.1) |
-| `ko.{n}.lp`, `en.{n}.lp` | `u8` | index into `meta.lm.<lang>.lpCodebook["n"]` (Int, millinats) — parallel to `key` |
-| `ko.{n}.bow`, `en.{n}.bow` | `u8` | index into `meta.lm.<lang>.bowCodebook["n"]`; present for n < order; entries that are not contexts point at the exact-0 codeword |
-| `lexko.key`, `lexen.key` | `u64` | sorted FNV-1a-64 of the normalised key string (`kno` for KO, `low` for EN) |
-| `lexko.val`, `lexen.val` | `u8` | index into `meta.lexicon.<lang>.codebook` (ln P(word|lang), millinats) |
+| `meta` | UTF-8 JSON | 매개변수, 코드북, 접미사 표, 대소문자 어휘 사전, 기호 표, 출처 정보(≈ 100 KB) |
+| `ko.{n}.key`, `en.{n}.key` | `u32` (n ≤ 5) / `u64` (n = 6) | order n의 묶은 n-gram, 오름차순 정렬(5.1) |
+| `ko.{n}.lp`, `en.{n}.lp` | `u8` | `meta.lm.<lang>.lpCodebook["n"]`(Int, millinats)의 인덱스 — `key`와 나란히 놓임 |
+| `ko.{n}.bow`, `en.{n}.bow` | `u8` | `meta.lm.<lang>.bowCodebook["n"]`의 인덱스. n < order일 때 있음. 문맥이 아닌 항목은 정확한 0 코드워드를 가리킴 |
+| `lexko.key`, `lexen.key` | `u64` | 정규화한 키 문자열(KO는 `kno`, EN은 `low`)의 FNV-1a-64, 정렬함 |
+| `lexko.val`, `lexen.val` | `u8` | `meta.lexicon.<lang>.codebook`(ln P(word|lang), millinats)의 인덱스 |
 
-`meta` keys used at runtime: `symbols`, `lm.{ko,en}.{order,lpCodebook,bowCodebook,count,keyType}`,
-`lexicon.{ko,en}.codebook`, `suffix.full` / `suffix.prefix` (`[String: Int]`, keys are `kno`
-strings, e.g. `"dmf"` = 을, `"goTdjdy"` = 했어요), `caseLexicon` (`[String]`, exact case),
-`params` (`[String: Int]`, section 6), `userLog2Millibits`.
+런타임에 쓰는 `meta` 키: `symbols`, `lm.{ko,en}.{order,lpCodebook,bowCodebook,count,keyType}`,
+`lexicon.{ko,en}.codebook`, `suffix.full` / `suffix.prefix`(`[String: Int]`, 키는 `kno`
+문자열, 예: `"dmf"` = 을, `"goTdjdy"` = 했어요), `caseLexicon`(`[String]`, 정확한 대소문자),
+`params`(`[String: Int]`, 6절), `userLog2Millibits`.
 
 FNV-1a-64: `h = 0xcbf29ce484222325; for byte in ascii(s) { h ^= byte; h = h &* 0x100000001b3 }`.
-The builder asserts there are no collisions inside each lexicon. A false positive for an OOV word
-has probability ≈ count / 2⁶⁴ (negligible).
+빌더는 각 어휘 사전 안에 충돌이 없는지 확인해요(assert). OOV 단어가 잘못 걸릴(false positive)
+확률은 ≈ count / 2⁶⁴예요(무시해도 돼요).
 
-### 7.3 Swift loading sketch
+### 7.3 Swift 로딩 스케치
 
 ```swift
 final class DuoModel: @unchecked Sendable {          // immutable after init -> safe to share
@@ -425,46 +425,46 @@ final class DuoModel: @unchecked Sendable {          // immutable after init -> 
 }
 ```
 
-`Data(contentsOf:options: .alwaysMapped)` also works but keep the `Data` alive for the model's
-lifetime. Load cost is one `mmap` + one ≈ 100 KB JSON decode (< 5 ms); pages fault in lazily
-(the first word touches ~100 pages).
+`Data(contentsOf:options: .alwaysMapped)`도 돼요. 다만 모델이 살아 있는 동안 `Data`를 계속 붙잡아
+두세요. 로딩 비용은 `mmap` 한 번 + ≈ 100 KB JSON 디코딩 한 번이에요(< 5 ms). 페이지는 필요할 때
+늦게 읽혀요(첫 단어가 ~100 페이지를 건드려요).
 
-### 7.4 Shipped model (`build_model.py`, config `ship`)
+### 7.4 배포 모델 (`build_model.py`, 설정 `ship`)
 
-| part | entries | bytes |
+| 부분 | 항목 수 | 바이트 |
 |---|---|---|
 | KO LM, order 5, θ₄ = 15, θ₅ = 30 | 36 / 858 / 11 418 / 62 520 / 197 597 | 1.44 MB |
-| EN LM, order 5, same pruning | 36 / 779 / 16 914 / 118 271 / 357 718 | 2.60 MB |
-| KO lexicon (top 100 000 eojeols as `kno`) | 100 000 × (8 + 1) | 0.90 MB |
-| EN lexicon (top 60 000 words) | 60 000 × (8 + 1) | 0.54 MB |
-| meta JSON (params, 9 codebooks per LM, 1 684 suffixes + prefix table, 250-entry case lexicon, 56 units) | — | 0.15 MB |
-| **total `duo-model.bin`** | | **5.63 MB** (content hash `aa722069c1e3076e`; the build is deterministic — two builds are byte-identical) |
+| EN LM, order 5, 같은 가지치기 | 36 / 779 / 16 914 / 118 271 / 357 718 | 2.60 MB |
+| KO 어휘 사전(상위 100 000 어절을 `kno`로) | 100 000 × (8 + 1) | 0.90 MB |
+| EN 어휘 사전(상위 60 000 단어) | 60 000 × (8 + 1) | 0.54 MB |
+| meta JSON(매개변수, LM마다 코드북 9개, 접미사 1 684개 + 접두 표, 250개 항목 대소문자 어휘 사전, 단위 56개) | — | 0.15 MB |
+| **전체 `duo-model.bin`** | | **5.63 MB**(내용 해시 `aa722069c1e3076e`. 빌드는 결정적임 — 두 번 빌드하면 바이트까지 똑같음) |
 
-Operation count per keystroke (`bench.py`, full recomputation of all hypotheses in prefix mode):
-6 (2-key word) … 106 (16-key word) binary searches; final mode 13 … 236. The Python reference
-needs 0.04–0.13 ms per keystroke; Swift should be well under 10 µs, two orders of magnitude inside the
-1 ms budget, so no incremental caching is needed (it is allowed, because `cond` depends only on
-`(hist, w)`, so caching yields identical integers).
+키 입력당 연산 수(`bench.py`, 접두 모드에서 모든 가설을 전부 다시 계산함): 이진 탐색이
+6(2키 단어) … 106(16키 단어)번이에요. 최종 모드는 13 … 236번이에요. Python 참조 구현은 키 입력당
+0.04–0.13 ms가 들어요. Swift는 10 µs보다 훨씬 짧을 거예요. 1 ms 예산 안에서 두 자릿수(order of
+magnitude)만큼 여유가 있어서 점진 캐싱은 필요 없어요. 캐싱해도 괜찮아요. `cond`는 `(hist, w)`에만
+의존해서, 캐싱해도 같은 정수가 나와요.
 
 ---
 
-## 8. Golden test vectors — `out/test_vectors.json`
+## 8. 골든 테스트 벡터 — `out/test_vectors.json`
 
-Derived by `build_model.py` from the **re-opened binary** (independent reader), so passing them
-proves both the algorithm and the file reader. All numbers are Int millinats.
+`build_model.py`가 **다시 연 바이너리**(독립된 리더)에서 만들어요. 그래서 이 벡터를 통과하면
+알고리즘과 파일 리더가 둘 다 맞다는 게 증명돼요. 모든 숫자는 Int millinats예요.
 
-| key | content | Swift test |
+| 키 | 내용 | Swift 테스트 |
 |---|---|---|
-| `automaton[]` | `{keys, normalized, text, orphans, trailingLoneConsonant}` — 100 hand-picked edge cases, 300 frequent eojeols, 300 random key strings (incl. shifted letters, `'`) | automaton only |
-| `fnv1a64[]` | `{s, hash}` (hex) | hash function |
-| `lexicon[]` | `{lang, key, value|null}` | lexicon lookup + codebook |
-| `lm[]` | `{model, keys, prefix[i], withEos[i]}` — cumulative score of `keys[0..<i]` without / with `</s>` | `cond` / backoff / codebooks |
-| `final[]` | `{raw, features{…}, cases[{ctx, term, scores{K,E,M<b>}, best, output}]}` — every token of the mixed set + confusables, for ctx ∈ START (term S/D/H), KO, EN, NUM | full final-mode scorer |
-| `incremental[]` | `{raw, ctx, steps[{scores, shown, text}]}` — per keystroke prefix scores and the hysteresis display | prefix scorer + display state machine |
-| `apostrophe[]` | `{raw, ctx, scores, internal}` — prefix scores of `raw + "'"` | apostrophe rule (section 4) |
-| `user[]`, `userBonus` | scores with user counts | adaptation |
+| `automaton[]` | `{keys, normalized, text, orphans, trailingLoneConsonant}` — 직접 고른 경계 사례 100개, 자주 쓰는 어절 300개, 무작위 키 문자열 300개(Shift 글자, `'` 포함) | 오토마톤만 |
+| `fnv1a64[]` | `{s, hash}`(16진수) | 해시 함수 |
+| `lexicon[]` | `{lang, key, value|null}` | 어휘 사전 조회 + 코드북 |
+| `lm[]` | `{model, keys, prefix[i], withEos[i]}` — `keys[0..<i]`의 누적 점수, `</s>` 없이 / 넣고 | `cond` / 백오프 / 코드북 |
+| `final[]` | `{raw, features{…}, cases[{ctx, term, scores{K,E,M<b>}, best, output}]}` — 혼합 세트의 모든 단어 + 헷갈리는 단어, ctx ∈ START (term S/D/H), KO, EN, NUM | 최종 모드 점수 계산 전체 |
+| `incremental[]` | `{raw, ctx, steps[{scores, shown, text}]}` — 키 입력마다의 접두 점수와 히스테리시스 표시 | 접두 점수 계산 + 표시 상태 기계 |
+| `apostrophe[]` | `{raw, ctx, scores, internal}` — `raw + "'"`의 접두 점수 | 아포스트로피 규칙(4절) |
+| `user[]`, `userBonus` | 사용자 횟수를 넣은 점수 | 적응 |
 
-Recommended Swift Testing layout: one `@Test(arguments:)` per key, e.g.
+권장하는 Swift Testing 구성은 키마다 `@Test(arguments:)` 하나예요. 예를 들면 이래요.
 
 ```swift
 @Test(arguments: Vectors.shared.final)
@@ -479,56 +479,56 @@ func finalDecision(_ v: FinalVector) throws {
 
 ---
 
-## 9. Evaluation (all numbers measured on the shipped `duo-model.bin` unless noted)
+## 9. 평가 (따로 적지 않으면 모든 숫자는 배포하는 `duo-model.bin`으로 잼)
 
-Accuracy = the committed text equals the intended text (so `M(b)` with the wrong `b` is an error).
-Raw results: `Tools/ModelBuilder/out/eval/ship_bin.json` (plus `o6_final.json`, `o5p40.json`,
+정확도는 확정한 글자가 의도한 글자와 같은지로 따져요(그래서 `b`가 틀린 `M(b)`는 오류예요).
+원본 결과: `Tools/ModelBuilder/out/eval/ship_bin.json`(그리고 `o6_final.json`, `o5p40.json`,
 `o4.json`, `ship_tune.json`).
 
-### 9.1 Single words without context (ctx = START, term = space, final mode)
+### 9.1 문맥 없는 낱단어 (ctx = START, term = 스페이스, 최종 모드)
 
-| set | Korean (K) | English (E) | Latin+suffix (M) | all, token-weighted |
+| 세트 | 한국어 (K) | 영어 (E) | 라틴+접미사 (M) | 전체, 단어 빈도 가중 |
 |---|---|---|---|---|
-| Korean news, test half (812 688 tokens) | **99.48 %** (800 994) | **99.44 %** (7 732) | 88.79 % (3 962) | 99.43 % |
-| Korean Wikipedia 2021, test half (701 072) | 99.85 % | 98.83 % | 84.53 % | 99.75 % |
-| English news, test half (981 488) | — | **99.89 %** | — | 99.89 % |
-| Mixed dev-chat set (1 385) | 100 % | 100 % | 100 % | 100 % |
-| Held-out **types** (OOV for LM and lexicon), type-level | 99.82 % (110 536 types) | 98.97 % (51 237 types) | — | — |
-| Held-out types, token-weighted | 94.21 % | 99.79 % | — | — |
+| 한국어 뉴스, test 절반(812 688 단어) | **99.48 %** (800 994) | **99.44 %** (7 732) | 88.79 % (3 962) | 99.43 % |
+| 한국어 위키백과 2021, test 절반(701 072) | 99.85 % | 98.83 % | 84.53 % | 99.75 % |
+| 영어 뉴스, test 절반(981 488) | — | **99.89 %** | — | 99.89 % |
+| 혼합 개발자 채팅 세트(1 385) | 100 % | 100 % | 100 % | 100 % |
+| 제외한 **종류**(LM과 어휘 사전에 없음), 종류 단위 | 99.82 % (110 536 종류) | 98.97 % (51 237 종류) | — | — |
+| 제외한 종류, 단어 빈도 가중 | 94.21 % | 99.79 % | — | — |
 
-The token-weighted held-out K number is dominated by a few very frequent Korean words that happen to be
-held out and that look like English when only n-grams are available (`ej` 더, `dhs` 온, `rhe` 곧,
-`Ehsms` 또는). In production those words are in the lexicon; the type-level number is the meaningful
-measure of OOV generalisation. Target "≥ 99 % token-weighted, single words, no context" is met for both
-languages on real text from a register never used in training (news).
+단어 빈도로 가중한 제외 종류의 K 수치는 아주 자주 쓰는 몇몇 한국어 단어가 좌우해요. 이 단어들은
+마침 제외 세트에 들어갔고, n-gram만 있으면 영어처럼 보여요(`ej` 더, `dhs` 온, `rhe` 곧,
+`Ehsms` 또는). 실제 제품에서는 이 단어들이 어휘 사전에 있어요. OOV 일반화를 제대로 보여 주는 값은
+종류 단위 수치예요. "단어 빈도 가중 ≥ 99 %, 낱단어, 문맥 없음" 목표는 두 언어 모두 달성했어요.
+학습에 한 번도 쓰지 않은 문체(뉴스)의 실제 글에서 잰 결과예요.
 
-### 9.2 Running text with context (greedy, context = what the engine itself committed)
+### 9.2 문맥 있는 이어진 글 (greedy, 문맥 = 엔진이 직접 확정한 것)
 
-| set | token acc. | K | E | M | sentence acc. | 1-word lookback | Viterbi (bound) |
+| 세트 | 단어 정확도 | K | E | M | 문장 정확도 | 1단어 되돌아보기 | Viterbi(상한) |
 |---|---|---|---|---|---|---|---|
-| Korean news (50 000 sent.) | **99.90 %** | 99.95 % | 99.53 % | 89.27 % | 98.50 % | 99.90 % | 99.90 % |
-| Korean Wikipedia (50 000) | **99.89 %** | 99.97 % | 99.34 % | 87.57 % | 98.72 % | 99.89 % | 99.89 % |
-| English news (50 000) | **99.99 %** | — | 99.99 % | — | 99.72 % | 100.00 % | 100.00 % |
-| Mixed dev-chat (417) | **99.86 %** | 100 % | 99.48 % | 100 % | 99.52 % | 99.86 % | 99.86 % |
+| 한국어 뉴스(50 000 문장) | **99.90 %** | 99.95 % | 99.53 % | 89.27 % | 98.50 % | 99.90 % | 99.90 % |
+| 한국어 위키백과(50 000) | **99.89 %** | 99.97 % | 99.34 % | 87.57 % | 98.72 % | 99.89 % | 99.89 % |
+| 영어 뉴스(50 000) | **99.99 %** | — | 99.99 % | — | 99.72 % | 100.00 % | 100.00 % |
+| 혼합 개발자 채팅(417) | **99.86 %** | 100 % | 99.48 % | 100 % | 99.52 % | 99.86 % | 99.86 % |
 
-Context removes about 80 % of the Korean-news errors (99.43 % → 99.90 %) and 90 % of the English ones
-(99.89 % → 99.99 %). With "gold" context (the user fixes every error immediately) the numbers are
-identical to 4 decimals, so errors do not cascade. Re-deciding the previous word when the next one
-commits (lookback) or a whole-sentence Viterbi brings nothing measurable on Korean, so **v1 does not
-modify already committed text**.
+문맥은 한국어 뉴스 오류의 약 80 %(99.43 % → 99.90 %)와 영어 오류의 90 %(99.89 % → 99.99 %)를
+없애요. "정답" 문맥(사용자가 모든 오류를 바로 고침)을 써도 숫자가 소수점 4자리까지 같아요. 그래서
+오류가 연쇄되지 않아요. 다음 단어를 확정할 때 이전 단어를 다시 판정해도(되돌아보기, lookback), 문장 전체
+Viterbi를 써도 한국어에서는 측정할 만한 이득이 없어요. 그래서 **v1은 이미 확정한 글자를 고치지
+않아요**.
 
-Remaining error classes (Korean news, predicted context; count per 812 k tokens):
-* short Korean words that are frequent English words: `db`/유 41, `an`/무 34, `eh`/도 32, `to`/새 30,
-  `so`/내 28, `al`/미 20, `did`/양 19, `fj`/러 12 (all ≈ 0.004 %);
-* `M` with an unusual tail: `H조` / `A조` (`Hwh`) 18+5, `m로` (`mfh`, unit after a digit) 11,
-  `A군은` parsed as `Arns`+은 11, `SK하이닉스는` read as Korean 10.
+남은 오류 유형(한국어 뉴스, 예측한 문맥. 812 k 단어당 횟수):
+* 자주 쓰는 영어 단어이기도 한 짧은 한국어 단어: `db`/유 41, `an`/무 34, `eh`/도 32, `to`/새 30,
+  `so`/내 28, `al`/미 20, `did`/양 19, `fj`/러 12(모두 ≈ 0.004 %);
+* 꼬리가 흔하지 않은 `M`: `H조` / `A조` (`Hwh`) 18+5, `m로`(`mfh`, 숫자 뒤 단위) 11,
+  `A군은`을 `Arns`+은으로 나눔 11, `SK하이닉스는`을 한국어로 읽음 10.
 
-Mixed dev-chat errors: exactly two, `그거 so good` (so → 내) and `그럼 go 하시죠` (go → 해) — the
-inherent ambiguity this product has to live with; one flip fixes it for that user from then on (5.5).
+혼합 개발자 채팅 오류는 딱 두 개예요. `그거 so good`(so → 내)과 `그럼 go 하시죠`(go → 해)예요. 이건
+이 제품이 안고 가야 하는 본질적인 애매함이에요. 바꾸기 한 번이면 그 사용자에게는 그다음부터 계속 고쳐져요(5.5).
 
-Requested confusion pairs (margin `S_E − S_K` in nats, final mode; positive = English wins):
+요청받은 헷갈리는 쌍(차이 `S_E − S_K`, 단위 nats, 최종 모드. 양수 = 영어가 이김):
 
-| raw | Korean reading | START | after Korean | after English |
+| raw | 한국어 읽기 | START | 한국어 뒤 | 영어 뒤 |
 |---|---|---|---|---|
 | `go` | 해 | +0.47 → go | −3.53 → 해 | +2.37 → go |
 | `so` | 내 | +1.05 → so | −2.95 → 내 | +2.95 → so |
@@ -542,32 +542,32 @@ Requested confusion pairs (margin `S_E − S_K` in nats, final mode; positive = 
 | `dkssud` / `gksrmf` | 안녕 / 한글 | −28.4 / −26.8 | −32.4 / −30.8 | −26.5 / −24.9 |
 | `rk` / `dl` / `sk` | 가 / 이 / 나 | −7.7 / −6.5 / −4.9 | −11.7 / −10.5 / −8.9 | −5.8 / −4.6 / −3.0 |
 
-Only the two-letter function words are genuinely contested; everything with an orphan in its Korean
-reading (`ok`, `in`, `it`, `we`, `no`, `hi`, …) is decided by 28–46 nats.
+정말로 다투는 것은 두 글자 기능어뿐이에요. 한국어 읽기에 외톨이가 있는 단어(`ok`, `in`, `it`,
+`we`, `no`, `hi`, …)는 모두 28–46 nats 차이로 정해져요.
 
-### 9.3 Incremental display (prefix mode + hysteresis, `HYST` = 1.5 nats, context init)
+### 9.3 점진 표시 (접두 모드 + 히스테리시스, `HYST` = 1.5 nats, 문맥 초기화)
 
-Sampled token-weighted, 1 000–3 000 words per row. *flips* = display changes per word;
-*display acc.* = fraction of keystrokes whose display matches the eventual intended reading
-(for `M(b)`, showing E before the suffix starts counts as correct); *surprise* = the committed text
-differs from what was displayed just before the commit.
+단어 빈도로 가중해 표본을 뽑았고, 행마다 1 000–3 000 단어예요. *바뀜* = 단어당 표시가 바뀐 횟수예요.
+*표시 정확도* = 표시가 최종적으로 의도한 읽기와 맞는 키 입력의 비율이에요
+(`M(b)`는 접미사가 시작되기 전에 E를 보여 주면 맞은 것으로 쳐요). *놀람* = 확정한 글자가
+확정 바로 전에 보이던 것과 다른 경우예요.
 
-| words typed | context | flips / word | words with a flip | display acc. | commit surprise |
+| 친 단어 | 문맥 | 바뀜 / 단어 | 바뀜이 있는 단어 | 표시 정확도 | 확정 놀람 |
 |---|---|---|---|---|---|
-| Korean words in Korean news | KO | **0.000** | 0.0 % | 100.0 % | 0.0 % |
-| English words in English news | EN | **0.012** | 0.8 % | 99.7 % | 0.07 % |
-| first English word of a sentence | START | 0.46 | 45.8 % | 82.3 % | 7.6 % |
-| Latin tokens inside Korean news (acronyms, M) | KO | 0.54 | 45.5 % | 80.2 % | 5.7 % |
-| mixed dev-chat set | START→running | 0.20 | 16.9 % | 96.2 % | 2.0 % |
+| 한국어 뉴스 속 한국어 단어 | KO | **0.000** | 0.0 % | 100.0 % | 0.0 % |
+| 영어 뉴스 속 영어 단어 | EN | **0.012** | 0.8 % | 99.7 % | 0.07 % |
+| 문장의 첫 영어 단어 | START | 0.46 | 45.8 % | 82.3 % | 7.6 % |
+| 한국어 뉴스 속 라틴 단어(약어, M) | KO | 0.54 | 45.5 % | 80.2 % | 5.7 % |
+| 혼합 개발자 채팅 세트 | START→이어짐 | 0.20 | 16.9 % | 96.2 % | 2.0 % |
 
-Policy comparisons:
-* **Final-mode display** (show what a commit would produce now): Korean 1.18 flips/word, mixed 1.21 —
-  rejected.
-* **Argmax init** (first key shows the raw argmax instead of the context language): English-in-English
-  flips rise from 0.012 to 0.083 per word (the first consonant was shown as jamo) — rejected.
-* **Hysteresis sweep** (flips / commit surprise):
+정책 비교:
+* **최종 모드 표시**(지금 확정하면 나올 것을 보여 줌): 한국어 1.18 바뀜/단어, 혼합 1.21 —
+  채택하지 않음.
+* **argmax 초기화**(첫 키에서 문맥 언어 대신 raw argmax를 보여 줌): 영어 문맥 속 영어의
+  바뀜이 단어당 0.012에서 0.083으로 늘어남(첫 자음이 자모로 보였음) — 채택하지 않음.
+* **히스테리시스 훑어보기**(바뀜 / 확정 놀람):
 
-| HYST (nats) | Korean in KO | English in EN | Latin in KO | English at START | mixed |
+| HYST (nats) | KO 속 한국어 | EN 속 영어 | KO 속 라틴 | START의 영어 | 혼합 |
 |---|---|---|---|---|---|
 | 0 | 0.000 / 0 % | 0.087 / 0 % | 0.55 / 4.8 % | 0.48 / 3.4 % | 0.27 / 1.9 % |
 | 1.0 | 0.000 / 0 % | 0.020 / 0 % | 0.55 / 5.1 % | 0.47 / 7.8 % | 0.20 / 1.8 % |
@@ -575,69 +575,68 @@ Policy comparisons:
 | 2.5 | 0.000 / 0 % | 0.007 / 0 % | 0.73 / 12.9 % | 0.49 / 8.0 % | 0.19 / 1.8 % |
 | 4.0 | 0.000 / 0 % | 0.000 / 0 % | 0.74 / 14.6 % | 0.47 / 11.1 % | 0.18 / 2.2 % |
 
-Typical flips are one-way and early: `t → ㅅ, th → 소, the → the`; `p → p, pending → pendingㅇ →
-pending으 → pending을 → pending으로` (MIX grows naturally); `C → Ch → … → ChatGPT한테`.
-UX recommendation: render the marked text with the standard underline only, and animate a reading
-change with a short (≈ 120 ms) cross-fade so a flip reads as "the keyboard understood you" rather than
-as flicker.
+흔한 바뀜은 한 방향이고 일찍 일어나요. `t → ㅅ, th → 소, the → the`; `p → p, pending → pendingㅇ →
+pending으 → pending을 → pending으로`(MIX가 자연스럽게 자라요); `C → Ch → … → ChatGPT한테`.
+UX 권장 사항: 조합 문자열은 표준 밑줄로만 그리세요. 읽기가 바뀔 때는 짧은(≈ 120 ms) 크로스페이드를
+넣으세요. 그러면 바뀜이 깜빡임이 아니라 "키보드가 알아들었다"로 느껴져요.
 
-### 9.4 Robustness
+### 9.4 견고성
 
-* **Shift rollover**: 17 831 Korean-news tokens re-typed with Shift held over / pressed early
-  (e.g. `dLTek` 있다, `gkTDj` 핬어): **100 %** still committed as the intended Korean. Capitalised English
-  words after a Korean word (`Slack`, `GitHub`, `CCTV`): 99.88 %.
-* **Hangul + Latin in one token** (`카톡ID`): unsupported, 0.045 % of Korean-news tokens.
+* **Shift 롤오버**: 한국어 뉴스 단어 17 831개를 Shift를 오래 누르거나 일찍 눌러 다시 침
+  (예: `dLTek` 있다, `gkTDj` 핬어). **100 %** 여전히 의도한 한국어로 확정됨. 한국어 단어 뒤에 오는
+  대문자 영어 단어(`Slack`, `GitHub`, `CCTV`): 99.88 %.
+* **한 단어 안의 한글 + 라틴**(`카톡ID`): 지원 안 함. 한국어 뉴스 단어의 0.045 %.
 
-### 9.5 Ablations and model-size curve (token accuracy, running text, greedy)
+### 9.5 제거 실험과 모델 크기 곡선 (단어 정확도, 이어진 글, greedy)
 
-| variant | Korean news | English news | mixed |
+| 변형 | 한국어 뉴스 | 영어 뉴스 | 혼합 |
 |---|---|---|---|
-| **shipped** | **99.90 %** | **99.99 %** | **99.86 %** |
-| no lexicon (n-grams only) | 99.77 % | 99.99 % | 98.99 % |
-| no orphan penalty | 99.89 % | 99.98 % | 99.86 % |
-| no `M(b)` hypotheses | 99.79 % | 99.99 % | 98.70 % |
-| no case / shift model | 99.79 % | 99.96 % | 99.78 % |
-| no context prior | 99.44 % | 99.97 % | 100.0 % |
+| **배포판** | **99.90 %** | **99.99 %** | **99.86 %** |
+| 어휘 사전 없음(n-gram만) | 99.77 % | 99.99 % | 98.99 % |
+| 외톨이 벌점 없음 | 99.89 % | 99.98 % | 99.86 % |
+| `M(b)` 가설 없음 | 99.79 % | 99.99 % | 98.70 % |
+| 대소문자 / Shift 모델 없음 | 99.79 % | 99.96 % | 99.78 % |
+| 문맥 사전 확률 없음 | 99.44 % | 99.97 % | 100.0 % |
 
-| LM config (same params, lexicons 100 k / 60 k) | file size | Korean news | Korean wiki | English news | mixed | held-out types K / E |
+| LM 설정(같은 매개변수, 어휘 사전 100 k / 60 k) | 파일 크기 | 한국어 뉴스 | 한국어 위키 | 영어 뉴스 | 혼합 | 제외 종류 K / E |
 |---|---|---|---|---|---|---|
-| order 6, unpruned | ≈ 26 MB | 99.91 % | 99.90 % | 99.99 % | 99.78 % | 99.83 / 99.14 % |
-| **order 5, θ 15/30 (shipped)** | **5.63 MB** | 99.90 % | 99.89 % | 99.99 % | 99.86 % | 99.82 / 98.97 % |
+| order 6, 가지치기 없음 | ≈ 26 MB | 99.91 % | 99.90 % | 99.99 % | 99.78 % | 99.83 / 99.14 % |
+| **order 5, θ 15/30 (배포판)** | **5.63 MB** | 99.90 % | 99.89 % | 99.99 % | 99.86 % | 99.82 / 98.97 % |
 | order 5, θ 40/80 | ≈ 4.8 MB | 99.90 % | 99.90 % | 99.98 % | 99.78 % | 99.83 / 99.01 % |
-| order 4, unpruned | ≈ 2.9 MB | 99.90 % | 99.89 % | 99.98 % | 99.78 % | 99.83 / 99.15 % |
+| order 4, 가지치기 없음 | ≈ 2.9 MB | 99.90 % | 99.89 % | 99.98 % | 99.78 % | 99.83 / 99.15 % |
 
-The lexicon, `M(b)` and the context prior carry most of the accuracy; the n-gram order hardly matters
-beyond 4 (differences of 0.01 pt are 1–2 tokens on the mixed set). Order 5 is shipped for its slightly
-better prefix (display) estimates on long words. If bundle size ever matters, order 4 (≈ 2.9 MB) is a
-drop-in fallback: same format, rebuild with `order_ko=4, order_en=4`.
-
----
-
-## 10. Recommendations, limitations and next steps
-
-1. **Flip key + learning is part of the algorithm, not an extra.** The two dev-chat errors and most of
-   the news errors are two-letter words valid in both scripts. Make the flip key prominent (e.g.
-   Shift+Space or a dedicated key; design track decides) and record flips with weight 3 (5.5).
-2. **Adaptive context prior (v1.1)**: keep per-user counts of `(previous language → language)` over
-   the last ~5 000 commits and use
-   `PRIOR[c][L] = round(1000·ln((n[c→L] + 20·p₀[c][L]) / (n[c] + 20)))`, with `p₀ = exp(PRIOR/1000)`
-   from the shipped params (renormalised). Heavy code-switchers will then get `go`, `so` and `to` right.
-   Not in the test vectors; gate it behind a feature flag.
-3. **Do not rewrite committed text** (lookback gave +0.00 pt on Korean, +0.01 pt on English).
-4. **Caps Lock** = ABC pass-through; **Option-modified keys** and keys with ⌘/⌃ are not part of
-   tokens (commit first).
-5. Known weak spots: Latin acronym + rare Korean compound (`SK하이닉스는`, 89 % on `M` tokens overall),
-   foreign names typed in English that contain a plausible Korean tail (`Swiatek` → Swiat+다, 3 in 981 k),
-   single letters in Korean text (`Z`, `R&D`).
-6. Data refresh: the Korean side is 48 % subtitles / 52 % Wikipedia. A licensed chat/office-register
-   corpus would help most (Leipzig news was used only as a held-out test set because its license could not
-   be verified).
-7. Privacy: user counts stay on device (`~/Library/Application Support/Duo/`), never synced without an
-   explicit opt-in; store hashes of `raw` if logs must be exported for debugging.
+정확도의 대부분은 어휘 사전, `M(b)`, 문맥 사전 확률에서 나와요. n-gram order는 4를 넘으면 거의
+상관없어요(0.01 pt 차이는 혼합 세트에서 단어 1–2개예요). order 5를 배포하는 이유는 긴 단어에서 접두(표시)
+추정이 조금 더 좋기 때문이에요. 번들 크기가 문제가 되면 order 4(≈ 2.9 MB)로 그대로 바꿔 끼울 수 있어요.
+형식은 같고, `order_ko=4, order_en=4`로 다시 빌드하면 돼요.
 
 ---
 
-## 11. Reproduction
+## 10. 권장 사항, 한계, 다음 단계
+
+1. **바꾸기 키 + 학습은 덤이 아니라 알고리즘의 일부임.** 개발자 채팅 오류 두 개와 뉴스 오류
+   대부분은 두 글자 체계 모두에서 말이 되는 두 글자 단어임. 바꾸기 키를 눈에 띄게 만들고(예:
+   Shift+Space나 전용 키. 디자인 트랙이 정함) 바꾸기를 가중치 3으로 기록할 것(5.5).
+2. **적응형 문맥 사전 확률(v1.1)**: 최근 ~5 000번의 확정에서 사용자별 `(previous language → language)`(이전 언어 → 언어) 횟수를
+   기록하고
+   `PRIOR[c][L] = round(1000·ln((n[c→L] + 20·p₀[c][L]) / (n[c] + 20)))`를 씀. `p₀ = exp(PRIOR/1000)`은
+   배포 매개변수에서 가져옴(재정규화함). 그러면 언어를 자주 섞어 쓰는 사람도 `go`, `so`, `to`를 맞게 받음.
+   테스트 벡터에는 없음. 기능 플래그 뒤에 둘 것.
+3. **확정한 글자를 다시 쓰지 말 것**(되돌아보기는 한국어에서 +0.00 pt, 영어에서 +0.01 pt였음).
+4. **Caps Lock** = ABC 그대로 통과. **Option을 함께 누른 키**와 ⌘/⌃를 함께 누른 키는
+   단어에 들어가지 않음(먼저 확정함).
+5. 알려진 약점: 라틴 약어 + 드문 한국어 합성어(`SK하이닉스는`, `M` 단어 전체에서 89 %),
+   영어로 친 외국 이름 중 그럴듯한 한국어 꼬리가 있는 것(`Swiatek` → Swiat+다, 981 k 중 3개),
+   한국어 글 속 한 글자(`Z`, `R&D`).
+6. 데이터 갱신: 한국어 쪽은 자막 48 % / 위키백과 52 %임. 라이선스가 확실한 채팅/사무 문체
+   말뭉치가 가장 도움이 될 것임(Leipzig 뉴스는 라이선스를 확인할 수 없어서 제외한 테스트 세트로만
+   썼음).
+7. 개인 정보: 사용자 횟수는 기기 안(`~/Library/Application Support/Duo/`)에만 둠. 사용자가 명시적으로
+   동의하지 않으면 절대 동기화하지 않음. 디버깅을 위해 로그를 내보내야 하면 `raw`의 해시를 저장할 것.
+
+---
+
+## 11. 재현
 
 ```bash
 cd Tools/ModelBuilder
@@ -654,13 +653,13 @@ python3 -I bench.py out/duo-model.bin         # operation counts
 python3 -I hangul.py                          # automaton self-test
 ```
 
-Files: `hangul.py` (automaton), `kn.py` (modified Kneser-Ney, pruning), `detector.py` (runtime
-algorithm, integer reference), `model_data.py` (data assembly), `corpora.py` (loaders incl. a minimal
-msgpack reader), `evaluate.py`, `build_model.py`, `bench.py`, `params.json`, `data/*.txt` (curated lists
-+ mixed test set). Download URLs:
+파일: `hangul.py`(오토마톤), `kn.py`(modified Kneser-Ney, 가지치기), `detector.py`(런타임
+알고리즘, 정수 참조 구현), `model_data.py`(데이터 조립), `corpora.py`(로더. 최소한의
+msgpack 리더도 들어 있음), `evaluate.py`, `build_model.py`, `bench.py`, `params.json`, `data/*.txt`(직접 고른 목록
++ 혼합 테스트 세트). 내려받기 URL:
 `https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/{ko/ko_full,en/en_full}.txt`,
 `https://raw.githubusercontent.com/rspeer/wordfreq/master/wordfreq/data/large_en.msgpack.gz`,
 `https://dumps.wikimedia.org/kowiki/latest/kowiki-latest-pages-articles1.xml-p1p82407.bz2`,
 `https://downloads.wortschatz-leipzig.de/corpora/{kor_news_2022_100K,kor_wikipedia_2021_100K,eng_news_2023_100K}.tar.gz`.
-The kowiki chunk is processed by `corpora.kowiki_counts` into `Tools/data/raw/kowiki/kowiki_counts.tsv`
-and `kowiki_mix.tsv` (see the one-liner in the git history / section 2).
+kowiki 조각은 `corpora.kowiki_counts`가 처리해서 `Tools/data/raw/kowiki/kowiki_counts.tsv`와
+`kowiki_mix.tsv`로 만들어요(git 기록에 있는 한 줄 명령 / 2절 참고).
