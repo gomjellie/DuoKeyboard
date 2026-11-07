@@ -1,0 +1,16 @@
+duo-model.bin — Duo Korean/English language model
+
+This model is an adaptation of data licensed under the Creative Commons Attribution-ShareAlike 4.0
+International License (CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/). It is
+distributed under the same license.
+
+Contains information from:
+  • OpenSubtitles2018 word frequencies via "FrequencyWords" by Hermit Dave
+    (https://github.com/hermitdave/FrequencyWords), CC BY-SA 4.0
+  • Korean Wikipedia (https://ko.wikipedia.org), CC BY-SA 4.0, © Wikipedia contributors
+  • wordfreq by Robyn Speer (https://github.com/rspeer/wordfreq), data CC BY-SA 4.0
+
+Changes: word counts were filtered, mixed, converted to keystroke sequences and used to train
+character n-gram language models and word lexicons (see Tools/ModelBuilder in the Duo source tree).
+
+The Duo application code is not covered by this license.
