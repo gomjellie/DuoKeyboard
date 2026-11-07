@@ -12,6 +12,8 @@ protocol HUDAnchorProvider: AnyObject {
     func hudCaretRect(for anchor: HUDRequest.Anchor) -> CGRect?
     /// `IMKTextInput.windowLevel()` of the client window.
     func hudClientWindowLevel() -> Int
+    /// The other reading on the choice bar for `shown`, the request on screen, was clicked.
+    func hudChooseOtherReading(on shown: HUDRequest)
 }
 
 /// The single, reused composition HUD (one panel per process: azooKey #348 leaked dozens).
@@ -24,7 +26,7 @@ final class CompositionHUDController {
     var flipKey: FlipKey {
         didSet {
             guard flipKey != oldValue, let request = timeline.visibleRequest else { return }
-            model.presentation = HUDPresentation(request.content, flipKey: flipKey)
+            setPresentation(HUDPresentation(request.content, flipKey: flipKey))
             reposition(for: request, stabilize: true)
         }
     }
@@ -34,7 +36,7 @@ final class CompositionHUDController {
 
     private let model = CompositionHUDModel()
     private let panel = CompositionHUDPanel()
-    private let hosting: NSHostingView<HUDRootView>
+    private let hosting: HUDHostingView
     private var timeline = HUDTimeline()
     private var timer: Task<Void, Never>?
     private weak var provider: (any HUDAnchorProvider)?
@@ -43,12 +45,17 @@ final class CompositionHUDController {
     private var isOrderedIn = false
     /// Invalidates fade-out completions that a newer show or hide has superseded.
     private var fadeGeneration = 0
+    /// The visible capsule, in global coordinates (the panel adds a transparent margin around it).
+    private var chipFrame: CGRect?
+    /// Mouse-moved monitors, installed only while a choice bar is on screen.
+    private var pointerMonitors: [Any] = []
 
     init(flipKey: FlipKey) {
         self.flipKey = flipKey
-        hosting = NSHostingView(rootView: HUDRootView(model: model, margin: Self.panelMargin))
+        hosting = HUDHostingView(rootView: HUDRootView(model: model, margin: Self.panelMargin))
         hosting.sizingOptions = [.intrinsicContentSize]
         panel.contentView = hosting
+        model.onChooseOther = { [weak self] in self?.chooseOther() }
     }
 
     /// Feeds the engine's current request after every engine call.
@@ -74,6 +81,55 @@ final class CompositionHUDController {
         model.flipCount &+= 1
     }
 
+    // MARK: Pointer
+
+    /// A click on the choice bar's other reading. The provider flips the word and presents the
+    /// engine's new request, which moves the selection pill. A bar on its way out (a hide was
+    /// issued) no longer counts.
+    private func chooseOther() {
+        guard isOrderedIn, model.presentation.isClickable, let shown = timeline.visibleRequest else { return }
+        provider?.hudChooseOtherReading(on: shown)
+    }
+
+    /// Follows the pointer while a choice bar is on screen. The panel takes clicks only while the
+    /// pointer is over the capsule itself, so its transparent margin never swallows a click meant
+    /// for the text. The input method process is never the active app, so this listens to
+    /// mouse-moved events globally (no permission needed) and on the panel itself.
+    private func updatePointerTracking() {
+        let wanted = isOrderedIn && model.presentation.isClickable
+        if wanted, pointerMonitors.isEmpty {
+            panel.acceptsMouseMovedEvents = true
+            let mask: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged]
+            if let global = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: { [weak self] _ in
+                MainActor.assumeIsolated { self?.updatePointer() }
+            }) { pointerMonitors.append(global) }
+            if let local = NSEvent.addLocalMonitorForEvents(matching: mask, handler: { [weak self] event in
+                MainActor.assumeIsolated { self?.updatePointer() }
+                return event
+            }) { pointerMonitors.append(local) }
+        } else if !wanted, !pointerMonitors.isEmpty {
+            pointerMonitors.forEach(NSEvent.removeMonitor)
+            pointerMonitors = []
+        }
+        updatePointer()
+    }
+
+    /// Whether the pointer is over the visible choice bar: the panel takes clicks, the chip's
+    /// lifetime is held and the reading a click would choose is highlighted.
+    private func updatePointer() {
+        let over = isOrderedIn && model.presentation.isClickable
+            && (chipFrame?.contains(NSEvent.mouseLocation) ?? false)
+        if panel.ignoresMouseEvents == over { panel.ignoresMouseEvents = !over }
+        guard over != model.pointerInside else { return }
+        model.pointerInside = over
+        timeline.setPointerInside(over, at: Self.now)
+        rescheduleTimer()
+    }
+
+    private func setPresentation(_ presentation: HUDPresentation) {
+        model.presentation = presentation
+    }
+
     // MARK: Commands
 
     private func apply(_ command: HUDTimeline.Command?) {
@@ -81,7 +137,7 @@ final class CompositionHUDController {
         case nil:
             break
         case .show(let request):
-            model.presentation = HUDPresentation(request.content, flipKey: flipKey)
+            setPresentation(HUDPresentation(request.content, flipKey: flipKey))
             lastCaret = nil
             guard reposition(for: request, stabilize: false) else { return }
             if let provider {
@@ -91,10 +147,12 @@ final class CompositionHUDController {
                     shieldingLevel: Int(CGShieldingWindowLevel())))
             }
             fadeIn()
+            updatePointerTracking()
         case .update(let request, let pulse):
-            model.presentation = HUDPresentation(request.content, flipKey: flipKey)
+            setPresentation(HUDPresentation(request.content, flipKey: flipKey))
             if pulse { model.pulseCount &+= 1 }
             reposition(for: request, stabilize: true)
+            updatePointerTracking()
         case .hide:
             fadeOut()
         }
@@ -123,6 +181,7 @@ final class CompositionHUDController {
             forceHide()
             return false
         }
+        chipFrame = placement.chipFrame
         lastCaret = caret
         lastAnchor = request.anchor
         if panel.frame != placement.panelFrame {
@@ -165,6 +224,8 @@ final class CompositionHUDController {
         fadeGeneration &+= 1
         lastCaret = nil
         lastAnchor = nil
+        chipFrame = nil
+        defer { updatePointerTracking() }
         guard isOrderedIn else { return }
         panel.orderOut(nil)
         panel.alphaValue = 0
@@ -192,6 +253,12 @@ final class CompositionHUDController {
 
     /// Monotonic seconds, the same clock as `NSEvent.timestamp`.
     private static var now: TimeInterval { ProcessInfo.processInfo.systemUptime }
+}
+
+/// Hosts the chip. Takes the first click although the panel is never key: the input method must
+/// not take focus from the client.
+final class HUDHostingView: NSHostingView<HUDRootView> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
 /// The hosting view's root: the chip plus the transparent panel margin.

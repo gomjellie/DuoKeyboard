@@ -334,6 +334,23 @@ extension DuoInputController: HUDAnchorProvider {
         }
     }
 
+    func hudChooseOtherReading(on shown: HUDRequest) {
+        guard let engine, let textClient, let proxy = client() as Proxy? else { return }
+        guard !IsSecureEventInputEnabled() else { return }
+        syncSettings(engine)
+        // A click reaches us outside any IMK callback: the client's answers may be stale.
+        textClient.bind(proxy, bundleIdentifier: bundleIdentifier, outsideCallback: true)
+        defer { textClient.unbind() }
+        let changed = engine.chooseOtherReading(on: shown, client: textClient)
+        DuoRuntime.shared.hud.present(engine.hud, from: self, trigger: .other)
+        if changed {
+            announcePendingFlip()
+        } else if engine.hud?.content == .cannotChange {
+            Task { @MainActor in VoiceOverAnnouncer.announce(.cannotChange) }
+        }
+        Log.hud.info("choice bar click changed=\(changed, privacy: .public)")
+    }
+
     func hudClientWindowLevel() -> Int {
         guard let proxy = textClient?.proxy ?? client() else { return Int(CGWindowLevelForKey(.normalWindow)) }
         return Int(proxy.windowLevel())

@@ -1,8 +1,9 @@
 import AppKit
 
-/// Borderless, non-activating, click-through floating panel for the HUD (ui-design §2.6,
-/// critique R12). It is never key or main and is shown with `orderFrontRegardless()`: the input
-/// method process must never become the active app, or it would steal focus from the client.
+/// Borderless, non-activating floating panel for the HUD (ui-design §2.6, critique R12). It is never
+/// key or main and is shown with `orderFrontRegardless()`: the input method process must never
+/// become the active app, or it would steal focus from the client. Clicks pass through to the app
+/// below unless the chip is the choice bar (`CompositionHUDController` sets `ignoresMouseEvents`).
 final class CompositionHUDPanel: NSPanel {
     init() {
         super.init(contentRect: NSRect(x: 0, y: 0, width: 160, height: 44),

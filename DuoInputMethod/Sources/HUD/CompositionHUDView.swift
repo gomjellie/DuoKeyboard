@@ -13,6 +13,10 @@ final class CompositionHUDModel {
     var pulseCount = 0
     /// Bumped when the user flipped: the text change animates instead of snapping.
     var flipCount = 0
+    /// The pointer is over the panel (the choice bar highlights the reading it would switch to).
+    var pointerInside = false
+    /// The other reading on the choice bar was clicked.
+    @ObservationIgnored var onChooseOther: () -> Void = {}
 
     init() {}
 }
@@ -39,7 +43,9 @@ struct CompositionHUDView: View {
         let presentation = model.presentation
         HStack(spacing: 6) {
             if let choice = presentation.choice {
-                ChoiceBar(choice: choice, emphasized: reduceTransparency || contrast == .increased)
+                ChoiceBar(choice: choice, pointerInside: model.pointerInside,
+                          emphasized: reduceTransparency || contrast == .increased,
+                          onChooseOther: model.onChooseOther)
                     .animation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(duration: 0.3, bounce: 0.15),
                                value: choice.selected)
             } else if let language = presentation.badge {
@@ -90,11 +96,13 @@ struct CompositionHUDView: View {
     }
 }
 
-/// Both readings of a word, the one in the document on the selection pill. A flip slides the pill
-/// over, since the order never changes.
+/// Both readings of a word, the one in the document on the selection pill. A click on the other
+/// reading switches to it; the pill then slides over, since the order never changes.
 private struct ChoiceBar: View {
     let choice: HUDChoice
+    let pointerInside: Bool
     let emphasized: Bool
+    let onChooseOther: () -> Void
 
     /// Pill inset inside the 28 pt capsule, so the pill is concentric with it.
     static let inset: CGFloat = 3
@@ -112,7 +120,10 @@ private struct ChoiceBar: View {
                                 .matchedGeometryEffect(id: "pill", in: pill)
                         }
                 } else {
-                    ReadingLabel(reading: reading, prominent: false)
+                    Button(action: onChooseOther) {
+                        ReadingLabel(reading: reading, prominent: pointerInside)
+                    }
+                    .buttonStyle(OtherReadingStyle(highlighted: pointerInside, emphasized: emphasized))
                 }
             }
         }
@@ -139,6 +150,25 @@ private struct ReadingLabel: View {
         .padding(.trailing, 8)
         .frame(height: CompositionHUDView.height - 2 * ChoiceBar.inset)
         .contentShape(Capsule())
+    }
+}
+
+/// The reading a click switches to: a faint neutral pill while the pointer is over the bar, a firmer
+/// one while pressed.
+private struct OtherReadingStyle: ButtonStyle {
+    let highlighted: Bool
+    let emphasized: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                Capsule().fill(Color.primary.opacity(fill(pressed: configuration.isPressed)))
+            }
+    }
+
+    private func fill(pressed: Bool) -> Double {
+        if pressed { return emphasized ? 0.22 : 0.14 }
+        return highlighted ? (emphasized ? 0.1 : 0.06) : 0
     }
 }
 
