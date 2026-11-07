@@ -72,6 +72,24 @@ targets:
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
         INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Inkyu Oh"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    scheme:
+      testTargets:
+        - DuoTests
+  # Host-side unit tests (Swift Testing). Not hosted: the tests never launch Duo.app.
+  DuoTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Duo/Tests
+    dependencies:
+      - package: DuoCore
+        product: DuoCore
+      - package: DuoCore
+        product: DuoKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.inkyuoh.Duo.Tests
+        GENERATE_INFOPLIST_FILE: YES
   DuoHarness:
     type: application
     platform: macOS
