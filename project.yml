@@ -45,6 +45,33 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: DuoInputMethod/Info.plist
         SKIP_INSTALL: YES
+  Duo:
+    type: application
+    platform: macOS
+    sources:
+      - Duo/Sources
+      - path: Duo/Resources
+        buildPhase: resources
+    dependencies:
+      - package: DuoCore
+        product: DuoCore
+      - package: DuoCore
+        product: DuoKit
+      - target: DuoInputMethod
+        embed: true
+        codeSign: false
+        copy:
+          destination: wrapper
+          subpath: Contents/Library/Input Methods
+    settings:
+      base:
+        PRODUCT_NAME: Duo
+        PRODUCT_BUNDLE_IDENTIFIER: com.inkyuoh.Duo
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Duo
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Inkyu Oh"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
   DuoHarness:
     type: application
     platform: macOS

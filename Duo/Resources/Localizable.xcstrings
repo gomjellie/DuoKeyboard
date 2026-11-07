@@ -1,0 +1,2078 @@
+{
+  "sourceLanguage" : "ko",
+  "strings" : {
+    "%@ (기본값)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (Default)"
+          }
+        }
+      }
+    },
+    "%@, 영어로 바꿈" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, switched to English"
+          }
+        }
+      }
+    },
+    "%@, 한국어로 바꿈" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, switched to Korean"
+          }
+        }
+      }
+    },
+    "%lld/%lld 단계" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Step %lld of %lld"
+          }
+        }
+      }
+    },
+    "%lldms" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld ms"
+          }
+        }
+      }
+    },
+    "Apple 두벌식처럼 ` 키를 누르면 ₩가 입력돼요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Like Apple’s 2-Set Korean, the ` key types ₩."
+          }
+        }
+      }
+    },
+    "CC BY‑SA 4.0 라이선스 전문 보기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read the CC BY‑SA 4.0 License"
+          }
+        }
+      }
+    },
+    "Caps Lock" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caps Lock"
+          }
+        }
+      }
+    },
+    "Caps Lock 키를 눌러 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press the Caps Lock key."
+          }
+        }
+      }
+    },
+    "Duo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo"
+          }
+        }
+      }
+    },
+    "Duo 다시 시작" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart Duo"
+          }
+        }
+      }
+    },
+    "Duo 설정" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo Settings"
+          }
+        }
+      }
+    },
+    "Duo 시작하기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to Duo"
+          }
+        }
+      }
+    },
+    "Duo 시작하기 안내" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo Setup Guide"
+          }
+        }
+      }
+    },
+    "Duo 앱 안에 입력기가 없어요. Duo를 다시 내려받아 설치해 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The input method is missing from the Duo app. Download and install Duo again."
+          }
+        }
+      }
+    },
+    "Duo 입력기 복사" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy the Duo input method"
+          }
+        }
+      }
+    },
+    "Duo 입력기가 응답하지 않아 일부 단어를 지우지 못했어요. 잠시 후 다시 해 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Duo input method didn’t respond, so some words weren’t deleted. Try again in a moment."
+          }
+        }
+      }
+    },
+    "Duo 입력기를 제거할까요?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove the Duo input method?"
+          }
+        }
+      }
+    },
+    "Duo 제거" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Duo"
+          }
+        }
+      }
+    },
+    "Duo 제거…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Duo…"
+          }
+        }
+      }
+    },
+    "Duo 켜기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn On Duo"
+          }
+        }
+      }
+    },
+    "Duo 켜기를 누르면 입력 소스에 추가되고 바로 켜져요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Turn On Duo to add it to your input sources and start using it."
+          }
+        }
+      }
+    },
+    "Duo가 기억한 단어가 모두 사라져요. 되돌릴 수 없어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every word Duo has learned will be erased. This can’t be undone."
+          }
+        }
+      }
+    },
+    "Duo가 꺼져 있어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo is turned off"
+          }
+        }
+      }
+    },
+    "Duo가 아직 설치되지 않았어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo isn’t installed yet"
+          }
+        }
+      }
+    },
+    "Duo가 언어를 자주 잘못 고른다면, 주로 쓰는 언어 쪽으로 옮겨 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If Duo often picks the wrong language, move the slider toward the one you type most."
+          }
+        }
+      }
+    },
+    "Duo가 지금 쓰는 입력 소스라면 ABC로 바꾼 다음 제거해요. 언제든 Duo 켜기로 다시 설치할 수 있어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If Duo is your current input source, Duo switches to ABC first. You can reinstall it anytime with Turn On Duo."
+          }
+        }
+      }
+    },
+    "Duo가 켜져 있어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo is on"
+          }
+        }
+      }
+    },
+    "Duo가 켜져 있어요. 메뉴 막대의 입력 메뉴에서도 확인할 수 있어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo is on. You’ll also find it in the input menu in the menu bar."
+          }
+        }
+      }
+    },
+    "Duo가 확신하지 못한 단어를 확정하면 잠깐 ‘↺ 바꾸기’를 띄워요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When Duo commits a word it wasn’t sure about, it briefly offers “↺ Flip”."
+          }
+        }
+      }
+    },
+    "Duo는 모든 판단을 Mac 안에서 해요. 입력한 문장은 저장하지 않고, 학습에는 단어별 횟수만 남아요. Duo는 인터넷에 연결하지 않아요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo makes every decision on your Mac. It never stores what you type; learning keeps only per-word counts. Duo never connects to the internet."
+          }
+        }
+      }
+    },
+    "Duo는 입력하는 단어를 보고 한국어인지 영어인지 알아서 판단해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo reads each word as you type and decides whether it’s Korean or English."
+          }
+        }
+      }
+    },
+    "Duo로 입력한 앱" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apps You’ve Typed In"
+          }
+        }
+      }
+    },
+    "Duo로 전환" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch to Duo"
+          }
+        }
+      }
+    },
+    "Duo를 선택하지 못했어요. 메뉴 막대의 입력 메뉴에서 Duo를 골라 주세요. (오류 %lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo couldn’t be selected. Choose Duo from the input menu in the menu bar. (Error %lld)"
+          }
+        }
+      }
+    },
+    "Duo를 쓰고 있어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You’re typing with Duo"
+          }
+        }
+      }
+    },
+    "Duo를 켜지 못했어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo couldn’t be turned on"
+          }
+        }
+      }
+    },
+    "Duo의 언어 모델은 CC BY‑SA 4.0 라이선스로 공개된 자료를 가공해 만들었고, 같은 라이선스로 배포해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo’s language model is adapted from material published under the CC BY‑SA 4.0 license and is distributed under the same license."
+          }
+        }
+      }
+    },
+    "English" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "English"
+          }
+        }
+      }
+    },
+    "English 우선" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "English First"
+          }
+        }
+      }
+    },
+    "English 쪽으로 %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld toward English"
+          }
+        }
+      }
+    },
+    "Finder에서 보기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show in Finder"
+          }
+        }
+      }
+    },
+    "Shift + Space" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shift + Space"
+          }
+        }
+      }
+    },
+    "Shift 두 번" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double Shift"
+          }
+        }
+      }
+    },
+    "Shift 키를 누른 채 Space 키를 눌러 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold Shift and press Space."
+          }
+        }
+      }
+    },
+    "Shift 키를 빠르게 두 번 눌러 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press Shift twice, quickly."
+          }
+        }
+      }
+    },
+    "` 키로 ₩ 입력" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "` key types ₩"
+          }
+        }
+      }
+    },
+    "dkssud를 쳐 보세요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try typing dkssud"
+          }
+        }
+      }
+    },
+    "dkssud를 치면 안녕, hello를 치면 hello가 돼요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typing dkssud gives 안녕; typing hello gives hello."
+          }
+        }
+      }
+    },
+    "macOS가 Duo를 입력 소스로 등록하지 못했어요. (오류 %lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS couldn’t register Duo as an input source. (Error %lld)"
+          }
+        }
+      }
+    },
+    "macOS가 Duo를 입력 소스로 알아보게 해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lets macOS recognize Duo as an input source."
+          }
+        }
+      }
+    },
+    "macOS가 확인을 요청하면 허용을 눌러 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If macOS asks for confirmation, click Allow."
+          }
+        }
+      }
+    },
+    "macOS에서 허용" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow in macOS"
+          }
+        }
+      }
+    },
+    "macOS의 허용을 받지 못했어요. 시스템 설정의 확인 창에서 ‘허용’을 누른 뒤 다시 시도해 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS didn’t get your approval. Click Allow in the System Settings prompt, then try again."
+          }
+        }
+      }
+    },
+    "vim이나 less를 자주 쓴다면 터미널을 ‘직접 입력’으로 바꿔 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use vim or less a lot? Set your terminal to Direct Input."
+          }
+        }
+      }
+    },
+    "‘macOS 26 업데이트’ 입력하기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type “macOS 26 업데이트”"
+          }
+        }
+      }
+    },
+    "‘안녕하세요 Duo를 써봐요’ 입력하기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type “안녕하세요 Duo를 써봐요”"
+          }
+        }
+      }
+    },
+    "가운데" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Centered"
+          }
+        }
+      }
+    },
+    "감사의 말" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acknowledgements"
+          }
+        }
+      }
+    },
+    "결과" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Result"
+          }
+        }
+      }
+    },
+    "계속" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+    "고급" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced"
+          }
+        }
+      }
+    },
+    "글자" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syllable"
+          }
+        }
+      }
+    },
+    "기본값 복원" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore Defaults"
+          }
+        }
+      }
+    },
+    "기본값 복원…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore Defaults…"
+          }
+        }
+      }
+    },
+    "꺼짐" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "나중에" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later"
+          }
+        }
+      }
+    },
+    "다른 앱이 보안 키보드 입력을 켜 두면 Duo는 잠시 키를 그대로 보내요. 그 앱에서 끄거나 앱을 닫으면 다시 동작해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While another app has Secure Keyboard Entry on, Duo passes keys straight through. Turn it off in that app, or quit the app, and Duo works again."
+          }
+        }
+      }
+    },
+    "다른 입력 소스" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Another input source"
+          }
+        }
+      }
+    },
+    "다시 시작" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume"
+          }
+        }
+      }
+    },
+    "다시 시작했어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restarted"
+          }
+        }
+      }
+    },
+    "단어 %lld개" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld word"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld words"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "단어 %lld개 중 %lld개" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$lld of %1$lld words"
+          }
+        }
+      }
+    },
+    "단어가 잘못 나오면 바꾸기 키를 눌러요. 바꾼 단어는 Duo가 기억해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If a word comes out wrong, press the flip key. Duo remembers the fix."
+          }
+        }
+      }
+    },
+    "단어가 잘못 나오면 이 키로 한국어와 English를 바꿔요. 바꾼 단어는 Duo가 기억해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If a word comes out wrong, this key flips it between Korean and English. Duo remembers the fix."
+          }
+        }
+      }
+    },
+    "단어가 잘못 나오면 이렇게 바꾸면 돼요. 바꾼 단어는 Duo가 기억해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That’s how you fix a word that comes out wrong. Duo remembers the fix."
+          }
+        }
+      }
+    },
+    "단어를 쓰고 Space를 누른 다음, 그 단어 바꾸기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type a word, press Space, then flip it"
+          }
+        }
+      }
+    },
+    "단어마다 알아서 판단해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decides word by word."
+          }
+        }
+      }
+    },
+    "대기 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting"
+          }
+        }
+      }
+    },
+    "데이터 위치" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data location"
+          }
+        }
+      }
+    },
+    "뒤로" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        }
+      }
+    },
+    "라이선스 파일을 찾지 못했어요. Duo 입력기 안의 duo-model.LICENSE.txt에 들어 있어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The license file couldn’t be found. It ships as duo-model.LICENSE.txt inside the Duo input method."
+          }
+        }
+      }
+    },
+    "마지막 사용" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Used"
+          }
+        }
+      }
+    },
+    "메뉴 막대의 입력 메뉴에서 언제든 Duo 설정을 열 수 있어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Duo settings anytime from the input menu in the menu bar."
+          }
+        }
+      }
+    },
+    "모두 지우기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase All"
+          }
+        }
+      }
+    },
+    "모두 지우기…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase All…"
+          }
+        }
+      }
+    },
+    "모든 앱을 기본값으로 되돌릴까요?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore every app to its default?"
+          }
+        }
+      }
+    },
+    "모든 판단과 학습은 이 Mac 안에서만 이뤄져요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything Duo decides and learns stays on this Mac."
+          }
+        }
+      }
+    },
+    "문맥" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Context"
+          }
+        }
+      }
+    },
+    "문장 시작" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sentence start"
+          }
+        }
+      }
+    },
+    "문제 해결" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Troubleshooting"
+          }
+        }
+      }
+    },
+    "바꾸기 키" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flip Key"
+          }
+        }
+      }
+    },
+    "바꾸기 키로 고친 단어가 여기에 나타나요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Words you fix with the flip key appear here."
+          }
+        }
+      }
+    },
+    "바꾸기 키로 고친 단어와 애매했던 단어를 기억해서 다음부터 맞게 써요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo remembers words you fixed with the flip key, and ambiguous ones, and gets them right next time."
+          }
+        }
+      }
+    },
+    "바꾸기 키를 눌러 보세요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try the flip key"
+          }
+        }
+      }
+    },
+    "바꾸기 키를 이 시간 안에 눌렀다 떼면 탭으로 쳐요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A press and release of the flip key within this time counts as a tap."
+          }
+        }
+      }
+    },
+    "백스페이스 단위" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete while composing"
+          }
+        }
+      }
+    },
+    "버전" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version"
+          }
+        }
+      }
+    },
+    "버전 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@"
+          }
+        }
+      }
+    },
+    "버튼 하나면 Duo가 입력 소스에 추가되고 바로 켜져요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One click adds Duo to your input sources and turns it on."
+          }
+        }
+      }
+    },
+    "보안 키보드 입력이 켜져 있어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secure Keyboard Entry is on"
+          }
+        }
+      }
+    },
+    "사용자 Library의 Input Methods 폴더에 넣어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Places it in the Input Methods folder of your Library."
+          }
+        }
+      }
+    },
+    "삭제" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "상태" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        }
+      }
+    },
+    "새 버전 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New: %@"
+          }
+        }
+      }
+    },
+    "새 버전이 준비됐어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A new version is ready"
+          }
+        }
+      }
+    },
+    "선택한 단어 삭제" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete the selected words"
+          }
+        }
+      }
+    },
+    "설정…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings…"
+          }
+        }
+      }
+    },
+    "설치" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installation"
+          }
+        }
+      }
+    },
+    "설치 안 됨" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not installed"
+          }
+        }
+      }
+    },
+    "설치된 Duo %@ → %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installed Duo %@ → %@"
+          }
+        }
+      }
+    },
+    "설치됨" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installed"
+          }
+        }
+      }
+    },
+    "숫자 뒤" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After a number"
+          }
+        }
+      }
+    },
+    "시스템 설정에 뜨는 확인 창에서 ‘허용’을 눌러요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press Allow when System Settings asks."
+          }
+        }
+      }
+    },
+    "실패" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed"
+          }
+        }
+      }
+    },
+    "실행 중인 다른 앱" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other Running Apps"
+          }
+        }
+      }
+    },
+    "써보기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try It"
+          }
+        }
+      }
+    },
+    "써보기 입력 칸" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try-it text field"
+          }
+        }
+      }
+    },
+    "써보기를 준비하지 못했어요. Duo를 켜면 어느 앱에서나 바로 써 볼 수 있어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The practice field isn’t available. Turn on Duo to try it in any app."
+          }
+        }
+      }
+    },
+    "아래 칸에 직접 입력해 보세요. 해낸 일은 바로 체크돼요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type in the box below. Each task checks off as you go."
+          }
+        }
+      }
+    },
+    "아직 Duo로 입력한 앱이 없어요. Duo로 입력하면 여기에 나타나요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You haven’t typed in any app with Duo yet. Apps appear here once you do."
+          }
+        }
+      }
+    },
+    "안녕하세요 Duo를 써봐요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "안녕하세요 Duo를 써봐요"
+          }
+        }
+      }
+    },
+    "애매하면 English로 써요. 터미널과 코드에 좋아요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leans to English when unsure. Good for terminals and code."
+          }
+        }
+      }
+    },
+    "애매하면 한국어로 써요. 메신저에 좋아요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leans to Korean when unsure. Good for messaging."
+          }
+        }
+      }
+    },
+    "애매한 단어를 쓰는 동안, 바꾸면 어떻게 되는지 커서 아래에 보여 줘요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While you type an ambiguous word, shows its other reading below the cursor."
+          }
+        }
+      }
+    },
+    "앱마다 Duo가 먼저 생각할 언어를 정해요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose which language Duo leans to in each app"
+          }
+        }
+      }
+    },
+    "앱별 설정" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apps"
+          }
+        }
+      }
+    },
+    "어느 앱에서나 그냥 입력하면 돼요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just type, in any app."
+          }
+        }
+      }
+    },
+    "언어 감지" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language Detection"
+          }
+        }
+      }
+    },
+    "언어 모델 데이터" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language model data"
+          }
+        }
+      }
+    },
+    "업데이트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update"
+          }
+        }
+      }
+    },
+    "업데이트하면 Duo 입력기가 다시 시작돼요. 설정과 학습은 그대로예요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating restarts the Duo input method. Your settings and learned words stay."
+          }
+        }
+      }
+    },
+    "여기서는 바꿀 수 없어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can’t change text here"
+          }
+        }
+      }
+    },
+    "여기에 입력해 보세요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type here"
+          }
+        }
+      }
+    },
+    "여기에 입력해 보세요. Duo가 언어를 알아서 골라요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type here. Duo picks the language for you."
+          }
+        }
+      }
+    },
+    "영어 단어가 확실하면 입력하는 동안 확정해서, 자동 완성이 실제 글자를 볼 수 있어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When a word is clearly English, Duo commits it as you type so autocomplete sees the real text."
+          }
+        }
+      }
+    },
+    "영어 뒤" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After English"
+          }
+        }
+      }
+    },
+    "영어로 바꿈" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switched to English"
+          }
+        }
+      }
+    },
+    "오른쪽 Command" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right Command"
+          }
+        }
+      }
+    },
+    "오른쪽 Command 키를 톡 눌러 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the right Command key."
+          }
+        }
+      }
+    },
+    "오른쪽 Option" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right Option"
+          }
+        }
+      }
+    },
+    "오른쪽 Option 키를 톡 눌러 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the right Option key."
+          }
+        }
+      }
+    },
+    "완료" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "이 키보드에서 누르기 어렵다면 다른 키를 골라 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hard to reach on this keyboard? Pick another key."
+          }
+        }
+      }
+    },
+    "이제 어디서나 그냥 쓰면 돼요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now just type, anywhere."
+          }
+        }
+      }
+    },
+    "일반" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        }
+      }
+    },
+    "입력" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typing"
+          }
+        }
+      }
+    },
+    "입력 메뉴에 Duo가 나타나요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo appears in the input menu."
+          }
+        }
+      }
+    },
+    "입력 메뉴에 Duo가 보이지 않아요. 다시 켜 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo isn’t in the input menu. Turn it on again."
+          }
+        }
+      }
+    },
+    "입력 소스" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input source"
+          }
+        }
+      }
+    },
+    "입력 소스 목록과 단축키는 시스템 설정에서 바꿀 수 있어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change input sources and shortcuts in System Settings."
+          }
+        }
+      }
+    },
+    "입력 소스 켜기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable the input source"
+          }
+        }
+      }
+    },
+    "입력 소스로 등록" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Register as an input source"
+          }
+        }
+      }
+    },
+    "입력 소스를 켜지 못했어요. 키보드 설정에서 직접 추가할 수 있어요. (오류 %lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The input source couldn’t be enabled. You can add it yourself in Keyboard settings. (Error %lld)"
+          }
+        }
+      }
+    },
+    "입력 소스에서 Duo를 빼고 입력기를 지워요. 설정과 학습한 단어는 남아요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removes Duo from your input sources and deletes the input method. Your settings and learned words stay."
+          }
+        }
+      }
+    },
+    "입력 중 힌트 보기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show hints while typing"
+          }
+        }
+      }
+    },
+    "입력 키" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keys"
+          }
+        }
+      }
+    },
+    "입력 키나 결과 검색" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search keys or results"
+          }
+        }
+      }
+    },
+    "입력기 다시 시작" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart the input method"
+          }
+        }
+      }
+    },
+    "입력기를 Input Methods 폴더에 복사하지 못했어요. (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The input method couldn’t be copied to the Input Methods folder. (%@)"
+          }
+        }
+      }
+    },
+    "입력이 이상하면 Duo 입력기를 다시 시작해 보세요. 설정과 학습한 단어는 그대로예요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If typing acts up, restart the Duo input method. Your settings and learned words stay."
+          }
+        }
+      }
+    },
+    "자동" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic"
+          }
+        }
+      }
+    },
+    "자소" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jamo"
+          }
+        }
+      }
+    },
+    "자소는 닭 → 달 → 다처럼 한 자소씩, 글자는 한 글자를 통째로 지워요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jamo deletes one letter at a time (닭 → 달 → 다); Syllable deletes the whole syllable."
+          }
+        }
+      }
+    },
+    "자주 쓰는 언어" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language you type most"
+          }
+        }
+      }
+    },
+    "잘 눌렸어요!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got it!"
+          }
+        }
+      }
+    },
+    "정보" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
+    },
+    "제거" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        }
+      }
+    },
+    "준비됐어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You’re All Set"
+          }
+        }
+      }
+    },
+    "지금 바로 Duo로 입력해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starts typing with Duo right away."
+          }
+        }
+      }
+    },
+    "지금은 다른 입력 소스를 쓰고 있어요. 입력 메뉴에서 Duo를 고르면 돼요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Another input source is in use. Choose Duo from the input menu."
+          }
+        }
+      }
+    },
+    "지우기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
+    },
+    "직접 고른 앱별 설정이 모두 지워지고, Duo가 정한 기본값으로 돌아가요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every per-app choice you made is cleared, and apps go back to Duo’s defaults."
+          }
+        }
+      }
+    },
+    "직접 입력" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direct Input"
+          }
+        }
+      }
+    },
+    "직접 쳐 보세요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try it yourself"
+          }
+        }
+      }
+    },
+    "진행 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In progress"
+          }
+        }
+      }
+    },
+    "켜짐" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On"
+          }
+        }
+      }
+    },
+    "키를 그대로 보내요. 바꾸기 키를 누르면 그 줄에서만 한국어를 써요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sends keys as they are. Press the flip key to type Korean on the current line."
+          }
+        }
+      }
+    },
+    "키보드 설정" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keyboard settings"
+          }
+        }
+      }
+    },
+    "키보드 설정 열기…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Keyboard Settings…"
+          }
+        }
+      }
+    },
+    "키보드 설정의 ‘텍스트 입력’에서 편집…을 누른 다음, + 버튼으로 한국어 ▸ Duo를 추가해도 돼요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can also add it yourself: in Keyboard settings, under Text Input, click Edit…, then + and choose Korean ▸ Duo."
+          }
+        }
+      }
+    },
+    "키보드 하나, 두 언어." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One keyboard. Two languages."
+          }
+        }
+      }
+    },
+    "탭 인식 시간" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap window"
+          }
+        }
+      }
+    },
+    "터미널과 코드 편집기는 처음부터 English 우선이에요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminals and code editors start as English First."
+          }
+        }
+      }
+    },
+    "학습" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learning"
+          }
+        }
+      }
+    },
+    "학습 데이터를 바꾸지 못했어요. (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The learning data couldn’t be changed. (%@)"
+          }
+        }
+      }
+    },
+    "학습 파일을 읽을 수 없어서 건드리지 않고 그대로 두었어요. 디스크 공간과 폴더 권한을 확인해 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The learning file can’t be read, so Duo left it untouched. Check disk space and folder permissions."
+          }
+        }
+      }
+    },
+    "학습 파일을 저장하지 못했어요. 디스크 공간과 권한을 확인해 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo couldn’t save the learning file. Check your disk space and permissions."
+          }
+        }
+      }
+    },
+    "학습은 이 Mac 안에서만 이뤄져요. 입력한 문장은 저장하지 않고, 단어별 횟수만 남아요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learning happens only on this Mac. Duo never stores what you type, only per-word counts."
+          }
+        }
+      }
+    },
+    "학습이 잠시 멈춰 있어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learning is paused"
+          }
+        }
+      }
+    },
+    "학습하기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learn from my typing"
+          }
+        }
+      }
+    },
+    "학습한 단어" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learned Words"
+          }
+        }
+      }
+    },
+    "학습한 단어가 없어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Learned Words"
+          }
+        }
+      }
+    },
+    "학습한 단어를 모두 지울까요?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase all learned words?"
+          }
+        }
+      }
+    },
+    "한국어" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Korean"
+          }
+        }
+      }
+    },
+    "한국어 뒤" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After Korean"
+          }
+        }
+      }
+    },
+    "한국어 문장 속 go를 쓰는 중에 go ↔ 해 바꾸기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In a Korean sentence, flip go ↔ 해 while typing it"
+          }
+        }
+      }
+    },
+    "한국어 우선" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Korean First"
+          }
+        }
+      }
+    },
+    "한국어 쪽으로 %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld toward Korean"
+          }
+        }
+      }
+    },
+    "한국어로 바꿈" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switched to Korean"
+          }
+        }
+      }
+    },
+    "한영 전환 없이, 그냥 쓰세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just type. No more switching."
+          }
+        }
+      }
+    },
+    "현재 입력 소스" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current input source"
+          }
+        }
+      }
+    },
+    "확신도" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strength"
+          }
+        }
+      }
+    },
+    "확신도는 바꾸기 키로 고친 단어에서 크게, 애매했던 단어를 그대로 쓰면 조금 올라가요. 쓰지 않으면 60일마다 표가 절반으로 줄어서 확신도도 서서히 낮아져요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strength rises a lot when you fix a word with the flip key, and a little when you keep an ambiguous word. Without use, its votes halve every 60 days, so the bar slowly shrinks."
+          }
+        }
+      }
+    },
+    "확실한 영어는 바로 확정" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commit clear English right away"
+          }
+        }
+      }
+    },
+    "확정 후 바꾸기 제안" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offer to flip after commit"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
