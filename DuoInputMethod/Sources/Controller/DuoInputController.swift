@@ -121,6 +121,11 @@ final class DuoInputController: IMKInputController {
         }
         runtime.activeController = self
         wasSecure = IsSecureEventInputEnabled()
+        #if DEBUG
+        // The end-to-end hook types only into DuoHarness's own text view (DebugInjector checks again
+        // before every key).
+        if bundleIdentifier == DuoIDs.harnessBundleID { DebugInjector.install() }
+        #endif
         Log.ime.info("""
             activate \(self.bundleIdentifier, privacy: .public) \
             profile=\(self.engine?.clientProfile.effectiveProfile(runtime.settings).rawValue ?? "pass-through", privacy: .public) \
