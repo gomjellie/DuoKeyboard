@@ -89,19 +89,8 @@ extension CompositionEngine {
         if t.scores == nil { t.scores = prefixScores(t.raw, t.context) }
         guard let scores = t.scores else { return false }
 
-        let target: Hypothesis
-        if let locked = t.locked, let original = t.lockedOriginal {
-            if locked != original {
-                target = original
-            } else {
-                guard let alt = alternative(of: original, raw: t.raw, in: scores) else { return false }
-                target = alt
-            }
-        } else {
-            guard let alt = alternative(of: t.shown, raw: t.raw, in: scores) else { return false }
-            target = alt
-            t.lockedOriginal = t.shown
-        }
+        guard let target = flipTarget(t, scores) else { return false }
+        if t.lockedOriginal == nil { t.lockedOriginal = t.shown }
 
         if t.committed > 0, !t.isConsistent(target) {
             // The Latin committed by eager E must be re-opened: verify it, then replace committed +

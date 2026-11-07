@@ -174,12 +174,14 @@ struct EngineRobustnessTests {
         #expect(h.hud?.isEligible == true)
     }
 
-    @Test func farAlternativeIsNotEligible() {
+    @Test(arguments: [(2944, true), (2945, false)])
+    func theBarIsEligibleUpToFivePercent(_ margin: Int, _ eligible: Bool) {
+        // Margins.hudCandidates: the other reading has P ≥ 5 %.
         let h = EngineHarness()
-        h.detector.scores["dk"] = [.korean: -2000, .english: -3387]   // 1387 > 1386
+        h.detector.scores["dk"] = [.korean: -2000, .english: -2000 - margin]
         h.type("dk")
-        #expect(h.hud?.isEligible == false)
-        #expect(h.hud?.alternativeText == "dk", "still sent, so a visible HUD can update in place")
+        #expect(h.hud?.isEligible == eligible)
+        #expect(h.hud?.alternativeText == "dk", "always sent, so a visible HUD can update in place")
     }
 
     @Test func autorepeatIsNeverEligible() {

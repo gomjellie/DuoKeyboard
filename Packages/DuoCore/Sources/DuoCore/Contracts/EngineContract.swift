@@ -181,27 +181,36 @@ public struct HUDReading: Hashable, Sendable {
     }
 }
 
-/// The two readings of one word on the choice bar (docs/SPEC.md §4.11): the one in the document
-/// and the one a flip or a click switches to.
+/// The readings of one word on the choice bar (docs/SPEC.md §4.11): the one in the document, the
+/// one the flip key switches to, and for the word being typed any other likely reading.
 ///
-/// The display order stays the same for a word whichever reading is selected, so a flip moves the
-/// selection instead of swapping the readings.
+/// The order stays the same while the word does not change, whichever reading is selected, so
+/// choosing one moves the selection instead of reordering the readings.
 public struct HUDChoice: Hashable, Sendable {
-    /// Both readings, in display order.
+    /// The readings, in display order (at least two).
     public let readings: [HUDReading]
     /// Index in ``readings`` of the reading in the document.
     public let selected: Int
+    /// Index in ``readings`` of the reading the flip key switches to.
+    public let alternate: Int
 
-    /// - Parameter currentFirst: whether `current` is drawn first.
+    /// `selected` and `alternate` must be different indices of `readings`.
+    public init(readings: [HUDReading], selected: Int, alternate: Int) {
+        self.readings = readings
+        self.selected = selected
+        self.alternate = alternate
+    }
+
+    /// Two readings. - Parameter currentFirst: whether `current` is drawn first.
     public init(current: HUDReading, other: HUDReading, currentFirst: Bool) {
-        readings = currentFirst ? [current, other] : [other, current]
-        selected = currentFirst ? 0 : 1
+        self.init(readings: currentFirst ? [current, other] : [other, current],
+                  selected: currentFirst ? 0 : 1, alternate: currentFirst ? 1 : 0)
     }
 
     /// The reading in the document.
     public var current: HUDReading { readings[selected] }
-    /// The reading a flip or a click switches to.
-    public var other: HUDReading { readings[1 - selected] }
+    /// The reading the flip key switches to.
+    public var other: HUDReading { readings[alternate] }
 }
 
 /// Why a composition is being committed without a key of its own.

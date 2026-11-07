@@ -133,6 +133,11 @@ public protocol LanguageDetector: Sendable {
     /// Prefix mode (display while typing). The user bonus applies here too (critique R7).
     func prefixScores(raw: String, context: LanguageContext, user: UserCounts?, biasKO: Int) -> HypothesisScores
 
+    /// The scores that order the choice bar while the word is typed (docs/SPEC.md §4.11): final
+    /// mode at a space, what a boundary would commit now. A separate requirement so a caller can
+    /// tell the bar's scoring from a commit's; the default is `finalScores(…, terminator: .space, …)`.
+    func choiceScores(raw: String, context: LanguageContext, user: UserCounts?, biasKO: Int) -> HypothesisScores
+
     /// `render(raw, h)` of detection.md §5.6.
     func render(raw: String, _ hypothesis: Hypothesis) -> String
 
@@ -146,11 +151,19 @@ public protocol LanguageDetector: Sendable {
     var parameters: [String: Int] { get }
 }
 
+extension LanguageDetector {
+    public func choiceScores(raw: String, context: LanguageContext, user: UserCounts?, biasKO: Int) -> HypothesisScores {
+        finalScores(raw: raw, context: context, terminator: .space, user: user, biasKO: biasKO)
+    }
+}
+
 /// Probability thresholds expressed as score margins (critique R8): a 2-way softmax of the shown
 /// reading against the best other one.
 public enum Margins {
     /// P(alt) ≥ 20 %: HUD offers the alternative; implicit learning counts the commit.
     public static let hudAlternative = 1386
+    /// P(alt) ≥ 5 %: the choice bar lists the word's readings (docs/SPEC.md §4.11).
+    public static let hudCandidates = 2944
     /// P(alt) ≥ 35 %: "uncertain commit" chip.
     public static let uncertainCommit = 619
     /// P(alt) < 1 %: eager English commit.

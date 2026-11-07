@@ -312,6 +312,32 @@ struct EngineScenarioTests {
         #expect(h.text == "")
     }
 
+    // MARK: English + Korean endings (user report 2026-11-07)
+
+    /// The texts on the bar after typing `keys`, and whether it earns the HUD.
+    static func listed(_ h: EngineHarness, _ keys: String) -> (texts: [String], eligible: Bool)? {
+        h.type(keys)
+        guard case .alternative(let choice, let eligible)? = h.hud?.content else { return nil }
+        return (choice.readings.map(\.text), eligible)
+    }
+
+    @Test(arguments: [("worksdlftneh", "재간일수도", "works일수도"), ("cmdfh", "층로", "cmd로"),
+                      ("cmdrk", "층가", "cmd가")])
+    func anEnglishWordThatAlsoReadsKoreanListsBoth(_ keys: String, _ korean: String, _ mixed: String) throws {
+        let h = Self.harness()
+        let bar = try #require(Self.listed(h, keys))
+        #expect(bar.texts.prefix(2) == [korean, mixed], "both readings, best first")
+        #expect(bar.eligible, "close enough for the bar to come up")
+    }
+
+    @Test func pausingInsideAKoreanSyllableShowsNoBar() {
+        // Review: final mode reads 감ㅅ as a finished word, so rkat (E) looked likely.
+        let h = Self.harness()
+        h.type("dkssud rkat")
+        #expect(h.marked == "감ㅅ")
+        #expect(h.hud?.isEligible != true)
+    }
+
     @Test func bilingualSentenceOneMutationPerKey() {
         let h = Self.harness()
         let steps = h.type("dhsmf PRdmf dhffuTsmsep CIrk RowuTspdy. Thank you!")

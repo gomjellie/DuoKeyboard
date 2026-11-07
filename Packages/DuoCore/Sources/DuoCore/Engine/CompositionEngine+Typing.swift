@@ -105,20 +105,30 @@ extension CompositionEngine {
         return final.best(where: t.isConsistent)?.hypothesis == .english
     }
 
-    /// §4.3.7: the alternative reading while the token is marked.
+    /// §4.3.7, §4.11: the choice bar while the token is marked: the shown reading, the one the
+    /// flip key switches to, and any other likely reading, best first.
+    ///
+    /// It earns the HUD when a listed reading is within ``Margins/hudCandidates`` of the shown one
+    /// (P ≥ 5 %), or when the user chose the reading (a flip or the bar), and the token has at least
+    /// two keys (or is one of the 1-key collision words).
     func alternativeHUD(_ t: Token, pulse: Bool, isRepeat: Bool) -> HUDRequest? {
-        guard settings.showHints, !t.marked.isEmpty, let scores = t.scores else { return nil }
-        let alt: Hypothesis?
-        if let locked = t.locked, let original = t.lockedOriginal, locked != original {
-            alt = original
-        } else {
-            alt = alternative(of: t.shown, raw: t.raw, in: scores)
+        guard settings.showHints, !t.marked.isEmpty, let prefix = t.scores,
+              let bar = choiceList(t, prefix) else { return nil }
+        // Close in prefix mode, or, for Latin plus an ending only, in final mode: prefix mode charges
+        // no end of word, so 층로 buries cmd로 there; final mode scores an unfinished syllable as a
+        // finished word (감ㅅ → rkat), so only M(b) may earn the bar on its final score.
+        func closeness(_ scores: HypothesisScores, onlyMixed: Bool) -> Bool {
+            let shownScore = scores[t.shown] ?? scores.best?.score ?? 0
+            return bar.hypotheses.enumerated().contains { i, h in
+                guard i != bar.selected, let s = scores[h] else { return false }
+                if onlyMixed, case .mixed = h {} else if onlyMixed { return false }
+                return shownScore - s <= Margins.hudCandidates
+            }
         }
-        guard let alt, let altScore = scores[alt], let shownScore = scores[t.shown] else { return nil }
-        let eligible = !isRepeat && shownScore - altScore <= Margins.hudAlternative
+        let close = closeness(bar.prefix, onlyMixed: false) || closeness(bar.final, onlyMixed: true)
+        let eligible = !isRepeat && (t.locked != nil || close)
             && (t.count >= 2 || Self.collisionKeys.contains(t.raw.lowercased()))
-        return HUDRequest(content: .alternative(choice(raw: t.raw, current: t.shown, other: alt), eligible: eligible),
-                          anchor: .markedText, pulse: pulse)
+        return HUDRequest(content: .alternative(bar.choice, eligible: eligible), anchor: .markedText, pulse: pulse)
     }
 
     // MARK: Apostrophe (§4.4)

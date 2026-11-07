@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import DuoCore
+import DuoKit
 
 /// docs/SPEC.md §4.11: the choice bar shows both readings of an ambiguous word, and a click on the
 /// other reading flips that word like the flip key does.
@@ -53,6 +54,59 @@ struct EngineChoiceTests {
         #expect(CompositionEngine.displayRank(.korean) < CompositionEngine.displayRank(.mixed(latin: 2)))
         #expect(CompositionEngine.displayRank(.mixed(latin: 2)) < CompositionEngine.displayRank(.mixed(latin: 3)))
         #expect(CompositionEngine.displayRank(.mixed(latin: 9)) < CompositionEngine.displayRank(.english))
+    }
+
+    // MARK: The numbered list
+
+    /// `cmdfh`: 층로 shown, cmd로 (M3) and cmdfh close behind, and c층로 (M1) 11 nats behind the best.
+    static func scriptCmdFh(_ d: FakeDetector) {
+        d.scores["cmdfh"] = [.korean: -23000, .mixed(latin: 3): -25000, .english: -27000,
+                             .mixed(latin: 1): -34000]
+    }
+
+    static func typeCmdFh(_ h: EngineHarness) {
+        h.detector.scores["c"] = [.korean: -3000, .english: -9000]
+        h.detector.scores["cm"] = [.korean: -6000, .english: -12000]
+        h.detector.scores["cmd"] = [.korean: -9000, .english: -10000]
+        h.detector.scores["cmdf"] = [.korean: -20000, .english: -24000]
+        Self.scriptCmdFh(h.detector)
+        h.type("cmdfh")
+    }
+
+    @Test func theListShowsLikelyReadingsBestFirst() throws {
+        let h = EngineHarness()
+        Self.typeCmdFh(h)
+        guard case .alternative(let choice, let eligible)? = h.hud?.content else {
+            Issue.record("expected the choice bar")
+            return
+        }
+        #expect(choice.readings.map(\.text) == ["층로", "cmd로", "cmdfh"], "c층로 is 11 nats behind")
+        #expect(choice.selected == 0)
+        #expect(eligible, "cmd로 is within 5 %")
+    }
+
+    @Test func atMostFiveReadingsAreListed() {
+        let h = EngineHarness()
+        h.detector.scores["abcdef"] = [.korean: -20000, .english: -20500, .mixed(latin: 1): -21000,
+                                       .mixed(latin: 2): -21500, .mixed(latin: 3): -22000, .mixed(latin: 4): -22500]
+        h.type("abcdef")
+        guard case .alternative(let choice, _)? = h.hud?.content else {
+            Issue.record("expected the choice bar")
+            return
+        }
+        #expect(choice.readings.count == CompositionEngine.maxCandidates)
+        #expect(!choice.readings.map(\.text).contains(FakeDetector().render(raw: "abcdef", .mixed(latin: 4))))
+    }
+
+    @Test func readingsFarBehindAreNotListed() {
+        let h = EngineHarness()
+        h.detector.scores["cmdfh"] = [.korean: -23000, .mixed(latin: 3): -25000, .english: -33001]
+        h.type("cmdfh")
+        guard case .alternative(let choice, _)? = h.hud?.content else {
+            Issue.record("expected the choice bar")
+            return
+        }
+        #expect(choice.readings.map(\.text) == ["층로", "cmd로"], "E is more than 10 nats behind")
     }
 
     // MARK: Clicking the word being typed

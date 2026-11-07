@@ -57,6 +57,7 @@ final class FakeDetector: LanguageDetector, @unchecked Sendable {
         prefixCalls = []
         prefixContexts = []
         finalCalls = []
+        choiceCalls = []
     }
 
     // MARK: LanguageDetector
@@ -67,6 +68,15 @@ final class FakeDetector: LanguageDetector, @unchecked Sendable {
         lastUser = user
         lastBias = biasKO
         return make(scores[raw] ?? fallback(raw), user: user, biasKO: biasKO)
+    }
+
+    /// The choice bar's scoring, kept apart from `finalCalls` (those are commits and eager E).
+    private(set) var choiceCalls: [String] = []
+
+    func choiceScores(raw: String, context: LanguageContext, user: UserCounts?, biasKO: Int) -> HypothesisScores {
+        choiceCalls.append(raw)
+        let table = finalsByContext[raw]?[context] ?? finals[raw] ?? scores[raw] ?? fallback(raw)
+        return make(table, user: user, biasKO: biasKO)
     }
 
     func finalScores(raw: String, context: LanguageContext, terminator: Terminator, user: UserCounts?,
