@@ -128,11 +128,12 @@ public enum ReplacementSupport: String, Sendable, Codable, Hashable {
 /// 300 ms appear delay, the 140 ms hide debounce and fades (critique R12).
 public struct HUDRequest: Hashable, Sendable {
     public enum Content: Hashable, Sendable {
-        /// The other reading of the token being composed (critique R11).
+        /// The token being composed and its other reading, on the choice bar (critique R11).
         /// `eligible == false` means "keep showing it if it is already visible, but don't bring it up".
-        case alternative(text: String, language: ScriptLanguage, eligible: Bool)
-        /// "↺ flip last word" chip after an uncertain/surprising commit, or Backspace right after one.
-        case flipLastWord(text: String, language: ScriptLanguage)
+        case alternative(HUDChoice, eligible: Bool)
+        /// The word just committed and its other reading, after an uncertain or surprising commit,
+        /// or Backspace right after one.
+        case flipLastWord(HUDChoice)
         /// One-shot language for the next word (flip with nothing to flip).
         case oneShot(ScriptLanguage)
         /// "여기서는 바꿀 수 없어요" (the client can't replace text).
@@ -167,6 +168,40 @@ public struct HUDRequest: Hashable, Sendable {
         self.lifetime = lifetime
         self.pulse = pulse
     }
+}
+
+/// One reading on the HUD's choice bar.
+public struct HUDReading: Hashable, Sendable {
+    public var text: String
+    public var language: ScriptLanguage
+
+    public init(text: String, language: ScriptLanguage) {
+        self.text = text
+        self.language = language
+    }
+}
+
+/// The two readings of one word on the choice bar (docs/SPEC.md §4.11): the one in the document
+/// and the one a flip or a click switches to.
+///
+/// The display order stays the same for a word whichever reading is selected, so a flip moves the
+/// selection instead of swapping the readings.
+public struct HUDChoice: Hashable, Sendable {
+    /// Both readings, in display order.
+    public let readings: [HUDReading]
+    /// Index in ``readings`` of the reading in the document.
+    public let selected: Int
+
+    /// - Parameter currentFirst: whether `current` is drawn first.
+    public init(current: HUDReading, other: HUDReading, currentFirst: Bool) {
+        readings = currentFirst ? [current, other] : [other, current]
+        selected = currentFirst ? 0 : 1
+    }
+
+    /// The reading in the document.
+    public var current: HUDReading { readings[selected] }
+    /// The reading a flip or a click switches to.
+    public var other: HUDReading { readings[1 - selected] }
 }
 
 /// Why a composition is being committed without a key of its own.

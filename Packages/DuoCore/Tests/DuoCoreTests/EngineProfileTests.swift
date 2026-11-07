@@ -497,7 +497,7 @@ struct EngineProfileTests {
         }
         let control = EngineHarness(settings: settings)
         uncertain(control)
-        #expect(control.hud?.content == .flipLastWord(text: "dk", language: .english))
+        #expect(control.hud?.content == .flipLastWord(bar("아", .korean, offering: "dk", .english, currentFirst: true)))
 
         let h = EngineHarness(settings: settings, bundleIdentifier: "com.microsoft.VSCode")
         h.buffer.ignoresReplacementRanges = true

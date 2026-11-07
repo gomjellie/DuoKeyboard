@@ -7,10 +7,15 @@ private let badge = HUDRequest(content: .bilingualLine, anchor: .caret, immediat
 private func oneShot(_ language: ScriptLanguage) -> HUDRequest {
     HUDRequest(content: .oneShot(language), anchor: .caret, immediate: true, lifetime: 0.9)
 }
-private let chip = HUDRequest(content: .flipLastWord(text: "해", language: .korean), anchor: .location(3),
-                              immediate: true, lifetime: 1.6)
-private let alternative = HUDRequest(content: .alternative(text: "dk", language: .english, eligible: true),
-                                     anchor: .markedText)
+private let chip = HUDRequest(
+    content: .flipLastWord(HUDChoice(current: HUDReading(text: "go", language: .english),
+                                     other: HUDReading(text: "해", language: .korean), currentFirst: false)),
+    anchor: .location(3), immediate: true, lifetime: 4)
+private let alternative = HUDRequest(
+    content: .alternative(HUDChoice(current: HUDReading(text: "아", language: .korean),
+                                    other: HUDReading(text: "dk", language: .english), currentFirst: true),
+                          eligible: true),
+    anchor: .markedText)
 
 @Suite("HUD announcements for flip-key feedback")
 struct HUDAnnouncementTests {

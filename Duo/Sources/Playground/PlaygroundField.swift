@@ -43,7 +43,8 @@ struct PlaygroundField: View {
         }
         .overlay(alignment: .topLeading) {
             if let hud = model.hud, usesEngine {
-                PlaygroundHUDChip(request: hud, flipKey: app.settings.value.flipKey)
+                let flipKey = app.settings.value.flipKey
+                PlaygroundHUDChip(request: hud, flipKey: flipKey)
                     .offset(x: max(0, anchor.minX - 8), y: anchor.maxY + 6)
                     .transition(.opacity)
                     .allowsHitTesting(false)
@@ -195,19 +196,16 @@ struct PlaygroundHUDChip: View {
     let request: HUDRequest
     let flipKey: FlipKey
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var pill
+
     var body: some View {
         HStack(spacing: 6) {
             switch request.content {
-            case .alternative(let text, let language, _):
-                LanguageBadge(language: language, size: 20)
-                Text(verbatim: text).font(.system(size: 14, weight: .medium))
-                KeyCaps(caps: flipKey.keycaps, size: 10)
-            case .flipLastWord(let text, let language):
-                Image(systemName: "arrow.uturn.backward")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(DuoStyle.color(for: language))
-                    .frame(width: 20, height: 20)
-                Text(verbatim: text).font(.system(size: 14, weight: .medium))
+            case .alternative(let choice, _), .flipLastWord(let choice):
+                choiceBar(choice)
+                    .animation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(duration: 0.3, bounce: 0.15),
+                               value: choice.selected)
                 KeyCaps(caps: flipKey.keycaps, size: 10)
             case .oneShot(let language):
                 LanguageBadge(language: language, size: 22)
@@ -222,10 +220,42 @@ struct PlaygroundHUDChip: View {
         }
         .lineLimit(1)
         .fixedSize()
-        .padding(.leading, 4)
+        .padding(.leading, isChoice ? 3 : 4)
         .padding(.trailing, 6)
         .frame(height: 28)
         .duoGlass(.regular, in: Capsule())
         .accessibilityElement(children: .combine)
+    }
+
+    private var isChoice: Bool { HUDPresentation(request.content, flipKey: flipKey).choice != nil }
+
+    /// Both readings, the one in the text on the selection pill.
+    private func choiceBar(_ choice: HUDChoice) -> some View {
+        HStack(spacing: 2) {
+            ForEach(Array(choice.readings.enumerated()), id: \.offset) { index, reading in
+                if index == choice.selected {
+                    readingLabel(reading, prominent: true)
+                        .background {
+                            Capsule().fill(DuoStyle.color(for: reading.language).opacity(0.22))
+                                .matchedGeometryEffect(id: "pill", in: pill)
+                        }
+                } else {
+                    readingLabel(reading, prominent: false)
+                }
+            }
+        }
+    }
+
+    private func readingLabel(_ reading: HUDReading, prominent: Bool) -> some View {
+        HStack(spacing: 5) {
+            LanguageBadge(language: reading.language, size: 16)
+            Text(verbatim: reading.text)
+                .font(.system(size: 13.5, weight: .medium))
+                .foregroundStyle(prominent ? .primary : .secondary)
+        }
+        .padding(.leading, 3)
+        .padding(.trailing, 8)
+        .frame(height: 22)
+        .contentShape(Capsule())
     }
 }

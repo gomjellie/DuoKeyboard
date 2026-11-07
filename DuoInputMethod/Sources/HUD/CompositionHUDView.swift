@@ -17,9 +17,11 @@ final class CompositionHUDModel {
     init() {}
 }
 
-/// The Liquid Glass composition chip (ui-design §2.2 merged with critique R12): a 28 pt capsule with
-/// a 20 pt language badge (가 orange / A blue), the alternative in 14 pt medium, and the flip key's
-/// keycaps. The view is hidden from accessibility (ux-spec §7.5); flips are announced instead.
+/// The Liquid Glass composition chip (ui-design §2.2 merged with critique R12): a 28 pt capsule.
+/// A word with two plausible readings gets the choice bar (docs/SPEC.md §4.11): both readings with
+/// 16 pt language badges (가 orange / A blue), the one in the document on a selection pill, then the
+/// flip key's keycaps. Feedback is a 20 pt badge or a message. The view is hidden from
+/// accessibility (ux-spec §7.5); flips are announced instead.
 struct CompositionHUDView: View {
     let model: CompositionHUDModel
 
@@ -36,13 +38,12 @@ struct CompositionHUDView: View {
     var body: some View {
         let presentation = model.presentation
         HStack(spacing: 6) {
-            if let language = presentation.badge {
+            if let choice = presentation.choice {
+                ChoiceBar(choice: choice, emphasized: reduceTransparency || contrast == .increased)
+                    .animation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(duration: 0.3, bounce: 0.15),
+                               value: choice.selected)
+            } else if let language = presentation.badge {
                 LanguageBadge(language: language)
-            }
-            if presentation.showsUndoGlyph {
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
             }
             if presentation.kind == .cannotChange {
                 Text("여기서는 바꿀 수 없어요")
@@ -50,17 +51,6 @@ struct CompositionHUDView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .fixedSize()
-            } else if !presentation.text.isEmpty {
-                Text(verbatim: presentation.text)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: Self.maximumTextWidth, alignment: .leading)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .contentTransition(reduceMotion ? .opacity : .interpolate)
-                    .animation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(duration: 0.28, bounce: 0.12),
-                               value: model.flipCount)
             }
             if !presentation.keycaps.isEmpty {
                 Keycaps(glyphs: presentation.keycaps, emphasized: reduceTransparency || contrast == .increased)
@@ -88,8 +78,11 @@ struct CompositionHUDView: View {
         .accessibilityHidden(true)
     }
 
-    /// The badge sits concentric in the capsule (4 pt); text-only content gets a roomier inset.
-    private func leadingPadding(_ p: HUDPresentation) -> CGFloat { p.badge == nil ? 12 : 4 }
+    /// Badges and the selection pill sit concentric in the capsule; a message gets a roomier inset.
+    private func leadingPadding(_ p: HUDPresentation) -> CGFloat {
+        if p.choice != nil { return ChoiceBar.inset }
+        return p.badge == nil ? 12 : 4
+    }
 
     private func trailingPadding(_ p: HUDPresentation) -> CGFloat {
         if p.isBadgeOnly || !p.keycaps.isEmpty { return 4 }
@@ -97,17 +90,73 @@ struct CompositionHUDView: View {
     }
 }
 
-/// 20 pt circle with "가" (orange, Korean) or "A" (blue, English): which language the chip offers.
+/// Both readings of a word, the one in the document on the selection pill. A flip slides the pill
+/// over, since the order never changes.
+private struct ChoiceBar: View {
+    let choice: HUDChoice
+    let emphasized: Bool
+
+    /// Pill inset inside the 28 pt capsule, so the pill is concentric with it.
+    static let inset: CGFloat = 3
+    @Namespace private var pill
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(Array(choice.readings.enumerated()), id: \.offset) { index, reading in
+                if index == choice.selected {
+                    ReadingLabel(reading: reading, prominent: true)
+                        .background {
+                            // Tinted with the reading's language, so it cannot pass for a hover.
+                            Capsule()
+                                .fill(LanguageBadge.color(for: reading.language).opacity(emphasized ? 0.34 : 0.22))
+                                .matchedGeometryEffect(id: "pill", in: pill)
+                        }
+                } else {
+                    ReadingLabel(reading: reading, prominent: false)
+                }
+            }
+        }
+    }
+}
+
+/// One reading: its 16 pt badge and its text.
+private struct ReadingLabel: View {
+    let reading: HUDReading
+    let prominent: Bool
+
+    var body: some View {
+        HStack(spacing: 5) {
+            LanguageBadge(language: reading.language, size: 16)
+            Text(verbatim: reading.text)
+                .font(.system(size: 13.5, weight: .medium))
+                .foregroundStyle(prominent ? .primary : .secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: CompositionHUDView.maximumTextWidth / 2, alignment: .leading)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .padding(.leading, 3)
+        .padding(.trailing, 8)
+        .frame(height: CompositionHUDView.height - 2 * ChoiceBar.inset)
+        .contentShape(Capsule())
+    }
+}
+
+/// A circle with "가" (orange, Korean) or "A" (blue, English): the language of a reading or of the
+/// next word.
 private struct LanguageBadge: View {
     let language: ScriptLanguage
+    var size: CGFloat = 20
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    static func color(for language: ScriptLanguage) -> Color { language == .english ? .blue : .orange }
 
     var body: some View {
         Image(systemName: language == .english ? "character" : "character.ko")
-            .font(.system(size: 11, weight: .semibold))
+            .font(.system(size: size * 0.55, weight: .semibold))
             .foregroundStyle(.white)
-            .frame(width: 20, height: 20)
-            .background(Circle().fill(language == .english ? Color.blue : Color.orange))
+            .frame(width: size, height: size)
+            .background(Circle().fill(Self.color(for: language)))
             .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace.downUp))
             .animation(.snappy(duration: 0.22), value: language)
     }

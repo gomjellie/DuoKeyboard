@@ -101,8 +101,9 @@ struct SnapshotRenderer {
         // 3 써보기
         let tryIt = await model(state: enabledOnly)
         let tryPlayground = await playground(tryIt, text: "안녕하세요 Duo를 써봐요. 이건 ", marked: "해")
-        tryPlayground.showFixtureHUD(HUDRequest(content: .alternative(text: "go", language: .english, eligible: true),
-                                                anchor: .markedText))
+        let goChoice = HUDChoice(current: HUDReading(text: "해", language: .korean),
+                                 other: HUDReading(text: "go", language: .english), currentFirst: true)
+        tryPlayground.showFixtureHUD(HUDRequest(content: .alternative(goChoice, eligible: true), anchor: .markedText))
         let detectedCoach = FlipKeyCoachModel(fixtureFlipKey: .rightCommand, detected: true, offersAlternatives: false)
         let someProgress = PracticeProgress(greeting: true, numbers: false, flippedWhileTyping: true, flippedLastWord: false)
         result.append(("onboarding-3-try", onboardingScene(.tryIt, tryIt,

@@ -127,7 +127,8 @@ struct EngineCompositionTests {
         #expect(h.detector.finalCalls.map(\.raw) == ["bbb"], "final mode asked only once all else agreed")
         let space = h.press(.space)
         #expect(space.mutations == [.insert("ㅠㅠㅠ", nil)])
-        #expect(h.hud?.content == .flipLastWord(text: "bbb", language: .english), "shown ≠ committed: chip (R2)")
+        #expect(h.hud?.content == .flipLastWord(bar("ㅠㅠㅠ", .korean, offering: "bbb", .english, currentFirst: true)),
+                "shown ≠ committed: chip (R2)")
     }
 
     @Test func eagerCommitNeverEndsOnAnAttachableConsonant() {

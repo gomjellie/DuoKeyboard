@@ -261,7 +261,8 @@ struct EngineScenarioTests {
         #expect(h.hud?.isEligible == true)
         h.press(.space)
         #expect(h.text == "go ")
-        #expect(h.hud?.content == .flipLastWord(text: "해", language: .korean), "never silently different (R2)")
+        #expect(h.hud?.content == .flipLastWord(bar("go", .english, offering: "해", .korean, currentFirst: false)),
+                "never silently different (R2)")
         #expect(h.learned("go", .start) == [.english: 1], "ambiguous implicit commit: +1")
     }
 

@@ -4,12 +4,15 @@ import Foundation
 import Testing
 
 private func alternative(_ text: String, eligible: Bool = true, pulse: Bool = false) -> HUDRequest {
-    HUDRequest(content: .alternative(text: text, language: .english, eligible: eligible), anchor: .markedText,
-               pulse: pulse)
+    let choice = HUDChoice(current: HUDReading(text: "·", language: .korean),
+                           other: HUDReading(text: text, language: .english), currentFirst: true)
+    return HUDRequest(content: .alternative(choice, eligible: eligible), anchor: .markedText, pulse: pulse)
 }
 
-private let chip = HUDRequest(content: .flipLastWord(text: "go", language: .english), anchor: .location(10),
-                              immediate: true, lifetime: 1.6)
+private let chip = HUDRequest(
+    content: .flipLastWord(HUDChoice(current: HUDReading(text: "해", language: .korean),
+                                     other: HUDReading(text: "go", language: .english), currentFirst: true)),
+    anchor: .location(10), immediate: true, lifetime: 1.6)
 private let oneShot = HUDRequest(content: .oneShot(.english), anchor: .caret, immediate: true, lifetime: 0.9)
 
 private let timing = HUDTimeline.Timing.standard
@@ -362,3 +365,4 @@ struct HUDTimelineTriggerTests {
         #expect(t.nextDeadline == 10.5 + timing.hideDebounce)
     }
 }
+

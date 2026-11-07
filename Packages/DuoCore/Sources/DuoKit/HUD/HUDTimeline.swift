@@ -189,7 +189,7 @@ public struct HUDTimeline: Sendable, Equatable {
 private extension HUDRequest {
     /// Alternatives must earn the HUD; feedback (chips, badges, messages) always may show.
     var earnsHUD: Bool {
-        if case .alternative(_, _, let eligible) = content { return eligible }
+        if case .alternative(_, let eligible) = content { return eligible }
         return true
     }
 

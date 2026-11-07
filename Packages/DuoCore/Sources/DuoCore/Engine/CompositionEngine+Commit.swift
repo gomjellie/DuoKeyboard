@@ -3,7 +3,7 @@
 import Foundation
 
 extension CompositionEngine {
-    /// How long the "↺ flip last word" chip stays up.
+    /// How long the last word's choice bar stays up.
     static let chipLifetime: TimeInterval = 1.6
     /// How long after a commit the word can still be flipped (case b).
     static let lastCommitLifetime: TimeInterval = 30
@@ -100,8 +100,7 @@ extension CompositionEngine {
             let surprising = render(t.raw, t.shown) != fullText
             let uncertain = margin.map { $0 <= Margins.uncertainCommit } ?? false
             if surprising || uncertain {
-                hud = HUDRequest(content: .flipLastWord(text: lc.alternativeText, language: lc.alternative.language),
-                                 anchor: .location(end - lc.length), immediate: true, lifetime: Self.chipLifetime)
+                hud = lastWordChoiceHUD(lc, start: end - lc.length)
             }
         }
 
@@ -110,6 +109,13 @@ extension CompositionEngine {
         notify(.committed(language: h.language))
         if !votes.isEmpty { notify(.learningChanged) }
         return h
+    }
+
+    /// The choice bar for the word just committed; `start` is its document location.
+    func lastWordChoiceHUD(_ lc: LastCommit, start: Int) -> HUDRequest {
+        HUDRequest(content: .flipLastWord(choice(current: (lc.hypothesis, lc.text),
+                                                 other: (lc.alternative, lc.alternativeText))),
+                   anchor: .location(start), immediate: true, lifetime: Self.chipLifetime)
     }
 
     /// Learning is on and not paused.

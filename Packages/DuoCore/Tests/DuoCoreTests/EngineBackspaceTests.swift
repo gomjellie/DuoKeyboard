@@ -130,8 +130,8 @@ struct EngineBackspaceTests {
         #expect(!step.consumed)
         #expect(step.calls == [.selectedRange])
         #expect(h.text == "안녕")
-        #expect(h.hud == HUDRequest(content: .flipLastWord(text: "dkssud", language: .english), anchor: .location(0),
-                                    immediate: true, lifetime: 1.6))
+        #expect(h.hud == HUDRequest(content: .flipLastWord(bar("안녕", .korean, offering: "dkssud", .english, currentFirst: true)),
+                                    anchor: .location(0), immediate: true, lifetime: CompositionEngine.chipLifetime))
         let flip = h.flip()
         #expect(flip == [.selectedRange, .string(NSRange(location: 0, length: 2)),
                          .insert("dkssud", NSRange(location: 0, length: 2))])

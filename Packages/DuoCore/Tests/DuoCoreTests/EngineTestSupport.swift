@@ -297,16 +297,29 @@ final class EngineHarness {
 }
 
 extension HUDRequest {
-    /// The alternative text when this is an `.alternative` request.
+    /// The offered reading's text when this is an `.alternative` request.
     var alternativeText: String? {
-        if case .alternative(let text, _, _) = content { return text }
+        if case .alternative(let choice, _) = content { return choice.other.text }
         return nil
     }
 
     var isEligible: Bool {
-        if case .alternative(_, _, let eligible) = content { return eligible }
+        if case .alternative(_, let eligible) = content { return eligible }
         return false
     }
+
+    /// This is the last word's choice bar.
+    var isLastWordChoice: Bool {
+        if case .flipLastWord = content { return true }
+        return false
+    }
+}
+
+/// A choice bar for expectations: `current` is in the document, `other` is offered.
+func bar(_ current: String, _ currentLanguage: ScriptLanguage, offering other: String, _ otherLanguage: ScriptLanguage,
+         currentFirst: Bool) -> HUDChoice {
+    HUDChoice(current: HUDReading(text: current, language: currentLanguage),
+              other: HUDReading(text: other, language: otherLanguage), currentFirst: currentFirst)
 }
 
 extension KeyEvent {

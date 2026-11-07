@@ -162,7 +162,8 @@ struct EngineRobustnessTests {
         #expect(h.hud?.alternativeText == "g")
         #expect(h.hud?.isEligible == false, "one key outside the collision set")
         h.type("o")
-        #expect(h.hud == HUDRequest(content: .alternative(text: "go", language: .english, eligible: true), anchor: .markedText))
+        #expect(h.hud == HUDRequest(content: .alternative(bar("해", .korean, offering: "go", .english, currentFirst: true),
+                                                          eligible: true), anchor: .markedText))
     }
 
     @Test(arguments: ["a", "e", "i", "o", "u", "x", "I"])
@@ -227,10 +228,10 @@ struct EngineRobustnessTests {
         #expect(h.marked == "해")
         h.press(.space)
         #expect(h.text == "go ")
-        #expect(h.hud == HUDRequest(content: .flipLastWord(text: "해", language: .korean), anchor: .location(0),
-                                    immediate: true, lifetime: 1.6))
+        #expect(h.hud == HUDRequest(content: .flipLastWord(bar("go", .english, offering: "해", .korean, currentFirst: false)),
+                                    anchor: .location(0), immediate: true, lifetime: CompositionEngine.chipLifetime))
         h.press(.letter("a"))
-        #expect(h.hud?.content != .flipLastWord(text: "해", language: .korean), "the next key cancels the chip")
+        #expect(h.hud?.isLastWordChoice != true, "the next key cancels the chip")
     }
 
     @Test(arguments: [(619, true), (620, false)])
@@ -241,7 +242,7 @@ struct EngineRobustnessTests {
         h.type("dk ")
         #expect(h.text == "아 ")
         if chip {
-            #expect(h.hud?.content == .flipLastWord(text: "dk", language: .english))
+            #expect(h.hud?.content == .flipLastWord(bar("아", .korean, offering: "dk", .english, currentFirst: true)))
         } else {
             #expect(h.hud == nil)
         }
@@ -277,8 +278,9 @@ struct EngineRobustnessTests {
         // Final mode prefers E (consistent with the committed "push"): a surprise, so the chip
         // offers M(4) and anchors where the whole word starts, not where the last insert began.
         #expect(h.text == "ㅐㅏ pushgo ")
-        #expect(h.hud == HUDRequest(content: .flipLastWord(text: "push해", language: .korean), anchor: .location(3),
-                                    immediate: true, lifetime: 1.6))
+        #expect(h.hud == HUDRequest(content: .flipLastWord(bar("pushgo", .english, offering: "push해", .korean,
+                                                               currentFirst: false)),
+                                    anchor: .location(3), immediate: true, lifetime: CompositionEngine.chipLifetime))
         h.flip()
         #expect(h.text == "ㅐㅏ push해 ")
     }
@@ -304,6 +306,7 @@ struct EngineRobustnessTests {
         }
         #expect(h.text == "안녕하세요 hello 반갑습니다.")
     }
+
     // MARK: Commits by a modifier
 
     @Test(arguments: [(UInt16(57), FlipTapDetector.Flags.capsLock), (UInt16(63), FlipTapDetector.Flags.function)])

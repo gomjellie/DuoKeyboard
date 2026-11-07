@@ -458,6 +458,27 @@ public final class CompositionEngine {
         return mixed?.hypothesis
     }
 
+    /// The choice bar for a word read as `current` with `other` offered.
+    func choice(current: (Hypothesis, String), other: (Hypothesis, String)) -> HUDChoice {
+        HUDChoice(current: HUDReading(text: current.1, language: current.0.language),
+                  other: HUDReading(text: other.1, language: other.0.language),
+                  currentFirst: Self.displayRank(current.0) <= Self.displayRank(other.0))
+    }
+
+    func choice(raw: String, current: Hypothesis, other: Hypothesis) -> HUDChoice {
+        choice(current: (current, render(raw, current)), other: (other, render(raw, other)))
+    }
+
+    /// Choice-bar order: the Korean reading, then mixed readings by Latin length, then English.
+    /// The order depends only on the hypotheses, so it survives a flip.
+    static func displayRank(_ h: Hypothesis) -> (Int, Int) {
+        switch h {
+        case .korean: (0, 0)
+        case .mixed(let latin): (1, latin)
+        case .english: (2, 0)
+        }
+    }
+
     func setMarked(_ text: String, in t: inout Token, client: any TextClient) {
         client.setMarkedText(text, replacementRange: nil)
         t.marked = text

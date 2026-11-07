@@ -117,7 +117,7 @@ extension CompositionEngine {
         guard let alt, let altScore = scores[alt], let shownScore = scores[t.shown] else { return nil }
         let eligible = !isRepeat && shownScore - altScore <= Margins.hudAlternative
             && (t.count >= 2 || Self.collisionKeys.contains(t.raw.lowercased()))
-        return HUDRequest(content: .alternative(text: render(t.raw, alt), language: alt.language, eligible: eligible),
+        return HUDRequest(content: .alternative(choice(raw: t.raw, current: t.shown, other: alt), eligible: eligible),
                           anchor: .markedText, pulse: pulse)
     }
 
@@ -295,8 +295,7 @@ extension CompositionEngine {
             return
         }
         if settings.offerUndoAfterCommit, clientProfile.canReplaceCommittedText {
-            hud = HUDRequest(content: .flipLastWord(text: lc.alternativeText, language: lc.alternative.language),
-                             anchor: .location(end - lc.length), immediate: true, lifetime: Self.chipLifetime)
+            hud = lastWordChoiceHUD(lc, start: end - lc.length)
         }
     }
 

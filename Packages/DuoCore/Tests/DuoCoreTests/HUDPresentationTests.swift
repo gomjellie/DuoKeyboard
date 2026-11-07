@@ -2,33 +2,46 @@ import DuoCore
 import DuoKit
 import Testing
 
+/// 아 in the document, dk offered.
+private let choice = HUDChoice(current: HUDReading(text: "아", language: .korean),
+                               other: HUDReading(text: "dk", language: .english), currentFirst: true)
+
 @Suite("HUD presentation")
 struct HUDPresentationTests {
-    @Test("an alternative shows its badge, text and the flip key's keycaps", arguments: FlipKey.allCases)
+    @Test("an alternative is the choice bar with both readings and the flip key's keycaps",
+          arguments: FlipKey.allCases)
     func alternative(flipKey: FlipKey) {
-        let p = HUDPresentation(.alternative(text: "dkssud", language: .english, eligible: true), flipKey: flipKey)
+        let p = HUDPresentation(.alternative(choice, eligible: true), flipKey: flipKey)
         #expect(p.kind == .alternative)
-        #expect(p.text == "dkssud")
-        #expect(p.badge == .english)
+        #expect(p.choice == choice)
+        #expect(p.badge == nil)
         #expect(p.keycaps == flipKey.keycaps)
-        #expect(!p.showsUndoGlyph)
         #expect(!p.isBadgeOnly)
         #expect(p.opacity == 1)
     }
 
+    @Test("the choice keeps its order and marks the reading in the document")
+    func choiceOrder() {
+        #expect(choice.readings.map(\.text) == ["아", "dk"])
+        #expect(choice.current.text == "아")
+        #expect(choice.other.text == "dk")
+        let flipped = HUDChoice(current: choice.other, other: choice.current, currentFirst: false)
+        #expect(flipped.readings == choice.readings, "a flip moves the selection, not the readings")
+        #expect(flipped.selected == 1)
+    }
+
     @Test("eligibility does not change what is drawn")
     func eligibilityIsTimingOnly() {
-        let a = HUDPresentation(.alternative(text: "해", language: .korean, eligible: true), flipKey: .rightCommand)
-        let b = HUDPresentation(.alternative(text: "해", language: .korean, eligible: false), flipKey: .rightCommand)
+        let a = HUDPresentation(.alternative(choice, eligible: true), flipKey: .rightCommand)
+        let b = HUDPresentation(.alternative(choice, eligible: false), flipKey: .rightCommand)
         #expect(a == b)
     }
 
-    @Test("the flip-last-word chip adds the ↺ glyph")
+    @Test("the last word's choice bar shows both readings too")
     func flipLastWord() {
-        let p = HUDPresentation(.flipLastWord(text: "해", language: .korean), flipKey: .rightCommand)
+        let p = HUDPresentation(.flipLastWord(choice), flipKey: .rightCommand)
         #expect(p.kind == .flipLastWord)
-        #expect(p.showsUndoGlyph)
-        #expect(p.badge == .korean)
+        #expect(p.choice == choice)
         #expect(p.keycaps == ["⌘"])
     }
 
