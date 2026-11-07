@@ -334,6 +334,24 @@ struct EngineScenarioTests {
         #expect(h.text == mixed + " ")
     }
 
+    @Test func cmdChosenAsEnglishThenRoReadsCmdRo() {
+        let h = Self.harness()
+        h.type("cmd")
+        #expect(h.marked == "층")
+        h.flip()
+        #expect(h.marked == "cmd")
+        h.type("fh")
+        #expect(h.marked == "cmd로")
+        h.press(.space)
+        #expect(h.text == "cmd로 ")
+    }
+
+    @Test func cmdLeftAsKoreanThenRoReadsCheungRo() {
+        let h = Self.harness()
+        h.type("cmdfh ")
+        #expect(h.text == "층로 ", "층 stays possible: no rule makes cmd English")
+    }
+
     @Test func pausingInsideAKoreanSyllableShowsNoBar() {
         // Review: final mode reads 감ㅅ as a finished word, so rkat (E) looked likely.
         let h = Self.harness()

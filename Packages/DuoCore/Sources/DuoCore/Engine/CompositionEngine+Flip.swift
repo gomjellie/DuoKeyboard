@@ -99,6 +99,7 @@ extension CompositionEngine {
             target = next
             if t.lockedOriginal == nil { t.lockedOriginal = t.shown }
         }
+        if target == t.lockedOriginal, let previous = t.locked, previous != target { t.lockedReturn = previous }
 
         if t.committed > 0, !t.isConsistent(target) {
             // The Latin committed by eager E must be re-opened: verify it, then replace committed +
@@ -124,6 +125,7 @@ extension CompositionEngine {
         }
         t.locked = target
         t.shown = target
+        t.lockedLatin = Self.latinCount(of: target, count: t.count)
         t.keptByChoice = false
         t.languageLock = nil
         self.token = t

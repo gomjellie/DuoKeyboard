@@ -43,6 +43,7 @@ extension CompositionEngine {
             }
             t.scores = prefixScores(t.raw, t.context)
             t.shown = .english
+            continueAfterLatinChoice(&t)
             let changed = t.applyHysteresis(hysteresis)
             setMarked(display(t, t.shown), in: &t, client: client)
             token = t
@@ -51,6 +52,7 @@ extension CompositionEngine {
         }
 
         t.scores = prefixScores(t.raw, t.context)
+        continueAfterLatinChoice(&t)
         let changed = t.applyHysteresis(hysteresis) && t.count >= 2
         if shouldEagerCommit(t) {
             insert(display(t, .english), client: client)

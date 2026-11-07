@@ -19,6 +19,12 @@ struct Token {
     var locked: Hypothesis?
     /// What was shown when the token was first flipped; a second flip returns to it.
     var lockedOriginal: Hypothesis?
+    /// Keys the user confirmed as Latin by choosing E or M(b) (flip or the choice bar). A Korean
+    /// ending may follow them: `cmd`, chosen as English, then `fh` reads cmd로 (docs/SPEC.md §4.11).
+    var lockedLatin: Int?
+    /// The reading the user last locked away from `lockedOriginal`: from the original, the flip key
+    /// returns to it (cmd로 after cmd + flip + fh, then a flip back to 층로).
+    var lockedReturn: Hypothesis?
     /// The user kept the shown reading on the choice bar: an explicit choice, taught at the commit
     /// when the model would have committed another reading.
     var keptByChoice = false
@@ -86,7 +92,7 @@ struct Token {
     /// Backspace never changes the language (ux-spec §2.4): keep `shown` unless it can no longer be
     /// shown, in which case fall back to the best allowed reading.
     mutating func keepShownIfPossible() {
-        if let locked, !exists(locked) {
+        if let locked, !isWellFormed(locked) {
             // A flipped M(b) whose Korean tail was deleted reads as its Latin part.
             self.locked = .english
             if let original = lockedOriginal, !exists(original) { lockedOriginal = .english }
@@ -98,6 +104,13 @@ struct Token {
         if !isAllowed(shown) || !exists(shown) {
             shown = scores?.best(where: isAllowed)?.hypothesis ?? .english
         }
+    }
+
+    /// Whether `h` can be rendered for the current raw, scored or not (M(b) needs `1 ≤ b < count`
+    /// and no apostrophe). A chosen M(b) the detector does not score stays chosen.
+    func isWellFormed(_ h: Hypothesis) -> Bool {
+        if case .mixed(let b) = h { return b >= 1 && b < count && !raw.contains("'") }
+        return true
     }
 
     /// Whether `h` is a hypothesis of the current raw (M(b) needs `1 ≤ b < count`).

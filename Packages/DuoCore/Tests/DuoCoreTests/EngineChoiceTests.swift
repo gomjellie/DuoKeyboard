@@ -144,6 +144,63 @@ struct EngineChoiceTests {
         #expect(h.engine.token?.locked == nil)
     }
 
+    // MARK: A Korean ending after a Latin choice
+
+    @Test func afterChoosingEnglishAKoreanEndingFollows() {
+        let h = EngineHarness()
+        h.detector.scores["c"] = [.korean: -3000, .english: -9000]
+        h.detector.scores["cm"] = [.korean: -6000, .english: -12000]
+        h.detector.scores["cmd"] = [.korean: -9000, .english: -10000]
+        h.type("cmd")
+        #expect(h.marked == "층")
+        h.flip()
+        #expect(h.marked == "cmd")
+        h.detector.scores["cmdf"] = [.korean: -20000, .mixed(latin: 3): -21000, .english: -22000]
+        Self.scriptCmdFh(h.detector)
+        h.type("fh")
+        #expect(h.marked == "cmd로", "the ending reads as Korean after the chosen English")
+        h.press(.space)
+        #expect(h.text == "cmd로 ")
+    }
+
+    @Test func englishThatContinuesStaysEnglish() {
+        let h = EngineHarness()
+        h.detector.scores["cmd"] = [.korean: -9000, .english: -10000]
+        h.type("cmd")
+        h.flip()
+        h.detector.scores["cmds"] = [.korean: -20000, .mixed(latin: 3): -26000, .english: -14000]
+        h.type("s")
+        #expect(h.marked == "cmds")
+    }
+
+    @Test func withoutAScoreAWholeSyllableEndingFollowsTheLatin() {
+        // zlqhem is no lexicon word, so the detector scores no M(6): whole syllables decide.
+        let h = EngineHarness()
+        h.detector.scores["zlqhem"] = [.korean: -9000, .english: -10000]
+        h.type("zlqhem")
+        h.flip()
+        #expect(h.marked == "zlqhem")
+        h.type("dms")
+        #expect(h.marked == "zlqhem은")
+        h.type("x")
+        #expect(h.marked == "zlqhemdmsx", "은 + ㅌ is no whole syllable: back to English")
+    }
+
+    @Test func theFlipKeyReturnsToTheLatinPlusEndingAfterAFlipBack() {
+        let h = EngineHarness()
+        h.detector.scores["cmd"] = [.korean: -9000, .english: -10000]
+        h.type("cmd")
+        h.flip()
+        h.detector.scores["cmdf"] = [.korean: -20000, .mixed(latin: 3): -21000, .english: -22000]
+        h.detector.scores["cmdfh"] = [.korean: -16000, .mixed(latin: 3): -26000, .english: -27000]
+        h.type("fh")
+        #expect(h.marked == "cmd로")
+        h.flip()
+        #expect(h.marked == "층로")
+        h.flip()
+        #expect(h.marked == "cmd로", "back to what the user chose, not to cmdfh")
+    }
+
     @Test func keepingTheShownReadingAgainstTheModelTeachesIt() throws {
         let h = EngineHarness()
         h.detector.scores["cmdfh"] = [.korean: -16000, .mixed(latin: 3): -18000, .english: -27000]
@@ -156,6 +213,17 @@ struct EngineChoiceTests {
         h.press(.space)
         #expect(h.text == "층로 ")
         #expect(h.learned("cmdfh", .start) == [.korean: 3], "a boundary would have committed cmd로")
+    }
+
+    @Test func backspaceKeepsAChosenEndingTheDetectorDoesNotScore() {
+        let h = EngineHarness()
+        h.detector.scores["zlqhem"] = [.korean: -9000, .english: -10000]
+        h.type("zlqhem")
+        h.flip()
+        h.type("dms")
+        #expect(h.marked == "zlqhem은")
+        h.press(.backspace)
+        #expect(h.marked == "zlqhem으", "still Latin plus ending, not zlqhemdm")
     }
 
     // MARK: Clicking the word being typed
