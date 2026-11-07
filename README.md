@@ -510,9 +510,8 @@ Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/
 
 ## 알려진 제한
 
-- **입력 소스 전환 창과 캐럿 옆 표시에서 빈칸으로 보임.** macOS 26은 이 두 곳에 입력 모드의 라벨을 그림. Duo는 입력 모드가 없어서 아무것도 보이지 않음. 메뉴 막대와 입력 메뉴에는 템플릿이 아닌 밝은 "가A" 타일 아이콘(`TISIconIsTemplate = false`)이 보임. 전환 창은 아이콘을 캐시해서 다음 로그인 뒤에 바뀜
-  - 계획: 입력 모드 하나를 더하고 그 모드에 `TISIconLabels` "가A"를 둠
-  - 모드를 더하면 사용자가 입력 소스를 다시 추가하고 허용해야 함(imk-platform 2.4절)
+- **캐럿 옆 입력 소스 표시에서 빈칸으로 보임.** macOS 26은 입력 소스를 바꿀 때 캐럿 옆에 라벨을 띄움. Duo는 라벨 없는 빈 알약으로 보임. ⌘Space 목록에는 이름 "Duo"가 보이고, 메뉴 막대와 입력 메뉴에는 템플릿이 아닌 밝은 "가A" 타일 아이콘(`TISIconIsTemplate = false`)이 보임
+  - 입력 모드를 더하는 방법은 macOS 26.6.2에서 실험했지만 고쳐지지 않았음. 메뉴와 ⌘Space 목록은 Duo를 상위 입력기로만 다루고, 모드를 직접 고르면 표시가 아예 뜨지 않음
 - **다시 설치한 뒤 다시 연결해야 함.** `make install`이나 `install-ime.sh` 뒤에는 Duo를 쓰던 앱이 ABC로 입력됨. 그 앱이 앞에 있을 때 Duo를 다시 고르거나 다른 앱에 갔다 와야 함. 호스트 앱의 설치, 업데이트, 다시 시작은 이 재선택을 직접 함. 뒤에 있던 앱은 다음 포커스 변화 때 다시 붙음
 - **확정한 글자를 바꿀 수 없는 앱.** Monaco 편집기(VS Code와 그 갈래), iTerm2, Hyper, JetBrains IDE, Android Studio, Orca에서는 확정한 단어를 바꾸지 못함. "여기서는 바꿀 수 없어요"를 띄움
   - xterm.js 터미널 중에는 Orca만 목록(`ClientProfile.xtermTerminals`)에 있음. 다른 xterm.js 터미널은 확인하지 않았음

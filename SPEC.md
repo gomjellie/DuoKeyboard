@@ -649,10 +649,10 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
    - ko와 en의 `InfoPlist.strings`;
    - `TISIconIsTemplate = false`(템플릿 아님), `TISIconLabels` `Primary = "가A"`;
    - `TICapsLockLanguageSwitchCapable = false`를 유지함;
-   - **입력 모드 없이 둠**(R19 실험은 미룸);
+   - **입력 모드 없이 둠**(R19. 2026-11-08에 실험함. 아래 알려진 한계 참고);
    - `NSSupportsSuddenTermination = false`. 종료할 때와 SIGTERM에서 학습을 저장함.
-   - 알려진 한계: macOS 26의 입력 소스 전환 창과 캐럿 표시기는 입력 모드의 라벨을 그림. Duo는 입력 모드가 없어서 거기서 빈칸으로 보임.
-   - 계획: 입력 모드 하나를 더하고 그 모드에 `TISIconLabels` "가A"를 닮. 입력 모드를 더하면 macOS의 입력 소스 허용을 다시 받아야 함.
+   - 알려진 한계: macOS 26의 캐럿 옆 입력 소스 표시는 Duo를 라벨 없는 빈 알약으로 그림. TIS는 `TISIconLabels` "가A"를 돌려주지만 표시는 쓰지 않음. ⌘Space 목록에는 이름 "Duo"가 보임.
+   - 입력 모드 하나를 더해도 고쳐지지 않음(macOS 26.6.2에서 실험함). 입력 메뉴와 ⌘Space 목록은 서드파티 입력기를 상위 입력기 항목으로만 다룸. 모드를 직접 선택하면 캐럿 옆 표시가 아예 뜨지 않음. 허용 목록에 모드 항목만 두면 Duo가 꺼짐.
 5. **메뉴 아이콘:** `Tools/IconGen/make_menu_icon.swift`로 `MenuIcon.tiff`를 다시 만듦.
    - 템플릿이 아닌 밝은 16 pt 타일(#E5E5EA, 모서리 반지름 3.5 pt)에 거의 검은(#1C1C1E) heavy "가A";
    - 16×16 px(72 dpi)와 32×32 px(144 dpi) 두 장을 `tiffutil -cathidpicheck`로 묶음.

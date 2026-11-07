@@ -197,8 +197,9 @@ macOS 26의 입력 소스 전환 창에서 Duo 아이콘이 거의 보이지 않
 - `Tools/IconGen/make_menu_icon.swift`와 `DuoInputMethod/Resources/MenuIcon.tiff`를 바꿈.
 - 밝은 타일은 어두운 메뉴와 메뉴 막대에서 애플 아이콘과 같아 보임. 밝은 모드에서는 애플 아이콘(검은 타일)과
   색이 다르지만 글자는 읽힘.
-- 메뉴 막대와 입력 메뉴에서 확인했음. 전환 창(TextInputSwitcher)은 아이콘을 캐시해서 다음 로그인 뒤에 바뀜.
-- 전환 창이 Duo를 빈칸으로 그리는 한계는 남아 있음 ("알려진 문제와 한계" 절 참고).
+- 메뉴 막대와 입력 메뉴에서 확인했음.
+- 캐럿 옆 입력 소스 표시는 Duo를 여전히 빈 알약으로 그림. TextInputSwitcher를 다시 시작해도 같음
+  ("알려진 문제와 한계" 절 참고).
 
 ### 실제 앱 QA (2026-11-07)
 
@@ -422,13 +423,22 @@ contenteditable, Terminal(zsh 줄 편집기), VS Code였어요. 호스트 앱 �
 
 ## 알려진 문제와 한계
 
-- **전환 창과 캐럿 옆 표시에서 Duo가 비어 보임.** macOS 26의 입력 소스 전환 창과 캐럿 옆 입력 소스 표시는
-  입력 모드의 라벨을 그림. Duo에는 입력 모드가 없어서 그 자리가 비어 보임.
-  - `DuoInputMethod/Info.plist`에는 입력 소스 수준의 `TISIconLabels`(`Primary` = "가A")가 이미 있음. 그래도
-    그 자리는 비어 보임.
-  - 계획한 수정: 입력 모드 하나를 추가하고 그 모드에 `TISIconLabels` "가A"를 줌.
-  - 입력 모드를 추가하면 macOS의 입력 소스 허용을 다시 받아야 함. 아이콘 수정 때는 이 이유로 미뤘음.
-  - SPEC 5절 C 트랙은 지금 입력 모드 없이 두라고 적고 있음 (R19). 이 수정을 하면 그 규칙도 바꿔야 함.
+- **캐럿 옆 입력 소스 표시에서 Duo가 비어 보임.** macOS 26은 입력 소스를 바꿀 때 캐럿 옆에 라벨 알약을
+  띄움 (ABC는 "A", 2-Set Korean은 "한"). Duo는 라벨 없는 빈 알약으로 보임.
+  - `DuoInputMethod/Info.plist`에는 입력 소스 수준의 `TISIconLabels`(`Primary` = "가A")가 있음. TIS도
+    `kTISPropertyInputSourceIconLabels`로 그 값을 돌려줌. 그래도 표시는 비어 보임.
+  - ⌘Space를 누른 채 보는 목록에는 이름 "Duo"가 보임. 메뉴 막대와 입력 메뉴에는 "가A" 타일이 보임.
+- **입력 모드를 더해도 고쳐지지 않음** (2026-11-08, macOS 26.6.2에서 실험함, R19). 실험 순서와 결과:
+  - Info.plist에 모드 `com.inkyuoh.inputmethod.Duo.Bilingual`을 더함. 모드 선언은 애플 2-Set Korean과
+    같은 꼴임. 다시 등록하자 로그아웃 없이 모드가 켜지고 선택됨
+    (critique U3의 답).
+  - 끄고 다시 켜자 macOS가 허용을 물었음. 허용하자 허용 목록에 모드 항목과 입력기 항목이 함께 써짐.
+  - 입력 메뉴의 Duo 항목과 ⌘Space 목록의 Duo는 상위 입력기 `com.inkyuoh.inputmethod.Duo`를 선택함. 이때 캐럿
+    옆 표시는 여전히 빈 알약임.
+  - TIS로 모드를 직접 선택하면 캐럿 옆 표시가 아예 뜨지 않음. 상위 입력기 기록이 없으면 ⌘Space 목록에서도
+    Duo가 빠짐.
+  - 허용 목록에 모드 항목만 두면 상위 입력기가 꺼지고 Duo가 입력 메뉴에서 사라짐.
+  - 그래서 입력 모드 없이 둠 (SPEC 5절 C.4). 실험 뒤 모드 없는 빌드를 다시 설치하고 허용 목록을 되돌렸음.
 - **docs/research/ui-design.md 4.4절은 아직 템플릿 메뉴 아이콘을 적음.** 지금 아이콘은 템플릿이 아님
   (`TISIconIsTemplate` = false, SPEC 5절 C.5).
 - **Orca 말고 다른 xterm.js 터미널은 확인하지 않았음.** 그래서 `xtermTerminals`에는 Orca만 있음.
