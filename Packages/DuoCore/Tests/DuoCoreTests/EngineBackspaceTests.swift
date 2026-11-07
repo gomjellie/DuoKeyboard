@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DuoCore
 
-/// docs/SPEC.md §4.5.4 Backspace: never overloaded, never changes the language.
+/// SPEC.md §4.5.4 Backspace: never overloaded, never changes the language.
 @MainActor
 @Suite("Engine · Backspace")
 struct EngineBackspaceTests {

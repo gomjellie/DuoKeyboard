@@ -4,7 +4,7 @@ import DuoCore
 import DuoKit
 import os
 
-/// The input method's process-wide singletons (docs/SPEC.md §2, critique R14): the detector, the
+/// The input method's process-wide singletons (SPEC.md §2, critique R14): the detector, the
 /// learning store and its writer, the settings, and the HUD. `main.swift` creates it and calls
 /// ``start()`` before `NSApp.run()`; every `DuoInputController` (one per client session) reads it.
 @MainActor

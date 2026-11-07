@@ -3,7 +3,7 @@ import Testing
 @testable import DuoCore
 import DuoKit
 
-/// docs/SPEC.md §4.11: the choice bar shows both readings of an ambiguous word, and a click on the
+/// SPEC.md §4.11: the choice bar shows both readings of an ambiguous word, and a click on the
 /// other reading flips that word like the flip key does.
 @MainActor
 @Suite("Engine · choice bar")

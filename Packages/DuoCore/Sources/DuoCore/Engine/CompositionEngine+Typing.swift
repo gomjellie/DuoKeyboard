@@ -1,4 +1,4 @@
-// Letters, the apostrophe, literal triggers and Backspace (docs/SPEC.md §4.3–§4.6).
+// Letters, the apostrophe, literal triggers and Backspace (SPEC.md §4.3–§4.6).
 
 import Foundation
 

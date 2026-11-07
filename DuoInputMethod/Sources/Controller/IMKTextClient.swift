@@ -2,7 +2,7 @@ import AppKit
 import DuoCore
 import InputMethodKit
 
-/// Adapts the IMK client proxy to the engine's `TextClient` (docs/SPEC.md §5 C1, critique R18).
+/// Adapts the IMK client proxy to the engine's `TextClient` (SPEC.md §5 C1, critique R18).
 ///
 /// One instance lives as long as its controller. The proxy is bound only for the duration of one
 /// IMK callback, so the input method never keeps an XPC proxy alive between events. Every method is

@@ -1,9 +1,9 @@
-// Internal state of `CompositionEngine` (docs/SPEC.md §4.1). Value types only, so the engine's
+// Internal state of `CompositionEngine` (SPEC.md §4.1). Value types only, so the engine's
 // transitions stay easy to reason about and to test.
 
 import Foundation
 
-/// The word being composed (docs/SPEC.md §4.1 `token`).
+/// The word being composed (SPEC.md §4.1 `token`).
 struct Token {
     /// ABC-layout keystrokes: letters plus internal `'` (detection.md §4).
     var raw: String
@@ -20,7 +20,7 @@ struct Token {
     /// What was shown when the token was first flipped; a second flip returns to it.
     var lockedOriginal: Hypothesis?
     /// Keys the user confirmed as Latin by choosing E or M(b) (flip or the choice bar). A Korean
-    /// ending may follow them: `cmd`, chosen as English, then `fh` reads cmd로 (docs/SPEC.md §4.11).
+    /// ending may follow them: `cmd`, chosen as English, then `fh` reads cmd로 (SPEC.md §4.11).
     var lockedLatin: Int?
     /// The reading the user last locked away from `lockedOriginal`: from the original, the flip key
     /// returns to it (cmd로 after cmd + flip + fh, then a flip back to 층로).
@@ -28,11 +28,11 @@ struct Token {
     /// The user kept the shown reading on the choice bar: an explicit choice, taught at the commit
     /// when the model would have committed another reading.
     var keptByChoice = false
-    /// A one-shot language chosen with nothing to flip (docs/SPEC.md §4.7 c): only readings in this
+    /// A one-shot language chosen with nothing to flip (SPEC.md §4.7 c): only readings in this
     /// language are allowed, and hysteresis runs inside it.
     var languageLock: ScriptLanguage?
     /// Prefix-mode scores of `raw`, computed once per key and reused for display, eager commit, the
-    /// HUD and flips (docs/SPEC.md §5 B.6). `nil` while stale (keys passed raw in the eager-E state).
+    /// HUD and flips (SPEC.md §5 B.6). `nil` while stale (keys passed raw in the eager-E state).
     var scores: HypothesisScores?
     /// Exactly what the engine last sent as marked text (`""` = nothing marked).
     var marked = ""
@@ -48,7 +48,7 @@ struct Token {
         lastKeyAt = time
     }
 
-    /// Everything typed so far is committed as Latin (docs/SPEC.md §4.3.5 "eager-E state").
+    /// Everything typed so far is committed as Latin (SPEC.md §4.3.5 "eager-E state").
     var isFullyCommitted: Bool { committed > 0 && committed == count }
 
     /// Whether the token is locked to a reading or to a language.
@@ -58,7 +58,7 @@ struct Token {
     /// word Korean (a flip lock wins over the one-shot).
     var koreanChosen: Bool { locked.map { $0.language == .korean } ?? (languageLock == .korean) }
 
-    /// docs/SPEC.md §4.3.4: with `c > 0` only `E` and `M(b)` with `b ≥ c` keep the committed Latin.
+    /// SPEC.md §4.3.4: with `c > 0` only `E` and `M(b)` with `b ≥ c` keep the committed Latin.
     func isConsistent(_ h: Hypothesis) -> Bool {
         guard committed > 0 else { return true }
         switch h {
@@ -124,7 +124,7 @@ struct Token {
     var committedPrefix: Substring { raw.prefix(committed) }
 }
 
-/// The word committed last, for flip case (b) (docs/SPEC.md §4.1 `lastCommit`, §4.7 b).
+/// The word committed last, for flip case (b) (SPEC.md §4.1 `lastCommit`, §4.7 b).
 struct LastCommit {
     /// The committed reading as it is in the document now (the whole token, including the part
     /// committed eagerly).
@@ -155,7 +155,7 @@ struct LastCommit {
     let learnable: Bool
 }
 
-/// Where the next token's context comes from (docs/SPEC.md §4.1 `contextTracker`, §4.2).
+/// Where the next token's context comes from (SPEC.md §4.1 `contextTracker`, §4.2).
 struct ContextTracker {
     /// Language of the last committed token (K and M read as Korean).
     var previousLanguage: ScriptLanguage?
@@ -171,7 +171,7 @@ struct ContextTracker {
     /// The previous key was the `:` that ended an English token (https:/).
     var colonAfterEnglishToken = false
 
-    /// docs/SPEC.md §4.2.
+    /// SPEC.md §4.2.
     var contextForNewToken: LanguageContext {
         if previousWasDigit { return .number }
         if atSentenceStart { return .start }
@@ -204,7 +204,7 @@ struct ContextTracker {
         colonAfterEnglishToken = false
     }
 
-    /// Effect of a key the app handles itself (after any commit), docs/SPEC.md §4.1/§4.2.
+    /// Effect of a key the app handles itself (after any commit), SPEC.md §4.1/§4.2.
     mutating func notePassed(_ key: KeyEvent.Key) {
         switch key {
         case .space:

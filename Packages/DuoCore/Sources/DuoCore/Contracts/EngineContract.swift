@@ -1,5 +1,5 @@
 // CONTRACT FILE: owned by the lead. Implementers must not change these signatures; add helpers in
-// your own files (extensions are fine). See docs/SPEC.md §3.
+// your own files (extensions are fine). See SPEC.md §3.
 
 import Foundation
 
@@ -181,7 +181,7 @@ public struct HUDReading: Hashable, Sendable {
     }
 }
 
-/// The readings of one word on the choice bar (docs/SPEC.md §4.11): the one in the document, the
+/// The readings of one word on the choice bar (SPEC.md §4.11): the one in the document, the
 /// one the flip key switches to, and for the word being typed any other likely reading.
 ///
 /// The order stays the same while the word does not change, whichever reading is selected, so

@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DuoCore
 
-/// docs/SPEC.md §4.9 / critique R3: the flip-key tap detector is a pure state machine.
+/// SPEC.md §4.9 / critique R3: the flip-key tap detector is a pure state machine.
 @Suite("Engine · flip tap detector")
 struct EngineTapDetectorTests {
     typealias F = FlipTapDetector.Flags

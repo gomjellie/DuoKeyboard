@@ -1,4 +1,4 @@
-// Committing a token (docs/SPEC.md §4.8).
+// Committing a token (SPEC.md §4.8).
 
 import Foundation
 
@@ -9,7 +9,7 @@ extension CompositionEngine {
     /// How long after a commit the word can still be flipped (case b).
     static let lastCommitLifetime: TimeInterval = 30
 
-    /// Final-commits the token, if any, with one `insertText` (docs/SPEC.md §4.8).
+    /// Final-commits the token, if any, with one `insertText` (SPEC.md §4.8).
     ///
     /// - Parameters:
     ///   - terminator: the boundary that ended the token (final mode).

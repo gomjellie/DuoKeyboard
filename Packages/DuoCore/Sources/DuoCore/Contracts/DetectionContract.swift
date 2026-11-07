@@ -1,5 +1,5 @@
 // CONTRACT FILE: owned by the lead. Implementers must not change these signatures; add helpers in
-// your own files (extensions are fine). See docs/SPEC.md §3.
+// your own files (extensions are fine). See SPEC.md §3.
 
 import Foundation
 
@@ -133,7 +133,7 @@ public protocol LanguageDetector: Sendable {
     /// Prefix mode (display while typing). The user bonus applies here too (critique R7).
     func prefixScores(raw: String, context: LanguageContext, user: UserCounts?, biasKO: Int) -> HypothesisScores
 
-    /// The scores that order the choice bar while the word is typed (docs/SPEC.md §4.11): final
+    /// The scores that order the choice bar while the word is typed (SPEC.md §4.11): final
     /// mode at a space, what a boundary would commit now. A separate requirement so a caller can
     /// tell the bar's scoring from a commit's; the default is `finalScores(…, terminator: .space, …)`.
     func choiceScores(raw: String, context: LanguageContext, user: UserCounts?, biasKO: Int) -> HypothesisScores
@@ -162,7 +162,7 @@ extension LanguageDetector {
 public enum Margins {
     /// P(alt) ≥ 20 %: HUD offers the alternative; implicit learning counts the commit.
     public static let hudAlternative = 1386
-    /// P(alt) ≥ 5 %: the choice bar lists the word's readings (docs/SPEC.md §4.11).
+    /// P(alt) ≥ 5 %: the choice bar lists the word's readings (SPEC.md §4.11).
     public static let hudCandidates = 2944
     /// P(alt) ≥ 35 %: "uncertain commit" chip.
     public static let uncertainCommit = 619

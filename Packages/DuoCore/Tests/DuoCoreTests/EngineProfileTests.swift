@@ -3,7 +3,7 @@ import Testing
 @testable import DuoCore
 import DuoKit
 
-/// docs/SPEC.md §4.10 client profiles, the Direct profile, Caps Lock, dead keys and shortcuts.
+/// SPEC.md §4.10 client profiles, the Direct profile, Caps Lock, dead keys and shortcuts.
 @MainActor
 @Suite("Engine · profiles and input modes")
 struct EngineProfileTests {

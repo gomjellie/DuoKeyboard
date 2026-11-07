@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DuoCore
 
-/// docs/SPEC.md §4.3 (letters, hysteresis, eager E, consistency, cap) and §4.4 (apostrophe).
+/// SPEC.md §4.3 (letters, hysteresis, eager E, consistency, cap) and §4.4 (apostrophe).
 @MainActor
 @Suite("Engine · composition")
 struct EngineCompositionTests {

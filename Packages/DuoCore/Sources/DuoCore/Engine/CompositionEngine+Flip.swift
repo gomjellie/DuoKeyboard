@@ -1,9 +1,9 @@
-// The flip key (docs/SPEC.md §4.7).
+// The flip key (SPEC.md §4.7).
 
 import Foundation
 
 extension CompositionEngine {
-    /// Flip the current token / last word / next word (docs/SPEC.md §4.7).
+    /// Flip the current token / last word / next word (SPEC.md §4.7).
     ///
     /// (a) a word is in progress: show its other reading and lock it (a second flip returns);
     /// (b) the caret is right after the last commit: replace that word (verified first);
@@ -39,7 +39,7 @@ extension CompositionEngine {
 
     // MARK: The choice bar
 
-    /// The other reading on the choice bar was clicked (docs/SPEC.md §4.11): flip the word the bar
+    /// The other reading on the choice bar was clicked (SPEC.md §4.11): flip the word the bar
     /// belongs to, as the flip key does. A click arrives outside any key event, so when that word is
     /// gone nothing happens: the click never arms the next word's language.
     ///

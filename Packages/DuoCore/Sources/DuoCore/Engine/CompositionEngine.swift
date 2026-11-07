@@ -1,6 +1,6 @@
 import Foundation
 
-/// The per-client composition state machine (docs/SPEC.md §4). One instance per IMK controller
+/// The per-client composition state machine (SPEC.md §4). One instance per IMK controller
 /// (client session); the detector, learning store and settings are shared.
 ///
 /// The engine keeps the whole token marked until a boundary, shows the detector's prefix-mode
@@ -30,7 +30,7 @@ public final class CompositionEngine {
             }
         }
     }
-    /// Built-in behaviour for the current client (docs/SPEC.md §4.10).
+    /// Built-in behaviour for the current client (SPEC.md §4.10).
     public private(set) var clientProfile: ClientProfile
     /// What the HUD should show after the last call; `nil` = hidden.
     public internal(set) var hud: HUDRequest?
@@ -46,7 +46,7 @@ public final class CompositionEngine {
 
     var token: Token?
     var context = ContextTracker()
-    /// L phase: keys pass raw until whitespace (docs/SPEC.md §4.6).
+    /// L phase: keys pass raw until whitespace (SPEC.md §4.6).
     var literal = false
     /// UTF-16 units typed since L began, its trigger included. Backspacing over all of them (the
     /// trigger is gone, so the next word is not part of a path or address) ends L.
@@ -56,7 +56,7 @@ public final class CompositionEngine {
     var capsLockOn = false
     /// Direct profile with Bilingual turned on for the current line (ux-spec §6.6).
     var bilingualLine = false
-    /// Language of the next token, armed by a flip with nothing to flip (docs/SPEC.md §4.7 c).
+    /// Language of the next token, armed by a flip with nothing to flip (SPEC.md §4.7 c).
     var oneShot: ScriptLanguage?
     var lastCommit: LastCommit?
     var tap: FlipTapDetector
@@ -130,7 +130,7 @@ public final class CompositionEngine {
 
     private func dispatch(_ event: KeyEvent, client: any TextClient) -> Bool {
         let mods = event.modifiers
-        // One-key look-behinds for the literal triggers (docs/SPEC.md §4.6).
+        // One-key look-behinds for the literal triggers (SPEC.md §4.6).
         let dotAfterEnglish = context.dotAfterEnglishToken
         let colonAfterEnglish = context.colonAfterEnglishToken
         context.dotAfterEnglishToken = false
@@ -241,7 +241,7 @@ public final class CompositionEngine {
         }
     }
 
-    // MARK: - Literal phase bookkeeping (docs/SPEC.md §4.6)
+    // MARK: - Literal phase bookkeeping (SPEC.md §4.6)
 
     /// Enter L; the trigger key (or the first raw letter after `.`) is the first unit typed.
     func beginLiteral() {
@@ -271,7 +271,7 @@ public final class CompositionEngine {
     }
 
     /// Commit any token (one `insertText`), record the key's effect on the context and let the app
-    /// handle the key (docs/SPEC.md §4.5).
+    /// handle the key (SPEC.md §4.5).
     @discardableResult
     func passThrough(_ event: KeyEvent, terminator: Terminator, boundaryLength: Int? = nil,
                      affectsContext: Bool = true, client: any TextClient) -> Bool {
@@ -421,7 +421,7 @@ public final class CompositionEngine {
     ///
     /// - Parameter carryLatinPrefixes: also add half (rounded up) of what each Latin prefix of
     ///   `raw` learned: its English votes and its stem votes (a chosen cmd로 records M(3) on `cmd`,
-    ///   which the bare word never scores). Only the choice bar asks for this (docs/SPEC.md
+    ///   which the bare word never scores). Only the choice bar asks for this (SPEC.md
     ///   4.11절): cmd learned as English lifts cmd로 on the bar, while what is shown and committed
     ///   stays the model's and the word's own learning, so 층로 is still typed as 층로.
     func userCounts(_ raw: String, _ context: LanguageContext, carryLatinPrefixes: Bool = false) -> UserCounts? {
@@ -503,7 +503,7 @@ public final class CompositionEngine {
     }
 
     /// Commits `text` at the marked text or caret. Java clients' mark-before-insert (critique R17) is
-    /// the IMK adapter's job (docs/SPEC.md §5 C.1, `ClientProfile.needsMarkBeforeInsert`), so the
+    /// the IMK adapter's job (SPEC.md §5 C.1, `ClientProfile.needsMarkBeforeInsert`), so the
     /// engine sends exactly one call here.
     func insert(_ text: String, client: any TextClient) {
         client.insertText(text, replacementRange: nil)

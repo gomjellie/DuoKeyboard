@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DuoCore
 
-/// docs/SPEC.md §4.7: the flip key's three cases, the lock and the second flip.
+/// SPEC.md §4.7: the flip key's three cases, the lock and the second flip.
 @MainActor
 @Suite("Engine · flip")
 struct EngineFlipTests {

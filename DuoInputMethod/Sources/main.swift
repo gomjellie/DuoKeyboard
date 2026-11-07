@@ -6,7 +6,7 @@ import InputMethodKit
 //
 // The application object comes first (the HUD owns an NSPanel), then the singletons (detector,
 // learning store and writer, settings, HUD), all before the first controller can be created, i.e.
-// before `NSApp.run()` (docs/SPEC.md §2).
+// before `NSApp.run()` (SPEC.md §2).
 let application = NSApplication.shared
 let appDelegate = AppDelegate()
 application.delegate = appDelegate

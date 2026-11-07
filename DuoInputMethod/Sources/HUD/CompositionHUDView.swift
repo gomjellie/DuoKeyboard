@@ -22,7 +22,7 @@ final class CompositionHUDModel {
 }
 
 /// The Liquid Glass composition chip (ui-design §2.2 merged with critique R12): a 28 pt capsule.
-/// A word with more than one likely reading gets the choice bar (docs/SPEC.md §4.11): the readings
+/// A word with more than one likely reading gets the choice bar (SPEC.md §4.11): the readings
 /// with 16 pt language badges (가 orange / A blue), numbered 1, 2, 3 … for the word being typed, the
 /// one in the document on a selection pill, then the flip key's keycaps. Feedback is a 20 pt badge
 /// or a message. The view is hidden from accessibility (ux-spec §7.5); flips are announced instead.

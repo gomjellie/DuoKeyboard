@@ -1,6 +1,6 @@
 import Foundation
 
-/// Detects a tap of the flip key from `flagsChanged` events (docs/SPEC.md §4.9, critique R3).
+/// Detects a tap of the flip key from `flagsChanged` events (SPEC.md §4.9, critique R3).
 ///
 /// A pure state machine: feed it every `ModifierEvent`, call ``noteKeyDown()`` for every key-down
 /// and ``noteMouseDown()`` for every click, and it reports when the configured key was tapped. It

@@ -211,7 +211,7 @@ final class DuoInputController: IMKInputController {
             if let index = HUDPresentation.readingIndex(for: key),
                let shown = runtime.hud.seenRequest,
                HUDPresentation(shown.content, flipKey: engine.settings.flipKey).isNumbered {
-                // A digit while numbered readings are on screen chooses one (docs/SPEC.md 4.11절);
+                // A digit while numbered readings are on screen chooses one (SPEC.md 4.11절);
                 // a refused choice is not text either, and keeps its message.
                 choice = engine.selectReading(at: index, on: shown, client: textClient)
                 if choice == .refused, engine.hud?.content == .cannotChange {

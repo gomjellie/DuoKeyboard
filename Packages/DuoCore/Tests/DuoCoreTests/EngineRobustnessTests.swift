@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DuoCore
 
-/// docs/SPEC.md §4.8 reasons, §4.9 resync, §4.3.7/§4.8.3 HUD requests, critique R15.
+/// SPEC.md §4.8 reasons, §4.9 resync, §4.3.7/§4.8.3 HUD requests, critique R15.
 @MainActor
 @Suite("Engine · robustness and HUD")
 struct EngineRobustnessTests {

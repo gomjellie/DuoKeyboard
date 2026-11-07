@@ -304,7 +304,7 @@ struct EngineLearningTests {
     }
 }
 
-/// docs/SPEC.md §4.2 context tracking.
+/// SPEC.md §4.2 context tracking.
 @MainActor
 @Suite("Engine · context")
 struct EngineContextTests {

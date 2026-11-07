@@ -1,6 +1,6 @@
 import Foundation
 
-/// Per-client defaults keyed by bundle identifier (docs/SPEC.md §4.10, critique R10, R17).
+/// Per-client defaults keyed by bundle identifier (SPEC.md §4.10, critique R10, R17).
 ///
 /// Direct is never a default: it is opt-in through the input menu or Settings
 /// (`DuoSettings.appProfiles`).
@@ -35,7 +35,7 @@ public struct ClientProfile: Sendable, Hashable {
         self.canReplaceCommittedText = canReplaceCommittedText && replacement != .none
     }
 
-    /// The built-in profile for a client (docs/SPEC.md §4.10); unknown apps are `.automatic` with
+    /// The built-in profile for a client (SPEC.md §4.10); unknown apps are `.automatic` with
     /// full replacement support (every replacement is verified before it is used anyway).
     public static func forBundleIdentifier(_ id: String) -> ClientProfile {
         if let terminal = terminals[id] {
@@ -72,7 +72,7 @@ public struct ClientProfile: Sendable, Hashable {
         return min(1500, max(-1500, profile + settings.languageBias))
     }
 
-    // MARK: Tables (docs/SPEC.md §4.10)
+    // MARK: Tables (SPEC.md §4.10)
 
     /// Terminal-class apps and their replacement support.
     static let terminals: [String: ReplacementSupport] = [

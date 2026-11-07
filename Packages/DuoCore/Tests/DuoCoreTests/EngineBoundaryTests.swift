@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DuoCore
 
-/// docs/SPEC.md §4.5 (boundaries, terminators, special keys) and §4.6 (literal phase).
+/// SPEC.md §4.5 (boundaries, terminators, special keys) and §4.6 (literal phase).
 @MainActor
 @Suite("Engine · boundaries and literal")
 struct EngineBoundaryTests {

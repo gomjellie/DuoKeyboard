@@ -1,8 +1,8 @@
-// The choice bar's list of readings and choosing one (docs/SPEC.md 4.11절).
+// The choice bar's list of readings and choosing one (SPEC.md 4.11절).
 
 import Foundation
 
-/// What a digit key or a click on the choice bar did (docs/SPEC.md 4.11절).
+/// What a digit key or a click on the choice bar did (SPEC.md 4.11절).
 public enum ReadingChoice: Equatable, Sendable {
     /// The engine has no such bar now (it replaced the request the user saw): the key is text.
     case notOnBar
@@ -112,7 +112,7 @@ extension CompositionEngine {
         t.isConsistent(h) || clientProfile.canReplaceCommittedText
     }
 
-    /// A reading on the bar was chosen with a digit key or a click (docs/SPEC.md 4.11절).
+    /// A reading on the bar was chosen with a digit key or a click (SPEC.md 4.11절).
     ///
     /// - The word being typed switches to that reading and keeps it, as after a flip. Choosing the
     ///   reading already shown keeps it too, and teaches it at the commit if the model would have
