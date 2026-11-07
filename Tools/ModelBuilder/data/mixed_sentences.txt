@@ -1,0 +1,420 @@
+# Duo synthetic mixed Korean/English evaluation set (hand-written, CC0).
+# Typical messages of Korean developers / office workers.  One sentence per line.
+# Tokens are scored as typed: Latin letters keep their case; Hangul is typed with 두벌식.
+오늘 오후 3시에 meeting 있어요
+PR 올렸습니다 리뷰 부탁드려요
+PR을 올렸는데 CI가 깨졌네요
+React component 하나 새로 만들었어요
+이번 sprint 목표는 login 화면 개선입니다
+API 응답이 너무 느려요
+API를 v2로 바꾸면 해결될 것 같아요
+iOS에서만 crash가 나요
+macOS 26에서 테스트해 봤나요
+Slack으로 공유드릴게요
+Figma 링크 다시 보내주실 수 있나요
+OK 확인했습니다
+ok 그럼 그렇게 진행할게요
+ㅋㅋㅋ 그거 완전 버그네
+ㅎㅎ 감사합니다
+ㅠㅠ 오늘 야근 확정
+내일 standup은 10시에 할게요
+배포는 금요일에 하지 말죠
+hotfix 브랜치에서 작업 중입니다
+main 브랜치에 merge 해주세요
+merge해주세요
+push했어요 확인해 주세요
+commit 메시지 좀 더 자세히 써주세요
+테스트 코드 추가했습니다
+unit test가 3개 실패했어요
+build가 너무 오래 걸려요
+Xcode 업데이트하고 나서 build 에러가 나요
+SwiftUI로 다시 짜는 게 나을 것 같아요
+UIKit 코드는 점진적으로 걷어낼 예정입니다
+Docker 이미지 용량이 너무 커요
+Kubernetes 설정 파일 공유해 주세요
+AWS 비용이 지난달보다 늘었어요
+QA 팀에서 이슈 올려줬어요
+Jira 티켓 만들어 둘게요
+Notion에 회의록 정리했습니다
+디자인 시안은 Figma에 있어요
+UX 관점에서 보면 버튼이 너무 작아요
+UI가 깔끔해졌네요
+JSON 파싱에서 에러가 납니다
+URL 인코딩 문제인 것 같아요
+DB 마이그레이션은 제가 할게요
+SQL 쿼리 최적화가 필요해요
+Redis 캐시를 붙이면 빨라질 거예요
+로그 보니까 timeout이 원인이네요
+staging 서버에 먼저 올려볼게요
+production 배포 전에 한 번 더 확인해 주세요
+dev 환경에서는 잘 돼요
+local에서는 재현이 안 돼요
+재현 경로 공유해 주실 수 있나요
+GitHub Actions가 또 실패했어요
+CI 다시 돌려볼게요
+LGTM 입니다
+LGTM
+Thanks 감사합니다
+Thank you so much
+Good morning everyone
+Hi 오랜만이에요
+Sorry 제가 착각했어요
+Please check the latest build
+Can you review my PR
+I will take a look
+Let me check
+Sounds good to me
+Let's go with option B
+We need to fix this ASAP
+FYI 내일 휴가입니다
+ASAP으로 부탁드려요
+ETA가 언제쯤일까요
+EOD까지 마무리하겠습니다
+TBD로 남겨둘게요
+KPI 달성률이 좋네요
+OKR 초안 작성했습니다
+CEO 보고 자료 준비 중입니다
+PPT 파일 첨부했습니다
+PDF로 변환해서 보내드릴게요
+Excel 파일이 깨져서 열리지 않아요
+Zoom 링크 보내드렸어요
+Google 캘린더에 일정 잡아둘게요
+YouTube 영상 참고해 보세요
+Chrome에서는 되는데 Safari에서는 안 돼요
+Android 앱도 같이 수정해야 해요
+iPhone에서 레이아웃이 깨져요
+iPad 가로 모드도 확인 부탁드려요
+MacBook 배터리가 금방 닳아요
+AirPods 연결이 자꾸 끊겨요
+ChatGPT한테 물어봤는데 틀린 답을 줬어요
+Claude가 코드 리뷰를 잘해줘요
+AI 기능 기획 회의가 있습니다
+LLM 응답 속도를 개선해야 합니다
+GPT 모델 바꿔보면 어떨까요
+TypeScript 타입 에러 좀 봐주세요
+JavaScript로 짜는 게 빠를 것 같아요
+Python 스크립트로 자동화했습니다
+Swift 6 마이그레이션 진행 중입니다
+Kotlin 코드랑 로직이 달라요
+Rust로 다시 쓰자는 의견이 있어요
+Java 버전 올려야 해요
+npm install이 안 돼요
+yarn 대신 pnpm 쓰기로 했어요
+git rebase 하다가 충돌 났어요
+rebase보다 merge가 나을 것 같아요
+force push는 하지 말아주세요
+branch 이름 규칙 지켜주세요
+feature 브랜치 정리했습니다
+release 노트 작성 부탁드립니다
+changelog 업데이트했어요
+version 올리는 거 잊지 마세요
+SDK 버전이 안 맞아요
+CLI 옵션이 바뀌었어요
+IDE 설정 공유드릴게요
+VPN 연결하고 다시 시도해 보세요
+SSH 키 등록했나요
+DNS 설정이 아직 반영이 안 됐어요
+SSO 로그인 오류가 있어요
+OAuth 토큰이 만료됐어요
+token 갱신 로직을 확인해 주세요
+session이 자꾸 끊겨요
+cache를 비우면 해결돼요
+cookie 정책이 바뀌었대요
+header에 값이 빠졌어요
+response 형식이 문서랑 달라요
+request body 예시 부탁드려요
+error 메시지를 더 친절하게 바꾸죠
+warning은 무시해도 돼요
+null 체크가 빠졌네요
+undefined 에러가 계속 나요
+async await으로 바꿨습니다
+callback 지옥이네요
+state 관리가 복잡해요
+props 이름 통일하죠
+hook으로 분리했어요
+context 너무 많이 쓰면 느려져요
+store 구조 다시 봐야겠어요
+router 설정 확인해 주세요
+page 전환 애니메이션 넣었어요
+modal 닫기 버튼이 안 보여요
+button 색상 바꿔주세요
+icon 크기가 안 맞아요
+font가 깨져 보여요
+dark mode에서 텍스트가 안 보여요
+light mode는 괜찮아요
+animation이 너무 빨라요
+scroll이 버벅여요
+performance 이슈가 있어요
+memory leak 의심됩니다
+CPU 사용률이 높아요
+GPU 가속 켜면 좋아질 거예요
+benchmark 결과 공유합니다
+profiling 해봤는데 병목은 렌더링이에요
+refactoring 하면서 버그를 찾았어요
+code review 코멘트 반영했습니다
+comment 남겨드렸어요
+approve 부탁드립니다
+approve했어요
+reject된 이유가 뭔가요
+issue 번호 알려주세요
+ticket 상태 업데이트해 주세요
+backlog 정리 회의 합시다
+roadmap 공유드립니다
+spec 문서 업데이트했어요
+docs 링크 고정해 둘게요
+wiki에 정리해 뒀어요
+demo 영상 찍어서 올릴게요
+beta 테스터 모집 중입니다
+TestFlight로 배포했어요
+App 심사 통과했어요
+심사 리젝 사유가 privacy 관련이래요
+privacy policy 문서 필요해요
+login 버튼 위치 바꿨어요
+logout이 안 돼요
+signup 플로우 단순화했습니다
+onboarding 화면 시안 나왔어요
+dashboard 숫자가 이상해요
+admin 권한 주세요
+user 데이터는 암호화해야 해요
+email 인증 메일이 안 와요
+password 재설정 메일 보냈습니다
+push 알림이 두 번 와요
+notification 설정 확인해 주세요
+background 작업이 멈춰요
+timeout 값을 늘려볼게요
+retry 로직 추가했어요
+rollback 했습니다
+hotfix 배포 완료
+deploy 완료했습니다
+deploy했습니다
+release했어요
+fix했어요 확인 부탁드려요
+check해볼게요
+test해봤는데 잘 돼요
+debug해보니까 원인 찾았어요
+update해주세요
+sync 맞춰주세요
+sync해야 할 것 같아요
+review해주시면 감사하겠습니다
+share해드릴게요
+download가 안 돼요
+upload 용량 제한이 있나요
+link가 깨졌어요
+file 이름에 공백이 있어요
+folder 구조 바꿨어요
+path가 잘못됐어요
+config 파일 위치가 어디죠
+env 변수 추가했어요
+script 실행 권한이 없대요
+server 재시작했습니다
+client 쪽 문제 같아요
+frontend 쪽에서 처리할게요
+backend 응답 기다리는 중이에요
+database 백업 완료했습니다
+query가 너무 무거워요
+index 추가하니까 빨라졌어요
+schema 변경 리뷰해 주세요
+migration 스크립트 돌렸어요
+table 이름 바꿔야 해요
+column 하나 추가했습니다
+그거 so good
+so 이제 어떻게 할까요
+and 그리고 하나 더 있어요
+the end
+to do 리스트 정리했어요
+todo 항목 확인해 주세요
+I think so
+I don't know
+I'm not sure
+it's working now
+that's right
+you're welcome
+we'll see
+don't worry
+can't reproduce
+doesn't work on my machine
+let's do it
+go for it
+just do it
+no problem
+of course
+see you tomorrow
+have a nice day
+good job
+nice work
+great idea
+sounds great
+perfect
+awesome
+cool
+sure
+done
+yes
+no
+hello world
+안녕하세요 반갑습니다
+오늘 점심 뭐 먹을까요
+내일 회의 몇 시에 하죠
+지금 바로 확인해 볼게요
+저는 괜찮습니다
+그럼 내일 다시 이야기해요
+수고하셨습니다
+고생 많으셨어요
+감사합니다 좋은 하루 보내세요
+퇴근하겠습니다
+잠깐 자리 비웁니다
+이따가 연락드릴게요
+회의실 예약했어요
+일정 조율 부탁드립니다
+자료 정리해서 공유드리겠습니다
+확인 부탁드립니다
+네 알겠습니다
+아니요 아직이요
+조금만 기다려 주세요
+금방 갈게요
+오늘 날씨 진짜 좋네요
+주말 잘 보내세요
+해야 할 일이 너무 많아요
+내가 해볼게
+새로 만든 기능이에요
+애초에 설계가 잘못됐어요
+그래서 내가 말했잖아
+다 했어요
+이거 해도 돼요
+너무 늦었네요 내일 해요
+같이 해요
+새해 복 많이 받으세요
+해결됐습니다
+내용 확인했습니다
+애매하네요
+솔직히 잘 모르겠어요
+뭔가 이상해요
+진짜 빠르네요
+완전 좋아요
+대박이네요
+헐 진짜요
+오 좋다
+ㅇㅇ 알겠어
+ㅇㅋ
+ㄱㄱ
+ㅇㅋ 바로 할게
+ㅋㅋ 그러게요
+ㅎㅎ 다행이네요
+ㅠㅠ 아쉽네요
+ㅜㅜ 힘드네요
+ㄷㄷ 대단하네
+그럼 go 하시죠
+이번 건은 skip 할게요
+skip해도 될 것 같아요
+일단 pending으로 둘게요
+block 된 이슈가 있어요
+blocker 해결됐어요
+priority 높여주세요
+high priority입니다
+low priority라 나중에 할게요
+P0 이슈입니다
+on call 담당자가 누구죠
+incident 보고서 작성했습니다
+postmortem 미팅 잡을게요
+alert이 너무 많이 와요
+monitoring 대시보드 확인해 주세요
+Grafana 대시보드 링크 공유드려요
+Sentry 에러 로그 보면 알 수 있어요
+log 레벨을 debug로 바꿨어요
+trace 아이디 공유해 주세요
+metric 수집이 안 되고 있어요
+latency가 튀었어요
+throughput이 떨어졌어요
+traffic이 몰려서 그래요
+load balancer 설정 바꿨어요
+autoscaling이 안 돼요
+instance 하나 더 띄웠어요
+region을 서울로 바꿨어요
+bucket 권한 문제예요
+CDN 캐시 지워주세요
+SSL 인증서 갱신해야 해요
+domain 연결했어요
+landing page 시안 공유드립니다
+A/B 테스트 결과 나왔어요
+conversion이 올랐어요
+retention 지표가 좋아졌어요
+churn이 늘었어요
+funnel 분석해 볼게요
+cohort 별로 나눠서 볼게요
+segment 기준이 뭔가요
+event 트래킹 추가했어요
+analytics 대시보드 업데이트했습니다
+SEO 최적화 작업 중입니다
+marketing 팀이랑 미팅 있어요
+sales 팀에서 요청 왔어요
+customer 피드백 정리했어요
+feedback 감사합니다
+survey 결과 공유합니다
+interview 일정 잡았어요
+offer 메일 보냈습니다
+onboarding 자료 준비했어요
+HR 팀에 문의해 보세요
+budget 승인 났어요
+invoice 발행해 주세요
+contract 검토 부탁드립니다
+legal 검토 중입니다
+partner 미팅 다음 주예요
+vendor 변경 건 논의해요
+roadmap 발표 자료 만들었어요
+keynote 영상 봤어요
+WWDC 세션 정리했습니다
+Apple 가이드라인 확인했어요
+Human Interface Guidelines 참고했어요
+Liquid Glass 디자인 적용했어요
+accessibility 지원 추가했어요
+VoiceOver 테스트 해봤나요
+localization 파일 업데이트했어요
+string 번역이 빠졌어요
+emoji 입력이 깨져요
+keyboard 단축키 추가했어요
+shortcut 충돌이 있어요
+menu bar 아이콘 바꿨어요
+window 크기 조절이 안 돼요
+popup 위치가 이상해요
+tooltip 문구 다듬었어요
+placeholder 텍스트 바꿨어요
+input 필드 검증 추가했어요
+form 제출이 두 번 돼요
+submit 버튼 비활성화 처리했어요
+loading 스피너가 안 사라져요
+skeleton 화면 넣었어요
+empty state 디자인 필요해요
+error state도 고려해 주세요
+edge case 하나 더 있어요
+corner case 처리했어요
+regression 테스트 돌렸어요
+e2e 테스트가 불안정해요
+flaky 테스트 격리했어요
+coverage가 80퍼센트 넘었어요
+lint 에러 고쳤습니다
+format 맞췄어요
+typo 수정했어요
+naming 다시 고민해 볼게요
+README 업데이트했어요
+LICENSE 파일 추가했습니다
+open source 라이선스 확인했어요
+MIT 라이선스라 괜찮아요
+fork해서 수정했어요
+clone 받으면 바로 돼요
+checkout 하고 다시 해보세요
+stash 해두고 pull 받으세요
+pull 받았는데 충돌 나요
+conflict 해결했습니다
+cherry pick 해주세요
+tag 달아둘게요
+squash merge로 합칠게요
+draft PR로 올려뒀어요
+PR 설명 보강했어요
+PR에 스크린샷 첨부했어요
+iOS 17 이상만 지원해요
+iOS 앱 심사 제출했습니다
+macOS 버전 별로 테스트 필요해요
+Mac에서 단축키가 안 먹혀요
+Windows 사용자는 어떻게 하죠
+Linux 서버에서 돌려볼게요
+Ubuntu 버전 올렸어요
