@@ -45,7 +45,7 @@ struct PlaygroundField: View {
             if let hud = model.hud, usesEngine {
                 let flipKey = app.settings.value.flipKey
                 PlaygroundHUDChip(request: hud, flipKey: flipKey,
-                                  onChooseOther: { model.chooseOtherReading(on: hud) },
+                                  onChoose: { model.chooseReading(at: $0, on: hud) },
                                   onPointer: model.setPointerOverHUD)
                     .offset(x: max(0, anchor.minX - 8), y: anchor.maxY + 6)
                     .transition(.opacity)
@@ -197,7 +197,7 @@ private struct NativeTextView: NSViewRepresentable {
 struct PlaygroundHUDChip: View {
     let request: HUDRequest
     let flipKey: FlipKey
-    var onChooseOther: () -> Void = {}
+    var onChoose: (Int) -> Void = { _ in }
     var onPointer: (Bool) -> Void = { _ in }
 
     @State private var hovering = false
@@ -238,30 +238,49 @@ struct PlaygroundHUDChip: View {
 
     private var isChoice: Bool { HUDPresentation(request.content, flipKey: flipKey).isClickable }
 
-    /// Both readings, the one in the text on the selection pill; a click on the other switches.
+    /// The readings, numbered for the word being typed, the one in the text on the selection
+    /// pill; a click on another one switches to it.
     private func choiceBar(_ choice: HUDChoice) -> some View {
-        HStack(spacing: 2) {
+        let numbered = HUDPresentation(request.content, flipKey: flipKey).isNumbered
+        return HStack(spacing: 2) {
             ForEach(Array(choice.readings.enumerated()), id: \.offset) { index, reading in
                 if index == choice.selected {
-                    readingLabel(reading, prominent: true)
+                    readingLabel(reading, number: numbered ? index + 1 : nil, prominent: true,
+                                 compact: choice.readings.count > 2)
                         .background {
                             Capsule().fill(DuoStyle.color(for: reading.language).opacity(0.22))
                                 .matchedGeometryEffect(id: "pill", in: pill)
                         }
                 } else {
-                    Button(action: onChooseOther) { readingLabel(reading, prominent: hovering) }
-                        .buttonStyle(PlaygroundOtherReadingStyle(highlighted: hovering))
+                    Button { onChoose(index) } label: {
+                        readingLabel(reading, number: numbered ? index + 1 : nil, prominent: hovering,
+                                     compact: choice.readings.count > 2)
+                    }
+                    .buttonStyle(PlaygroundOtherReadingStyle(highlighted: hovering && choice.readings.count == 2))
+                    // Digits and the flip key choose readings; the chip stays out of the Tab loop.
+                    .focusable(false)
                 }
             }
         }
     }
 
-    private func readingLabel(_ reading: HUDReading, prominent: Bool) -> some View {
+    private func readingLabel(_ reading: HUDReading, number: Int?, prominent: Bool,
+                              compact: Bool = false) -> some View {
         HStack(spacing: 5) {
+            if let number {
+                Text(verbatim: "\(number)")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 4)
+            }
             LanguageBadge(language: reading.language, size: 16)
             Text(verbatim: reading.text)
                 .font(.system(size: 13.5, weight: .medium))
                 .foregroundStyle(prominent ? .primary : .secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: compact ? 110 : 140, alignment: .leading)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.leading, 3)
         .padding(.trailing, 8)
