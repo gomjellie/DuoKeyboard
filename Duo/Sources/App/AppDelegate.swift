@@ -8,7 +8,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static var model: AppModel?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        handOffToRunningInstance()
+        switch LaunchMode.current {
+        case .normal:
+            handOffToRunningInstance()
+        #if DEBUG
+        case .render:
+            // Never appear in the Dock, never take the menu bar or focus: the user may be typing.
+            NSApp.setActivationPolicy(.prohibited)
+        #endif
+        }
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        if case .render(let directory) = LaunchMode.current, let model = Self.model {
+            Task { @MainActor in
+                let failures = await SnapshotRenderer(app: model, directory: directory).renderAll()
+                exit(failures == 0 ? 0 : 1)
+            }
+        }
+        #endif
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

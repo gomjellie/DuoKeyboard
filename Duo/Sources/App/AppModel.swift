@@ -173,8 +173,20 @@ final class AppModel {
 /// How this process was launched.
 enum LaunchMode: Equatable {
     case normal
+    #if DEBUG
+    /// `--duo-render <dir>`: render every onboarding step and Settings pane offscreen, then exit.
+    case render(URL)
+    #endif
 
-    static let current: LaunchMode = .normal
+    static let current: LaunchMode = {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "--duo-render"), i + 1 < args.count {
+            return .render(URL(fileURLWithPath: args[i + 1], isDirectory: true))
+        }
+        #endif
+        return .normal
+    }()
 
     var presentsWindows: Bool { self == .normal }
 
