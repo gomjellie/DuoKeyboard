@@ -3,8 +3,9 @@
 import Foundation
 
 extension CompositionEngine {
-    /// How long the last word's choice bar stays up.
-    static let chipLifetime: TimeInterval = 1.6
+    /// How long the last word's choice bar stays up while nothing is typed. Long enough to reach it
+    /// with the pointer; the next key hides it anyway, and the HUD holds it while the pointer is on it.
+    static let chipLifetime: TimeInterval = 4
     /// How long after a commit the word can still be flipped (case b).
     static let lastCommitLifetime: TimeInterval = 30
 
