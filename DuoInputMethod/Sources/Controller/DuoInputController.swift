@@ -1,0 +1,351 @@
+import AppKit
+import Carbon
+import DuoCore
+import DuoKit
+import InputMethodKit
+
+/// The IMK controller: one per client input session (critique R14). A thin adapter that routes IMK
+/// callbacks into its own `CompositionEngine` and pushes the engine's HUD request to the shared HUD.
+///
+/// Concurrency (critique R14, V6, imk-platform D3): the class is `@MainActor`, every IMK override is
+/// `nonisolated`, rebinds its non-Sendable IMK arguments with `nonisolated(unsafe)`, and hops with
+/// `MainActor.assumeIsolated` (IMK calls controllers on the main thread). Marked text is always set
+/// synchronously before `handle` returns (iTerm2 checks right after, imk-platform D5).
+@MainActor
+@objc(DuoInputController)
+final class DuoInputController: IMKInputController {
+    typealias Proxy = any IMKTextInput & NSObjectProtocol
+
+    /// `nil` in pass-through mode (no model) or before the first activation.
+    private(set) var engine: CompositionEngine?
+    private var textClient: IMKTextClient?
+    /// Cached `client.bundleIdentifier()`, fetched once per activation (critique R15).
+    private(set) var bundleIdentifier = ""
+    private var settingsGeneration = -1
+    private var wasSecure = false
+    private var pendingFlipAnnouncement: ScriptLanguage?
+    /// The client has passed a `flagsChanged` through IMK (Cocoa, Chromium); until then the global
+    /// monitor stands in (``ModifierRouter``).
+    var forwardsModifierEvents = false
+
+    nonisolated override init!(server: IMKServer!, delegate: Any!, client inputClient: Any!) {
+        super.init(server: server, delegate: delegate, client: inputClient)
+    }
+
+    nonisolated override init() {
+        super.init()
+    }
+
+    // MARK: IMK entry points
+
+    nonisolated override func recognizedEvents(_ sender: Any!) -> Int {
+        // Taking .flagsChanged turns off IMK's own commit-on-click, so mouse-downs come to `handle` (R4).
+        Int(NSEvent.EventTypeMask([.keyDown, .flagsChanged, .leftMouseDown, .rightMouseDown, .otherMouseDown]).rawValue)
+    }
+
+    nonisolated override func activateServer(_ sender: Any!) {
+        super.activateServer(sender)
+        nonisolated(unsafe) let sender = sender
+        onMain { $0.activate(sender) }
+    }
+
+    nonisolated override func deactivateServer(_ sender: Any!) {
+        nonisolated(unsafe) let sender = sender
+        onMain { $0.deactivate(sender) }
+        super.deactivateServer(sender)
+    }
+
+    nonisolated override func handle(_ event: NSEvent!, client sender: Any!) -> Bool {
+        nonisolated(unsafe) let event = event
+        nonisolated(unsafe) let sender = sender
+        return onMain { $0.handleEvent(event, sender: sender) }
+    }
+
+    nonisolated override func commitComposition(_ sender: Any!) {
+        nonisolated(unsafe) let sender = sender
+        onMain { $0.commit(.commitComposition, sender: sender) }
+    }
+
+    nonisolated override func hidePalettes() {
+        onMain { _ in DuoRuntime.shared.hud.forceHide() }
+        super.hidePalettes()
+    }
+
+    nonisolated override func inputControllerWillClose() {
+        onMain { $0.willClose() }
+        super.inputControllerWillClose()
+    }
+
+    /// IMK calls controllers on the main thread; this documents and enforces it without crashing
+    /// if a future IMK ever does not.
+    nonisolated func onMain<T: Sendable>(_ work: @MainActor (DuoInputController) -> T) -> T {
+        // `self` reaches a nonisolated override from IMK's ObjC side; rebind it like the IMK
+        // arguments (critique V6) so region isolation accepts the hop.
+        nonisolated(unsafe) let this = self
+        if Thread.isMainThread {
+            return MainActor.assumeIsolated { work(this) }
+        }
+        Log.ime.fault("IMK called the controller off the main thread")
+        return DispatchQueue.main.sync { MainActor.assumeIsolated { work(this) } }
+    }
+
+    // MARK: Lifecycle
+
+    private func activate(_ sender: Any?) {
+        let runtime = DuoRuntime.shared
+        guard let proxy = (sender as? Proxy) ?? client() else {
+            Log.ime.error("activateServer without a client")
+            return
+        }
+        runtime.reloadSettings()
+        let previousBundleIdentifier = bundleIdentifier
+        bundleIdentifier = proxy.bundleIdentifier() ?? ""
+        // A controller IMK reuses for another client must find out again whether it forwards modifiers.
+        if bundleIdentifier != previousBundleIdentifier { forwardsModifierEvents = false }
+        proxy.overrideKeyboard(withKeyboardNamed: runtime.keyboardLayoutID)
+
+        let textClient = self.textClient ?? IMKTextClient(controller: self)
+        self.textClient = textClient
+        textClient.resetMarkedState()
+
+        if let detector = runtime.detector {
+            let engine = self.engine ?? makeEngine(detector: detector, learning: runtime.learning)
+            self.engine = engine
+            engine.setClient(bundleIdentifier: bundleIdentifier)
+            syncSettings(engine)
+            textClient.needsMarkBeforeInsert = engine.clientProfile.needsMarkBeforeInsert
+        }
+
+        if !bundleIdentifier.isEmpty, !bundleIdentifier.hasPrefix("com.inkyuoh.") {
+            SettingsStore.recordSeenApp(bundleIdentifier)
+        }
+        runtime.activeController = self
+        wasSecure = IsSecureEventInputEnabled()
+        Log.ime.info("""
+            activate \(self.bundleIdentifier, privacy: .public) \
+            profile=\(self.engine?.clientProfile.effectiveProfile(runtime.settings).rawValue ?? "pass-through", privacy: .public) \
+            secure=\(self.wasSecure, privacy: .public)
+            """)
+    }
+
+    private func deactivate(_ sender: Any?) {
+        commit(.deactivate, sender: sender)
+        let runtime = DuoRuntime.shared
+        if runtime.activeController === self { runtime.activeController = nil }
+        Log.ime.info("deactivate \(self.bundleIdentifier, privacy: .public)")
+    }
+
+    private func willClose() {
+        engine?.reset()
+        textClient?.resetMarkedState()
+        let runtime = DuoRuntime.shared
+        if runtime.activeController === self {
+            runtime.activeController = nil
+            runtime.hud.forceHide()
+        }
+    }
+
+    /// The selected input source changed away from Duo without a `deactivateServer` (R18 #6).
+    func inputSourceDidChangeAway() {
+        // From a TIS notification, not an IMK callback: the client's answers may be stale.
+        commit(.deactivate, sender: client(), outsideCallback: true)
+    }
+
+    private func makeEngine(detector: DuoDetector, learning: LearningStore) -> CompositionEngine {
+        let engine = CompositionEngine(detector: detector, learning: learning,
+                                       settings: DuoRuntime.shared.settings, bundleIdentifier: bundleIdentifier)
+        engine.onNotification = { [weak self] note in self?.engineDidNotify(note) }
+        return engine
+    }
+
+    // MARK: Events
+
+    private func handleEvent(_ event: NSEvent?, sender: Any?) -> Bool {
+        guard let event, let proxy = sender as? Proxy else { return false }
+        guard let engine, let textClient else { return false }   // pass-through mode
+        let runtime = DuoRuntime.shared
+        syncSettings(engine)
+        textClient.bind(proxy, bundleIdentifier: bundleIdentifier)
+        defer { textClient.unbind() }
+
+        // R5: secure input first. Commit what is pending, then every key passes raw: no HUD, no learning.
+        let secure = IsSecureEventInputEnabled()
+        if secure != wasSecure {
+            wasSecure = secure
+            Log.ime.info("secure event input \(secure ? "on" : "off", privacy: .public)")
+        }
+        if secure {
+            if engine.isComposing { engine.commit(.secureInput, client: textClient) }
+            runtime.hud.forceHide()
+            return false
+        }
+
+        let consumed: Bool
+        let trigger: HUDTimeline.Trigger
+        let hudBefore = engine.hud
+        var flipPress: HUDAnnouncement.Press?
+        switch event.type {
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+            // R4: IMK no longer commits on click for us. Commit, and let the click move the caret.
+            engine.commit(.mouse, client: textClient)
+            consumed = false
+            trigger = .other
+        case .flagsChanged:
+            // Flip-key taps and Caps Lock. Never consumed: the app must see modifier state.
+            runtime.modifierRouter.noteForwarded(by: self)
+            routeModifier(event, engine: engine, client: textClient)
+            if HUDAnnouncement.isFlipKey(modifierKeyCode: event.keyCode, flipKey: engine.settings.flipKey) {
+                flipPress = .modifier
+            }
+            consumed = false
+            trigger = .other
+        case .keyDown:
+            guard let key = KeyEventMapper.keyEvent(from: event) else { return false }
+            if HUDAnnouncement.isFlipKey(key, flipKey: engine.settings.flipKey) { flipPress = .keyDown }
+            consumed = engine.handle(key, client: textClient)
+            trigger = .keystroke
+            Log.ime.debug("""
+                key \(event.keyCode, privacy: .private) repeat=\(event.isARepeat, privacy: .public) \
+                consumed=\(consumed, privacy: .public)
+                """)
+        default:
+            return false
+        }
+
+        runtime.hud.present(engine.hud, from: self, trigger: trigger)
+        announce(flipPress, hudBefore: hudBefore, hudAfter: engine.hud)
+        return consumed
+    }
+
+    /// One `flagsChanged`, from IMK or from ``ModifierRouter``'s monitor; copies are dropped.
+    private func routeModifier(_ event: NSEvent, engine: CompositionEngine, client: IMKTextClient) {
+        let router = DuoRuntime.shared.modifierRouter
+        guard router.isNewChange(event), let modifier = KeyEventMapper.modifierEvent(from: event) else { return }
+        if router.otherInputBefore(event) { engine.noteKeyActivity() }
+        engine.handleModifier(modifier, client: client)
+    }
+
+    /// A `flagsChanged` from ``ModifierRouter``'s global monitor, for a session whose client has not
+    /// forwarded any modifier event through IMK.
+    func handleMonitoredModifier(_ event: NSEvent) {
+        guard let engine, let textClient, let proxy = client() as Proxy? else { return }
+        guard !IsSecureEventInputEnabled() else { return }
+        syncSettings(engine)
+        textClient.bind(proxy, bundleIdentifier: bundleIdentifier, outsideCallback: true)
+        defer { textClient.unbind() }
+        let hudBefore = engine.hud
+        routeModifier(event, engine: engine, client: textClient)
+        DuoRuntime.shared.hud.present(engine.hud, from: self, trigger: .other)
+        let isFlipKey = HUDAnnouncement.isFlipKey(modifierKeyCode: event.keyCode, flipKey: engine.settings.flipKey)
+        announce(isFlipKey ? .modifier : nil, hudBefore: hudBefore, hudAfter: engine.hud)
+    }
+
+    private func commit(_ reason: CommitReason, sender: Any?, outsideCallback: Bool = false) {
+        defer { DuoRuntime.shared.hud.forceHide() }
+        guard let engine, let textClient, let proxy = (sender as? Proxy) ?? client() else { return }
+        textClient.bind(proxy, bundleIdentifier: bundleIdentifier, outsideCallback: outsideCallback)
+        defer { textClient.unbind() }
+        engine.commit(reason, client: textClient)
+    }
+
+    private func syncSettings(_ engine: CompositionEngine) {
+        let runtime = DuoRuntime.shared
+        guard settingsGeneration != runtime.settingsGeneration else { return }
+        engine.settings = runtime.settings
+        settingsGeneration = runtime.settingsGeneration
+    }
+
+    // MARK: Engine notifications
+
+    private func engineDidNotify(_ note: EngineNotification) {
+        switch note {
+        case .flipped(let language):
+            DuoRuntime.shared.hud.noteManualFlip()
+            pendingFlipAnnouncement = language
+            Log.ime.info("flipped to \(language.rawValue, privacy: .public)")
+        case .committed:
+            break
+        case .learningChanged:
+            DuoRuntime.shared.learningDidChange()
+        }
+    }
+
+    /// After the engine call returns: a flip is announced with its word (``announcePendingFlip()``);
+    /// any other flip-key press that changed the HUD's feedback (refused, the next word's language,
+    /// Bilingual for the line) is spoken as that feedback, which VoiceOver cannot read off the hidden HUD.
+    private func announce(_ flipPress: HUDAnnouncement.Press?, hudBefore: HUDRequest?, hudAfter: HUDRequest?) {
+        if announcePendingFlip() { return }
+        guard let flipPress,
+              let feedback = HUDAnnouncement.feedback(for: flipPress, before: hudBefore, after: hudAfter) else { return }
+        Task { @MainActor in VoiceOverAnnouncer.announce(feedback) }
+    }
+
+    /// After the engine call returns (so the flipped word has been sent to the client), tell the host
+    /// app (onboarding challenge) and VoiceOver (ux-spec §7.5). Both run on the next turn so the key
+    /// returns to the client first. Returns whether a flip was pending.
+    @discardableResult
+    private func announcePendingFlip() -> Bool {
+        guard let language = pendingFlipAnnouncement else { return false }
+        pendingFlipAnnouncement = nil
+        let word = textClient?.lastSentText ?? ""
+        Task { @MainActor in
+            DistributedNotificationCenter.default().postNotificationName(
+                DuoIDs.Notifications.flipped, object: nil, userInfo: ["to": language.rawValue],
+                deliverImmediately: true)
+            VoiceOverAnnouncer.announceFlip(word: word, to: language)
+        }
+        return true
+    }
+
+    // MARK: Client access for the menu
+
+    /// Binds `proxy` to the engine's client for a one-off action (menu commands, which IMK does not
+    /// send inside a `handle` callback, so the client's answers may be stale).
+    func withEngineClient(_ proxy: Proxy, _ body: (CompositionEngine, IMKTextClient) -> Void) {
+        guard let engine, let textClient else { return }
+        textClient.bind(proxy, bundleIdentifier: bundleIdentifier, outsideCallback: true)
+        defer { textClient.unbind() }
+        body(engine, textClient)
+    }
+}
+
+// MARK: - HUD geometry
+
+extension DuoInputController: HUDAnchorProvider {
+    func hudCaretRect(for anchor: HUDRequest.Anchor) -> CGRect? {
+        guard let proxy = textClient?.proxy ?? client() else { return nil }
+        switch anchor {
+        case .markedText:
+            return lineRectAtSessionStart(proxy) ?? firstRect(proxy, of: proxy.markedRange())
+        case .caret:
+            if let rect = lineRectAtSessionStart(proxy) { return rect }
+            return firstRect(proxy, of: NSRange(location: proxy.selectedRange().location, length: 0))
+        case .location(let location):
+            return firstRect(proxy, of: NSRange(location: location, length: 1)) ?? lineRectAtSessionStart(proxy)
+        }
+    }
+
+    func hudClientWindowLevel() -> Int {
+        guard let proxy = textClient?.proxy ?? client() else { return Int(CGWindowLevelForKey(.normalWindow)) }
+        return Int(proxy.windowLevel())
+    }
+
+    /// `attributes(forCharacterIndex: 0, lineHeightRectangle:)`: the start of the marked text, or
+    /// the caret when nothing is marked (imk-platform §4.5).
+    private func lineRectAtSessionStart(_ proxy: Proxy) -> CGRect? {
+        var rect = NSRect.zero
+        _ = proxy.attributes(forCharacterIndex: 0, lineHeightRectangle: &rect)
+        return usable(rect)
+    }
+
+    /// `firstRect(forCharacterRange:)` for a valid document range (fallback for clients whose
+    /// `attributes(forCharacterIndex:)` returns nothing).
+    private func firstRect(_ proxy: Proxy, of range: NSRange) -> CGRect? {
+        guard range.location != NSNotFound, range.location >= 0 else { return nil }
+        return usable(proxy.firstRect(forCharacterRange: range, actualRange: nil))
+    }
+
+    private func usable(_ rect: NSRect) -> CGRect? {
+        HUDGeometry.sanitized(rect) == nil ? nil : rect
+    }
+}

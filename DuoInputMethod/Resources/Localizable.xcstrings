@@ -1,0 +1,237 @@
+{
+  "sourceLanguage": "ko",
+  "strings": {
+    "%@, 영어로 바꿈": {
+      "comment": "VoiceOver announcement after a flip. %@ is the word.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, switched to English"
+          }
+        }
+      }
+    },
+    "%@, 한국어로 바꿈": {
+      "comment": "VoiceOver announcement after a flip. %@ is the word.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, switched to Korean"
+          }
+        }
+      }
+    },
+    "Duo 도움말": {
+      "comment": "Input menu: opens the Duo app.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duo Help"
+          }
+        }
+      }
+    },
+    "Duo 설정…": {
+      "comment": "Input menu: opens the Duo app's settings.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duo Settings…"
+          }
+        }
+      }
+    },
+    "English 우선": {
+      "comment": "Input menu: per-app profile that prefers English.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English First"
+          }
+        }
+      }
+    },
+    "다음 단어 언어 지정 취소": {
+      "comment": "VoiceOver announcement: a second flip-key press cancelled the next word's language.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next-word language cancelled"
+          }
+        }
+      }
+    },
+    "다음 단어는 영어": {
+      "comment": "VoiceOver announcement: a flip-key press with nothing to flip set the next word to English.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next word in English"
+          }
+        }
+      }
+    },
+    "다음 단어는 한국어": {
+      "comment": "VoiceOver announcement: a flip-key press with nothing to flip set the next word to Korean.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next word in Korean"
+          }
+        }
+      }
+    },
+    "선택한 텍스트 한↔A 변환": {
+      "comment": "Input menu: converts the selection between Hangul and the keys that type it.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convert Selected Text 한↔A"
+          }
+        }
+      }
+    },
+    "알 수 없음": {
+      "comment": "Input menu: shown as the app name when the client app is unknown.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        }
+      }
+    },
+    "여기서는 바꿀 수 없어요": {
+      "comment": "HUD message and VoiceOver announcement when the app cannot replace text.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't change text here"
+          }
+        }
+      }
+    },
+    "영어로 바꿈": {
+      "comment": "VoiceOver announcement after a flip with no word.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switched to English"
+          }
+        }
+      }
+    },
+    "이 줄은 한영 자동": {
+      "comment": "VoiceOver announcement: in a Direct-input app, the flip key turned on Korean/English detection for this line.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilingual for this line"
+          }
+        }
+      }
+    },
+    "자동": {
+      "comment": "Input menu: per-app profile, no language bias.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic"
+          }
+        }
+      }
+    },
+    "직접 입력": {
+      "comment": "Input menu: per-app profile where keys pass straight through.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Direct Input"
+          }
+        }
+      }
+    },
+    "직접 입력으로 돌아감": {
+      "comment": "VoiceOver announcement: in a Direct-input app, the flip key turned this line's Korean/English detection off again.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to direct input"
+          }
+        }
+      }
+    },
+    "학습 일시 정지": {
+      "comment": "Input menu: temporarily stops learning from corrections.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause Learning"
+          }
+        }
+      }
+    },
+    "한국어 우선": {
+      "comment": "Input menu: per-app profile that prefers Korean.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korean First"
+          }
+        }
+      }
+    },
+    "한국어로 바꿈": {
+      "comment": "VoiceOver announcement after a flip with no word.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switched to Korean"
+          }
+        }
+      }
+    },
+    "현재 앱: %@": {
+      "comment": "Input menu: disabled header above the per-app profile choices. %@ is the app name.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current App: %@"
+          }
+        }
+      }
+    },
+    "힌트 표시": {
+      "comment": "Input menu: toggles the alternative-reading HUD.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Hints"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -1,0 +1,47 @@
+name: Duo
+options:
+  bundleIdPrefix: com.inkyuoh
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: ko
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: YES
+    # Ad-hoc signing + hardened runtime refuses a separately signed debug dylib (critique V5/R20).
+    ENABLE_DEBUG_DYLIB: NO
+    ENABLE_PREVIEWS: NO
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+packages:
+  DuoCore:
+    path: Packages/DuoCore
+targets:
+  DuoInputMethod:
+    type: application
+    platform: macOS
+    sources:
+      - DuoInputMethod/Sources
+      - path: DuoInputMethod/Resources
+        buildPhase: resources
+    dependencies:
+      - package: DuoCore
+        product: DuoCore
+      - package: DuoCore
+        product: DuoKit
+    settings:
+      base:
+        PRODUCT_NAME: DuoInputMethod
+        PRODUCT_BUNDLE_IDENTIFIER: com.inkyuoh.inputmethod.Duo
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: DuoInputMethod/Info.plist
+        SKIP_INSTALL: YES
