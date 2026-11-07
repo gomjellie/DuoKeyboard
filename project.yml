@@ -45,3 +45,18 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: DuoInputMethod/Info.plist
         SKIP_INSTALL: YES
+  DuoHarness:
+    type: application
+    platform: macOS
+    sources:
+      - DuoHarness/Sources
+    dependencies:
+      - package: DuoCore
+        product: DuoKit
+    settings:
+      base:
+        PRODUCT_NAME: DuoHarness
+        PRODUCT_BUNDLE_IDENTIFIER: com.inkyuoh.Duo.Harness
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSUIElement: NO
+        ENABLE_HARDENED_RUNTIME: NO
