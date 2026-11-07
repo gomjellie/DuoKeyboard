@@ -1,0 +1,26 @@
+# Secrets
+.env
+.env.*
+
+# Build
+build/
+DerivedData/
+.build/
+.swiftpm/
+*.xcodeproj/
+!*.xcodeproj/project.pbxproj
+xcuserdata/
+*.xcuserstate
+
+# Generated project (XcodeGen) — regenerate with `make project`
+Duo.xcodeproj/
+
+# Raw downloaded corpora (re-fetch with Tools/ModelBuilder)
+Tools/data/raw/
+Tools/ModelBuilder/__pycache__/
+
+.DS_Store
+
+# Model outputs are copied into the app/test resources; keep only those copies
+Tools/ModelBuilder/out/duo-model.bin
+Tools/ModelBuilder/out/test_vectors.json
