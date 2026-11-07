@@ -17,6 +17,7 @@ let package = Package(
         .testTarget(
             name: "DuoCoreTests",
             dependencies: ["DuoCore"],
+            resources: [.copy("Resources")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
     ]
