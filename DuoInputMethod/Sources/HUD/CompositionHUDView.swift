@@ -15,17 +15,17 @@ final class CompositionHUDModel {
     var flipCount = 0
     /// The pointer is over the panel (the choice bar highlights the reading it would switch to).
     var pointerInside = false
-    /// The other reading on the choice bar was clicked.
-    @ObservationIgnored var onChooseOther: () -> Void = {}
+    /// The reading at this index on the choice bar was clicked.
+    @ObservationIgnored var onChoose: (Int) -> Void = { _ in }
 
     init() {}
 }
 
 /// The Liquid Glass composition chip (ui-design §2.2 merged with critique R12): a 28 pt capsule.
-/// A word with two plausible readings gets the choice bar (docs/SPEC.md §4.11): both readings with
-/// 16 pt language badges (가 orange / A blue), the one in the document on a selection pill, then the
-/// flip key's keycaps. Feedback is a 20 pt badge or a message. The view is hidden from
-/// accessibility (ux-spec §7.5); flips are announced instead.
+/// A word with more than one likely reading gets the choice bar (docs/SPEC.md §4.11): the readings
+/// with 16 pt language badges (가 orange / A blue), numbered 1, 2, 3 … for the word being typed, the
+/// one in the document on a selection pill, then the flip key's keycaps. Feedback is a 20 pt badge
+/// or a message. The view is hidden from accessibility (ux-spec §7.5); flips are announced instead.
 struct CompositionHUDView: View {
     let model: CompositionHUDModel
 
@@ -43,9 +43,9 @@ struct CompositionHUDView: View {
         let presentation = model.presentation
         HStack(spacing: 6) {
             if let choice = presentation.choice {
-                ChoiceBar(choice: choice, pointerInside: model.pointerInside,
+                ChoiceBar(choice: choice, numbered: presentation.isNumbered, pointerInside: model.pointerInside,
                           emphasized: reduceTransparency || contrast == .increased,
-                          onChooseOther: model.onChooseOther)
+                          onChoose: model.onChoose)
                     .animation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(duration: 0.3, bounce: 0.15),
                                value: choice.selected)
             } else if let language = presentation.badge {
@@ -96,13 +96,14 @@ struct CompositionHUDView: View {
     }
 }
 
-/// Both readings of a word, the one in the document on the selection pill. A click on the other
-/// reading switches to it; the pill then slides over, since the order never changes.
+/// The readings of a word, the one in the document on the selection pill. A click on another
+/// reading switches to it; the pill then slides over, since the order does not change.
 private struct ChoiceBar: View {
     let choice: HUDChoice
+    let numbered: Bool
     let pointerInside: Bool
     let emphasized: Bool
-    let onChooseOther: () -> Void
+    let onChoose: (Int) -> Void
 
     /// Pill inset inside the 28 pt capsule, so the pill is concentric with it.
     static let inset: CGFloat = 3
@@ -112,7 +113,7 @@ private struct ChoiceBar: View {
         HStack(spacing: 2) {
             ForEach(Array(choice.readings.enumerated()), id: \.offset) { index, reading in
                 if index == choice.selected {
-                    ReadingLabel(reading: reading, prominent: true)
+                    ReadingLabel(reading: reading, number: number(index), prominent: true, compact: compact)
                         .background {
                             // Tinted with the reading's language, so it cannot pass for a hover.
                             Capsule()
@@ -120,30 +121,46 @@ private struct ChoiceBar: View {
                                 .matchedGeometryEffect(id: "pill", in: pill)
                         }
                 } else {
-                    Button(action: onChooseOther) {
-                        ReadingLabel(reading: reading, prominent: pointerInside)
+                    Button { onChoose(index) } label: {
+                        ReadingLabel(reading: reading, number: number(index), prominent: pointerInside, compact: compact)
                     }
-                    .buttonStyle(OtherReadingStyle(highlighted: pointerInside, emphasized: emphasized))
+                    // With two readings the other one is the click target: a faint pill shows it.
+                    .buttonStyle(OtherReadingStyle(highlighted: pointerInside && choice.readings.count == 2,
+                                                   emphasized: emphasized))
+                    // The panel never takes keyboard focus, so a focus ring would only mislead.
+                    .focusEffectDisabled()
                 }
             }
         }
     }
+
+    private var compact: Bool { choice.readings.count > 2 }
+    private func number(_ index: Int) -> Int? { numbered ? index + 1 : nil }
 }
 
-/// One reading: its 16 pt badge and its text.
+/// One reading: its number (the digit key that chooses it), its 16 pt badge and its text.
 private struct ReadingLabel: View {
     let reading: HUDReading
+    let number: Int?
     let prominent: Bool
+    /// Three or more readings: a shorter text before truncation, so the bar stays compact.
+    let compact: Bool
 
     var body: some View {
         HStack(spacing: 5) {
+            if let number {
+                Text(verbatim: "\(number)")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 4)
+            }
             LanguageBadge(language: reading.language, size: 16)
             Text(verbatim: reading.text)
                 .font(.system(size: 13.5, weight: .medium))
                 .foregroundStyle(prominent ? .primary : .secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .frame(maxWidth: CompositionHUDView.maximumTextWidth / 2, alignment: .leading)
+                .frame(maxWidth: compact ? 110 : CompositionHUDView.maximumTextWidth / 2, alignment: .leading)
                 .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.leading, 3)

@@ -12,8 +12,8 @@ protocol HUDAnchorProvider: AnyObject {
     func hudCaretRect(for anchor: HUDRequest.Anchor) -> CGRect?
     /// `IMKTextInput.windowLevel()` of the client window.
     func hudClientWindowLevel() -> Int
-    /// The other reading on the choice bar for `shown`, the request on screen, was clicked.
-    func hudChooseOtherReading(on shown: HUDRequest)
+    /// The reading at `index` on the choice bar for `shown`, the request on screen, was clicked.
+    func hudChooseReading(at index: Int, on shown: HUDRequest)
 }
 
 /// The single, reused composition HUD (one panel per process: azooKey #348 leaked dozens).
@@ -45,6 +45,8 @@ final class CompositionHUDController {
     private var isOrderedIn = false
     /// Invalidates fade-out completions that a newer show or hide has superseded.
     private var fadeGeneration = 0
+    /// When the panel last came on screen (`systemUptime`).
+    private var orderedInAt: TimeInterval?
     /// The visible capsule, in global coordinates (the panel adds a transparent margin around it).
     private var chipFrame: CGRect?
     /// Mouse-moved monitors, installed only while a choice bar is on screen.
@@ -55,7 +57,7 @@ final class CompositionHUDController {
         hosting = HUDHostingView(rootView: HUDRootView(model: model, margin: Self.panelMargin))
         hosting.sizingOptions = [.intrinsicContentSize]
         panel.contentView = hosting
-        model.onChooseOther = { [weak self] in self?.chooseOther() }
+        model.onChoose = { [weak self] index in self?.choose(index) }
     }
 
     /// Feeds the engine's current request after every engine call.
@@ -83,12 +85,19 @@ final class CompositionHUDController {
 
     // MARK: Pointer
 
-    /// A click on the choice bar's other reading. The provider flips the word and presents the
+    /// The request the user can see now: on screen, not on its way out, and faded in. The digit
+    /// keys choose from this bar only; a bar still at alpha 0 was not seen.
+    var seenRequest: HUDRequest? {
+        guard isOrderedIn, let shownAt = orderedInAt, Self.now - shownAt >= timeline.timing.fadeIn else { return nil }
+        return timeline.visibleRequest
+    }
+
+    /// A click on a reading of the choice bar. The provider switches the word and presents the
     /// engine's new request, which moves the selection pill. A bar on its way out (a hide was
     /// issued) no longer counts.
-    private func chooseOther() {
+    private func choose(_ index: Int) {
         guard isOrderedIn, model.presentation.isClickable, let shown = timeline.visibleRequest else { return }
-        provider?.hudChooseOtherReading(on: shown)
+        provider?.hudChooseReading(at: index, on: shown)
     }
 
     /// Follows the pointer while a choice bar is on screen. The panel takes clicks only while the
@@ -196,6 +205,7 @@ final class CompositionHUDController {
             panel.alphaValue = 0
             panel.orderFrontRegardless()
             isOrderedIn = true
+            orderedInAt = Self.now
         }
         let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         NSAnimationContext.runAnimationGroup { context in
@@ -230,6 +240,7 @@ final class CompositionHUDController {
         panel.orderOut(nil)
         panel.alphaValue = 0
         isOrderedIn = false
+        orderedInAt = nil
     }
 
     // MARK: Timer

@@ -207,7 +207,18 @@ final class DuoInputController: IMKInputController {
         case .keyDown:
             guard let key = KeyEventMapper.keyEvent(from: event) else { return false }
             if HUDAnnouncement.isFlipKey(key, flipKey: engine.settings.flipKey) { flipPress = .keyDown }
-            consumed = engine.handle(key, client: textClient)
+            var choice = ReadingChoice.notOnBar
+            if let index = HUDPresentation.readingIndex(for: key),
+               let shown = runtime.hud.seenRequest,
+               HUDPresentation(shown.content, flipKey: engine.settings.flipKey).isNumbered {
+                // A digit while numbered readings are on screen chooses one (docs/SPEC.md 4.11절);
+                // a refused choice is not text either, and keeps its message.
+                choice = engine.selectReading(at: index, on: shown, client: textClient)
+                if choice == .refused, engine.hud?.content == .cannotChange {
+                    Task { @MainActor in VoiceOverAnnouncer.announce(.cannotChange) }
+                }
+            }
+            consumed = choice == .notOnBar ? engine.handle(key, client: textClient) : true
             trigger = .keystroke
             Log.ime.debug("""
                 key \(event.keyCode, privacy: .private) repeat=\(event.isARepeat, privacy: .public) \
@@ -334,14 +345,14 @@ extension DuoInputController: HUDAnchorProvider {
         }
     }
 
-    func hudChooseOtherReading(on shown: HUDRequest) {
+    func hudChooseReading(at index: Int, on shown: HUDRequest) {
         guard let engine, let textClient, let proxy = client() as Proxy? else { return }
         guard !IsSecureEventInputEnabled() else { return }
         syncSettings(engine)
         // A click reaches us outside any IMK callback: the client's answers may be stale.
         textClient.bind(proxy, bundleIdentifier: bundleIdentifier, outsideCallback: true)
         defer { textClient.unbind() }
-        let changed = engine.chooseOtherReading(on: shown, client: textClient)
+        let changed = engine.selectReading(at: index, on: shown, client: textClient) == .chosen
         DuoRuntime.shared.hud.present(engine.hud, from: self, trigger: .other)
         if changed {
             announcePendingFlip()
