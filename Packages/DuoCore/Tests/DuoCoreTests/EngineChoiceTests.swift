@@ -83,6 +83,8 @@ struct EngineChoiceTests {
         #expect(choice.readings.map(\.text) == ["층로", "cmd로", "cmdfh"], "c층로 is 11 nats behind")
         #expect(choice.selected == 0)
         #expect(eligible, "cmd로 is within 5 %")
+        let numbered = HUDPresentation(h.hud!.content, flipKey: .rightCommand).isNumbered
+        #expect(numbered)
     }
 
     @Test func atMostFiveReadingsAreListed() {
@@ -107,6 +109,53 @@ struct EngineChoiceTests {
             return
         }
         #expect(choice.readings.map(\.text) == ["층로", "cmd로"], "E is more than 10 nats behind")
+    }
+
+    @Test func aDigitChoosesAReadingAndCommittingTeachesIt() throws {
+        let h = EngineHarness()
+        Self.typeCmdFh(h)
+        let bar = try #require(h.hud)
+        #expect(h.engine.selectReading(at: 1, on: bar, client: h.client) == .chosen)
+        #expect(h.marked == "cmd로")
+        #expect(h.engine.token?.locked == .mixed(latin: 3))
+        h.press(.space)
+        #expect(h.text == "cmd로 ")
+        #expect(h.learned("cmdfh", .start) == [.mixed(latin: 3): 3])
+    }
+
+    @Test func choosingTheShownReadingKeepsIt() throws {
+        let h = EngineHarness()
+        Self.typeCmdFh(h)
+        let bar = try #require(h.hud)
+        #expect(h.engine.selectReading(at: 0, on: bar, client: h.client) == .chosen)
+        #expect(h.marked == "층로")
+        #expect(h.engine.token?.locked == .korean)
+        h.press(.space)
+        #expect(h.store.count == 0, "keeping the shown reading teaches nothing")
+    }
+
+    @Test func aChoiceOnABarTheEngineHasReplacedIsIgnored() throws {
+        let h = EngineHarness()
+        Self.typeCmdFh(h)
+        let bar = try #require(h.hud)
+        h.detector.scores["cmdfhs"] = [.korean: -30000, .english: -31000]
+        h.type("s")
+        #expect(h.engine.selectReading(at: 1, on: bar, client: h.client) == .notOnBar)
+        #expect(h.engine.token?.locked == nil)
+    }
+
+    @Test func keepingTheShownReadingAgainstTheModelTeachesIt() throws {
+        let h = EngineHarness()
+        h.detector.scores["cmdfh"] = [.korean: -16000, .mixed(latin: 3): -18000, .english: -27000]
+        h.detector.finals["cmdfh"] = [.korean: -24000, .mixed(latin: 3): -22000, .english: -27000]
+        h.type("cmdfh")
+        #expect(h.marked == "층로")
+        let bar = try #require(h.hud)
+        let index = try #require({ if case .alternative(let c, _) = bar.content { c.selected } else { nil } }())
+        #expect(h.engine.selectReading(at: index, on: bar, client: h.client) == .chosen)
+        h.press(.space)
+        #expect(h.text == "층로 ")
+        #expect(h.learned("cmdfh", .start) == [.korean: 3], "a boundary would have committed cmd로")
     }
 
     // MARK: Clicking the word being typed

@@ -126,6 +126,12 @@ public final class PlaygroundSession {
         engine.chooseOtherReading(on: shown, client: buffer)
     }
 
+    /// A reading on the playground's bar for `shown` was chosen (digit key or click).
+    @discardableResult
+    public func selectReading(at index: Int, on shown: HUDRequest) -> ReadingChoice {
+        engine.selectReading(at: index, on: shown, client: buffer)
+    }
+
     /// A ⌘ or ⌃ key-down about to be taken by a menu (⌘C, ⌘A), which then never reaches the canvas's
     /// `keyDown`. The engine sees it as the IME would: the word is committed and a held flip key
     /// becomes a chord instead of a tap. Seeing the same key again in `keyDown` is harmless.

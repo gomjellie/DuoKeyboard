@@ -1,6 +1,17 @@
-// The choice bar's list of readings (docs/SPEC.md 4.11절).
+// The choice bar's list of readings and choosing one (docs/SPEC.md 4.11절).
 
 import Foundation
+
+/// What a digit key or a click on the choice bar did (docs/SPEC.md 4.11절).
+public enum ReadingChoice: Equatable, Sendable {
+    /// The engine has no such bar now (it replaced the request the user saw): the key is text.
+    case notOnBar
+    /// The bar is current but the choice could not be made (the client cannot re-open committed
+    /// Latin, or the marked text is gone). The key was aimed at the bar, so it is not text either.
+    case refused
+    /// The word changed to the chosen reading, or kept the one it showed.
+    case chosen
+}
 
 extension CompositionEngine {
     /// Most readings the bar lists.
@@ -89,5 +100,51 @@ extension CompositionEngine {
     /// client can re-open that Latin.
     func canChoose(_ t: Token, _ h: Hypothesis) -> Bool {
         t.isConsistent(h) || clientProfile.canReplaceCommittedText
+    }
+
+    /// A reading on the bar was chosen with a digit key or a click (docs/SPEC.md 4.11절).
+    ///
+    /// - The word being typed switches to that reading and keeps it, as after a flip. Choosing the
+    ///   reading already shown keeps it too, and teaches it at the commit if the model would have
+    ///   committed another one.
+    /// - On the last word's bar, choosing the other reading flips that word.
+    ///
+    /// - Parameter shown: the request whose bar the user saw. A bar the engine has replaced since
+    ///   (a hide debounce or fade-out still shows it) is not this bar.
+    @discardableResult
+    public func selectReading(at index: Int, on shown: HUDRequest, client: any TextClient) -> ReadingChoice {
+        // A digit or a click between two flip-key presses makes them a chord, not a tap.
+        tap.noteKeyDown()
+        guard !literal, let request = hud, request == shown else { return .notOnBar }
+        switch request.content {
+        case .alternative(let choice, _):
+            guard choice.readings.indices.contains(index), let t = token, let scores = t.scores,
+                  let bar = choiceList(t, scores), bar.choice == choice else { return .notOnBar }
+            let target = bar.hypotheses[index]
+            hud = nil
+            let marked = t.marked.isEmpty ? nil : client.markedRange()
+            guard t.marked.isEmpty || marked != nil else {
+                dropToken()
+                return .refused
+            }
+            if target == t.shown {
+                var kept = t
+                if kept.locked == nil {
+                    kept.locked = target
+                    kept.lockedOriginal = target
+                }
+                kept.keptByChoice = true
+                token = kept
+                hud = alternativeHUD(kept, pulse: false, isRepeat: false)
+                return .chosen
+            }
+            return flipToken(t, to: target, markedRange: marked, checked: true, client: client) ? .chosen : .refused
+        case .flipLastWord(let choice):
+            guard choice.readings.indices.contains(index) else { return .notOnBar }
+            guard index != choice.selected else { return .chosen }
+            return chooseOtherReading(on: shown, client: client) ? .chosen : .refused
+        case .oneShot, .cannotChange, .bilingualLine:
+            return .notOnBar
+        }
     }
 }

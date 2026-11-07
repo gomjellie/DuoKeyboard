@@ -57,6 +57,23 @@ struct HUDPresentationTests {
         #expect(p.keycaps.isEmpty)
     }
 
+    @Test("only the word being typed gets numbers")
+    func numbering() {
+        #expect(HUDPresentation(.alternative(choice, eligible: true), flipKey: .rightCommand).isNumbered)
+        #expect(!HUDPresentation(.flipLastWord(choice), flipKey: .rightCommand).isNumbered)
+        #expect(!HUDPresentation(.oneShot(.korean), flipKey: .rightCommand).isNumbered)
+    }
+
+    @Test("digits 1 to 9 choose a reading; shortcuts and other keys do not")
+    func digitKeys() {
+        #expect(HUDPresentation.readingIndex(for: KeyEvent(.character("1"))) == 0)
+        #expect(HUDPresentation.readingIndex(for: KeyEvent(.character("5"))) == 4)
+        #expect(HUDPresentation.readingIndex(for: KeyEvent(.character("0"))) == nil)
+        #expect(HUDPresentation.readingIndex(for: KeyEvent(.character("!"))) == nil)
+        #expect(HUDPresentation.readingIndex(for: KeyEvent(.character("2"), modifiers: .command)) == nil)
+        #expect(HUDPresentation.readingIndex(for: KeyEvent(.space)) == nil)
+    }
+
     @Test("cannot-change is a message with no badge and no keycaps")
     func cannotChange() {
         let p = HUDPresentation(.cannotChange, flipKey: .rightCommand)

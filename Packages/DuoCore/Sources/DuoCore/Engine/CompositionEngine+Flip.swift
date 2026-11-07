@@ -81,16 +81,24 @@ extension CompositionEngine {
 
     // MARK: (a) the token being composed
 
+    /// - Parameter explicitTarget: the reading chosen on the bar; `nil` for the flip key's target.
     /// - Returns: whether the token changed to another reading.
     @discardableResult
-    private func flipToken(_ token: Token, markedRange knownMarked: NSRange?, checked: Bool,
-                           client: any TextClient) -> Bool {
+    func flipToken(_ token: Token, to explicitTarget: Hypothesis? = nil, markedRange knownMarked: NSRange?,
+                   checked: Bool, client: any TextClient) -> Bool {
         var t = token
         if t.scores == nil { t.scores = prefixScores(t.raw, t.context) }
         guard let scores = t.scores else { return false }
 
-        guard let target = flipTarget(t, scores) else { return false }
-        if t.lockedOriginal == nil { t.lockedOriginal = t.shown }
+        let target: Hypothesis
+        if let explicitTarget {
+            target = explicitTarget
+            if t.lockedOriginal == nil { t.lockedOriginal = t.shown }
+        } else {
+            guard let next = flipTarget(t, scores) else { return false }
+            target = next
+            if t.lockedOriginal == nil { t.lockedOriginal = t.shown }
+        }
 
         if t.committed > 0, !t.isConsistent(target) {
             // The Latin committed by eager E must be re-opened: verify it, then replace committed +
@@ -116,6 +124,7 @@ extension CompositionEngine {
         }
         t.locked = target
         t.shown = target
+        t.keptByChoice = false
         t.languageLock = nil
         self.token = t
         notify(.flipped(to: target.language))

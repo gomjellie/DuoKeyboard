@@ -328,6 +328,10 @@ struct EngineScenarioTests {
         let bar = try #require(Self.listed(h, keys))
         #expect(bar.texts.prefix(2) == [korean, mixed], "both readings, best first")
         #expect(bar.eligible, "close enough for the bar to come up")
+        let shown = try #require(h.hud)
+        #expect(h.engine.selectReading(at: 1, on: shown, client: h.client) == .chosen)
+        h.press(.space)
+        #expect(h.text == mixed + " ")
     }
 
     @Test func pausingInsideAKoreanSyllableShowsNoBar() {

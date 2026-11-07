@@ -19,6 +19,9 @@ struct Token {
     var locked: Hypothesis?
     /// What was shown when the token was first flipped; a second flip returns to it.
     var lockedOriginal: Hypothesis?
+    /// The user kept the shown reading on the choice bar: an explicit choice, taught at the commit
+    /// when the model would have committed another reading.
+    var keptByChoice = false
     /// A one-shot language chosen with nothing to flip (docs/SPEC.md §4.7 c): only readings in this
     /// language are allowed, and hysteresis runs inside it.
     var languageLock: ScriptLanguage?

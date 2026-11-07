@@ -62,6 +62,13 @@ extension CompositionEngine {
                 if let original = t.lockedOriginal, locked != original {
                     votes.append(learning.record(raw: t.raw, context: t.context, hypothesis: locked,
                                                  votes: LearningStore.flipVotes))
+                } else if t.keptByChoice, let would = detector.finalScores(
+                    raw: t.raw, context: t.context, terminator: terminator, user: userCounts(t.raw, t.context),
+                    biasKO: biasKO).best?.hypothesis, would != locked {
+                    // The shown reading kept on the bar against what a boundary would commit: an
+                    // explicit correction (층로 kept while cmd로 had become the model's choice).
+                    votes.append(learning.record(raw: t.raw, context: t.context, hypothesis: locked,
+                                                 votes: LearningStore.flipVotes))
                 }
             } else if let lock = t.languageLock {
                 // A one-shot language that overruled the detector is an explicit correction.

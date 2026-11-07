@@ -58,6 +58,18 @@ public struct HUDPresentation: Hashable, Sendable {
     /// The chip offers a reading to click. Every other chip lets clicks through to the app below.
     public var isClickable: Bool { choice != nil }
 
+    /// The readings carry the numbers 1, 2, 3 …: the digit keys choose them. Only the word being
+    /// typed, since a digit typed after a committed word is text.
+    public var isNumbered: Bool { kind == .alternative && choice != nil }
+
+    /// The reading a digit key chooses on a numbered bar: 1 → the first … 9 → the ninth. `nil` for
+    /// any other key and for a digit with ⌘, ⌃ or ⌥ (a shortcut).
+    public static func readingIndex(for key: KeyEvent) -> Int? {
+        guard case .character(let c) = key.key, key.modifiers.isDisjoint(with: [.command, .control, .option]),
+              let digit = c.wholeNumberValue, (1...9).contains(digit) else { return nil }
+        return digit - 1
+    }
+
     /// The chip is just the badge (a 28 pt glass circle).
     public var isBadgeOnly: Bool { badge != nil && choice == nil && kind != .cannotChange }
 
