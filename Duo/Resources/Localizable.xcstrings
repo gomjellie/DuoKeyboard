@@ -1633,6 +1633,16 @@
         }
       }
     },
+    "입력기 업데이트 필요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input method needs an update"
+          }
+        }
+      }
+    },
     "입력기 응답 없음" : {
       "localizations" : {
         "en" : {

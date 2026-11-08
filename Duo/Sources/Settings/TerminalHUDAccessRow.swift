@@ -1,3 +1,4 @@
+import AppKit
 import DuoKit
 import SwiftUI
 
@@ -5,20 +6,28 @@ import SwiftUI
 /// (Orca), which puts the choice bar under the word there (`ClientProfile.compositionAtFocusedElement`).
 /// The permission belongs to the input method, so the IME reports it (`pong`) and shows the prompt.
 struct TerminalHUDAccessRow: View {
-    /// `nil` until the input method answers (it is not running, or has not answered yet).
-    @State private var trusted: Bool?
+    enum Access: Equatable {
+        /// The input method did not answer (not running, or not yet).
+        case unknown
+        /// It answered without the permission key: a build from before this setting.
+        case needsUpdate
+        case granted
+        case denied
+    }
+
+    @State private var access = Access.unknown
 
     var body: some View {
         LabeledContent {
-            switch trusted {
-            case true?:
+            switch access {
+            case .granted:
                 StatusValue(ok: true, text: "허용됨")
-            case false?:
-                Button("허용…") {
-                    DistributedNotificationCenter.default().postNotificationName(
-                        DuoIDs.Notifications.requestAccessibility, object: nil, userInfo: nil, deliverImmediately: true)
-                }
-            case nil:
+            case .denied:
+                Button("허용…") { Task { await Self.requestAccess() } }
+            case .needsUpdate:
+                Text("입력기 업데이트 필요")
+                    .foregroundStyle(.secondary)
+            case .unknown:
                 Text("입력기 응답 없음")
                     .foregroundStyle(.secondary)
             }
@@ -29,13 +38,35 @@ struct TerminalHUDAccessRow: View {
         .task {
             // A grant in System Settings shows up here within a few seconds.
             while !Task.isCancelled {
-                if let reply = await InputMethodPing.reply(timeout: .seconds(1)) {
-                    trusted = reply[DuoIDs.pongAccessibilityKey] == "true"
-                } else {
-                    trusted = nil
-                }
+                access = Self.access(from: await InputMethodPing.reply(timeout: .seconds(1)))
                 try? await Task.sleep(for: .seconds(2))
             }
+        }
+    }
+
+    static func access(from reply: [String: String]?) -> Access {
+        guard let reply else { return .unknown }
+        guard let value = reply[DuoIDs.pongAccessibilityKey] else { return .needsUpdate }
+        return value == "true" ? .granted : .denied
+    }
+
+    /// Clears the input method's own Accessibility entry, asks it to request the permission, and
+    /// opens the list in System Settings. An entry left by another build of the input method
+    /// (another signature) makes macOS ignore both the switch and the request.
+    static func requestAccess() async {
+        await Task.detached {
+            let reset = Process()
+            reset.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+            reset.arguments = ["reset", "Accessibility", DuoIDs.inputMethodBundleID]
+            reset.standardOutput = FileHandle.nullDevice
+            reset.standardError = FileHandle.nullDevice
+            try? reset.run()
+            reset.waitUntilExit()
+        }.value
+        DistributedNotificationCenter.default().postNotificationName(
+            DuoIDs.Notifications.requestAccessibility, object: nil, userInfo: nil, deliverImmediately: true)
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
         }
     }
 }
