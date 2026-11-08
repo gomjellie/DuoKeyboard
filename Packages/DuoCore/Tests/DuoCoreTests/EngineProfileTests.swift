@@ -12,16 +12,16 @@ struct EngineProfileTests {
     // MARK: ClientProfile table
 
     @Test(arguments: [
-        ("com.apple.Terminal", AppProfile.englishFirst, ReplacementSupport.beforeCaretOnly, true, false),
-        ("com.googlecode.iterm2", .englishFirst, .none, true, false),
-        ("com.stablyai.orca", .englishFirst, .full, true, false),
-        ("com.cmuxterm.app", .englishFirst, .full, true, false),
-        ("com.mitchellh.ghostty", .englishFirst, .full, true, false),
-        ("dev.warp.Warp-Stable", .englishFirst, .full, true, false),
-        ("net.kovidgoyal.kitty", .englishFirst, .full, true, false),
-        ("org.alacritty", .englishFirst, .full, true, false),
-        ("com.github.wez.wezterm", .englishFirst, .full, true, false),
-        ("co.zeit.hyper", .englishFirst, .none, true, false),
+        ("com.apple.Terminal", AppProfile.automatic, ReplacementSupport.beforeCaretOnly, true, false),
+        ("com.googlecode.iterm2", .automatic, .none, true, false),
+        ("com.stablyai.orca", .automatic, .full, true, false),
+        ("com.cmuxterm.app", .automatic, .full, true, false),
+        ("com.mitchellh.ghostty", .automatic, .full, true, false),
+        ("dev.warp.Warp-Stable", .automatic, .full, true, false),
+        ("net.kovidgoyal.kitty", .automatic, .full, true, false),
+        ("org.alacritty", .automatic, .full, true, false),
+        ("com.github.wez.wezterm", .automatic, .full, true, false),
+        ("co.zeit.hyper", .automatic, .none, true, false),
         ("com.apple.dt.Xcode", .englishFirst, .full, false, false),
         ("com.microsoft.VSCode", .englishFirst, .full, false, false),
         ("com.todesktop.230313mzl4w4u92", .englishFirst, .full, false, false),
@@ -84,7 +84,8 @@ struct EngineProfileTests {
         ("com.kakao.KakaoTalkMac", 1000, nil, 1500),
         ("com.microsoft.VSCode", -1000, nil, -1500),
         ("com.microsoft.VSCode", 500, nil, -500),
-        ("com.apple.Terminal", 0, nil, -1000),
+        ("com.apple.Terminal", 0, nil, 0),
+        ("com.apple.Terminal", 0, -1000, -1000),
     ] as [(String, Int, Int?, Int)])
     func biasKOCombinesProfileAndSliderClamped(_ id: String, _ slider: Int, _ englishOverride: Int?, _ expected: Int) {
         var settings = DuoSettings()

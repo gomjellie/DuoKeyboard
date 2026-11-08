@@ -11,7 +11,7 @@ public struct ClientProfile: Sendable, Hashable {
     public var defaultAppProfile: AppProfile
     /// How the client handles `replacementRange` (imk-platform.md §5.3).
     public var replacement: ReplacementSupport
-    /// Terminal-class client (English-first by default, critique R10).
+    /// Terminal-class client (critique R10).
     public var isTerminal: Bool
     /// Java clients need `setMarkedText(x)` before `insertText(x)` (critique R17). The IMK adapter
     /// applies it; the engine and `BufferTextClient` never need it.
@@ -46,8 +46,8 @@ public struct ClientProfile: Sendable, Hashable {
     public static func forBundleIdentifier(_ id: String) -> ClientProfile {
         if let terminal = terminals[id] {
             let xterm = xtermTerminals.contains(id)
-            return ClientProfile(bundleIdentifier: id, defaultAppProfile: .englishFirst, replacement: terminal,
-                                 isTerminal: true, canReplaceCommittedText: !xterm, compositionAtFocusedElement: xterm)
+            return ClientProfile(bundleIdentifier: id, replacement: terminal, isTerminal: true,
+                                 canReplaceCommittedText: !xterm, compositionAtFocusedElement: xterm)
         }
         if isJava(id) {
             return ClientProfile(bundleIdentifier: id, defaultAppProfile: .englishFirst, replacement: .none,
