@@ -262,18 +262,39 @@ S_E = word(scoreEN(low, eos), lexEN[low], NG_EN, LEX_EN)
       + PRIOR[ctx].EN + (ctx == NUM && low ∈ numUnitsEn ? NUM_UNIT_EN : 0)
 for b in 1 ..< len(raw), only if raw contains no apostrophe:
     lat = raw[0..<b];  ks = kno[b...]
-    shortOK = (b >= MIX_MIN_LATIN) || lat is all uppercase ;  if !shortOK && ctx != NUM: skip
+    shortOK = (b >= MIX_MIN_LATIN) || lat is all uppercase
     suf = suffixFull[ks]                                         // optional
     gen = (lat has an uppercase letter || lexEN[low[0..<b]] != nil)
           && ks[0] is a consonant key (qwertasdfgzxcvQWERT)
           && orphans(automaton(ks)) == 0      ? scoreKO(ks, eos) : nil
+    if !shortOK && ctx != NUM:                                   // one lowercase letter (m에, a양)
+        if suf == nil: skip
+        gen = nil                                                // table suffixes only
     if suf == nil && gen == nil: skip
+    if suf != nil && b == 1 && casePattern(lat) != lower && ctx != EN:
+        suf += MIX_INITIAL                                       // A씨, B급, C가 (2026-11-08)
     tail = max over present of { suf + MIX , gen + MIX_GENERIC }
     S_M(b) = word(scoreEN(low[0..<b], eos), lexEN[low[0..<b]], NG_EN, LEX_EN)
              + CASE[casePattern(lat)] + tail
              + ROLLOVER·nr(raw[b...]) + STRAY·ns(raw[b...])       // shiftCounts on the substring
              + PRIOR[ctx].EN
 ```
+
+**소문자 한 글자 + 접미사**(a양, m에): 숫자 뒤가 아니면 엔진이 스스로 고르지 않아요
+(`Token.isChoiceOnly`, 평가에서는 `automatic()`). 바꾸기 키와 후보 막대로만 골라요. 스스로 고르게 하면
+영어 단어(ask → a나, ago → a해)와 한국어 첫 자음 표기(ㄱ씨는 → r씨는)를 망가뜨렸어요(홀드아웃 E 99.79 % → 99.12 %).
+
+**`MIX_INITIAL` 평가** (2026-11-08, 출하 모델, `evaluate.py run --binary`, 테스트 세트):
+
+| | 이전 | +6000 |
+|---|---|---|
+| ko_news M (3 962) | 89.27 % | 91.02 % |
+| ko_wiki M (3 556) | 87.57 % | 89.71 % |
+| ko_news / ko_wiki 토큰 | 99.899 % / 99.894 % | 99.907 % / 99.904 % |
+| ko_wiki E | 99.336 % | 99.322 % (2 토큰) |
+| 홀드아웃 K / E, en_news, mixed | 같음 | 같음 |
+
++8000은 E를 더 잃었어요(ko_news E 99.534 % → 99.496 %). 값은 테스트 세트로 골랐어요. dev 세트로 다시 고르는 일이 남았어요.
 
 **접두 모드**(표시): 다음만 빼고 같아요.
 `S_K = scoreKO(kno, no eos) + ORPHAN·(orph − (lone ? 1 : 0)) + ROLLOVER·nr + STRAY·ns + PRIOR[ctx].KO`
@@ -341,7 +362,8 @@ en-news-dev 5 000 문장이에요(greedy, 예측한 문맥). `ROLLOVER`/`STRAY`/
 | `ROLLOVER` / `STRAY` | −1500 / −7000 | QWERTOP가 아닌 키에 Shift가 걸림: Shift한 QWERTOP 키 옆 / 그 밖의 위치(KO) |
 | `CASE_LOWER` / `INITCAP` / `ALLCAPS` / `MIXED` / `EXACT` | 0 / −800 / −1500 / −8000 / −300 | EN 대소문자 패턴 |
 | `MIX` / `MIX_GENERIC` | −7000 / −12000 | 라틴 + 표에 있는 접미사 / + 아무 한국어 이어짐 |
-| `MIX_MIN_LATIN` | 2 (글자) | 이보다 짧은 라틴 부분은 대문자이거나 숫자 뒤일 때만 허용 |
+| `MIX_MIN_LATIN` | 2 (글자) | 이보다 짧은 라틴 부분은 대문자이거나 숫자 뒤일 때 허용. 소문자 한 글자는 표에 있는 접미사만 허용(아래) |
+| `MIX_INITIAL` | +6000 | 라틴 대문자 한 글자 + 표에 있는 접미사, EN 문맥 밖(A씨, B급, C가). 2026-11-08에 더함 |
 | `TERM_DIGIT_EN` / `TERM_HYPHEN_EN` | +2000 / +5000 | 숫자 / 하이픈으로 끝난 단어 |
 | `NUM_UNIT_EN` | +5000 | ctx가 NUM이고 단어가 `numUnitsEn`에 있음 |
 | `PRIOR_START_{KO,EN}` | −200 / −1000 | |

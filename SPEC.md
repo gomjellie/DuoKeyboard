@@ -265,7 +265,7 @@ project.yml, Package.swift, Makefile, Tools/scripts                          [le
    - `shown` = `languageLock` 언어의 순수 읽기(K 또는 E). 없으면 `ctx == .english ? E : K`(DET "문맥 초기화").
    - 글자 키를 받을 때마다 `lastCommit`을 지움. 앞 단어의 바꾸기 경우 (b)가 끝남.
 4. **덧붙이고 점수 매기기.** 키를 덧붙이고 `prefixScores`를 계산함. `user` = `learning.counts(raw, ctx)`(학습을 끄면 `nil`).
-   - **일관된 읽기:** c > 0이면 `E`와 b ≥ c인 `M(b)`만. c == 0이면 모두. **허용되는 읽기**는 여기에 `languageLock`의 언어 조건을 더한 것임.
+   - **일관된 읽기:** c > 0이면 `E`와 b ≥ c인 `M(b)`만. c == 0이면 모두. **허용되는 읽기**는 여기에 `languageLock`의 언어 조건을 더한 것임. `latinStart`이면 K를 빼고(4.3절 8), 숫자 뒤가 아니면 소문자 한 글자 + 접미사인 M(1)(a양, `Token.isChoiceOnly`)도 뺌. 이 M(1)은 바꾸기 키와 후보 막대로만 고름. 스스로 고르면 ask → a나, ㄱ씨는 → r씨는처럼 틀렸음(DET 매개변수 `MIX_INITIAL`과 함께 detection.md 참고).
    - 라틴을 고른 뒤라면 어미 규칙(4.11절 7)을 먼저 적용함.
    - **히스테리시스(DET 5.6절).** 잠겼으면 `shown = locked`. 아니면:
      - `shown`이 허용되지 않거나 점수가 없으면 `shown` = 허용되는 읽기 중 `best`;
@@ -599,7 +599,7 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
    - release(`swift test -c release`)에서 300 µs 이하가 목표. Debug 숫자도 보고함;
    - 핫 경로에서 작은 배열 말고는 할당하지 않음;
    - 필요하면 단어마다 n-gram 조회를 캐시함(DET 7.4절이 허용함).
-5. 모델 내용 해시 `aa722069c1e3076e`를 확인하는 단위 테스트.
+5. 모델 내용 해시 `5c028cbea247bcc5`를 확인하는 단위 테스트.
 
 ### B — 조합 엔진 (`Sources/DuoCore/Engine/`, `Sources/DuoKit/{KeyEventMapper,LearningPersistence}.swift`, `Tests/DuoCoreTests/Engine*`)
 
@@ -750,7 +750,7 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
 | 호스트 앱 테스트 | `xcodebuild test -project Duo.xcodeproj -scheme Duo -destination 'platform=macOS' -derivedDataPath build/dd` | 11개 묶음의 테스트 50개 통과 |
 | live E2E | `make e2e` | 51/51 |
 | 문자열 카탈로그 | `Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/Duo.build` | 206/206개 키 |
-| DET 골든 벡터 | `make test` | 비트 단위로 같음, 모델 해시 `aa722069c1e3076e` |
+| DET 골든 벡터 | `make test` | 비트 단위로 같음, 모델 해시 `5c028cbea247bcc5` |
 | 점수 계산 시간 | `swift test -c release` (벤치마크, release에서만 300 µs 예산을 검사함) | 2차 수정 때 접두 p99 15.6 µs, 최종 p99 17.1 µs. 최신 작업 뒤에는 다시 재지 않음 |
 
 알려진 문제 4개는 UX의 기대와 DET의 결과가 다른 시나리오 행이에요(`withKnownIssue`, R8). 그 밖의 실패는 없어요.
