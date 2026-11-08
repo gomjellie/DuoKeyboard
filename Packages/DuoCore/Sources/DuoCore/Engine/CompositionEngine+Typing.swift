@@ -189,9 +189,9 @@ extension CompositionEngine {
     /// committed word plus `raw` (the keys typed after it that belong to it, or none). Only where
     /// committed text can be replaced, and only if the word is still right before the marked text.
     ///
-    /// - Parameter reading: the reading the joined word shows (when it can render it); by default it
-    ///   keeps the committed word's reading if it still can.
-    func reopenSplitHead(of tail: Token, appending raw: String, reading: Hypothesis? = nil,
+    /// - Parameter locked: the reading the joined word is locked to; by default it keeps the
+    ///   committed word's reading if it still can.
+    func reopenSplitHead(of tail: Token, appending raw: String, locked: Hypothesis? = nil,
                          client: any TextClient) -> Token? {
         guard let head = tail.splitHead, clientProfile.canReplaceCommittedText else { return nil }
         let marked = tail.marked.isEmpty ? nil : client.markedRange()
@@ -204,7 +204,7 @@ extension CompositionEngine {
         t.committed = 0
         t.lastKeyAt = tail.lastKeyAt
         t.scores = prefixScores(t.raw, t.context)
-        if let reading, t.isWellFormed(reading) { t.shown = reading }
+        if let locked { t.locked = locked }
         t.keepShownIfPossible()
         let text = display(t, t.shown)
         // NSTextView ignores a replacement range while text is marked, and TextEdit does not end a

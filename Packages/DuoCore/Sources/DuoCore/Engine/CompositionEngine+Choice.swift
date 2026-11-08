@@ -94,16 +94,23 @@ extension CompositionEngine {
             if case .whole(let h) = r, let s = prefix[h] { return s }
             return segments.first { $0.reading == r }.map { $0.score - bestFinal + bestPrefix }
         }
-        var rows: [(reading: ChoiceReading, score: Int?, text: String)] = []
+        // The end of a split shows what its original reading does: the whole word it joins again.
+        let join = joinTarget(of: t)
+        var rows: [(reading: ChoiceReading, score: Int?, text: String, language: ScriptLanguage)] = []
         func add(_ r: ChoiceReading) {
             if case .whole(let h) = r, !canChoose(t, h) { return }
-            let text = segments.first { $0.reading == r }?.text ?? render(t.raw, r)
+            var text = segments.first { $0.reading == r }?.text ?? render(t.raw, r)
+            var language = r.language
+            if let join, r == original {
+                text = render(join.raw, join.reading)
+                language = join.reading.language
+            }
             if let i = rows.firstIndex(where: { $0.text == text }) {
                 // Two readings that look the same: keep the one the bar must show.
-                if kept.contains(r), !kept.contains(rows[i].reading) { rows[i] = (r, score(r), text) }
+                if kept.contains(r), !kept.contains(rows[i].reading) { rows[i] = (r, score(r), text, language) }
                 return
             }
-            rows.append((r, score(r), text))
+            rows.append((r, score(r), text, language))
         }
         for r in kept { add(r) }
         for entry in prefix.entries + final.entries {
@@ -129,9 +136,14 @@ extension CompositionEngine {
             rows.remove(at: i)
         }
         guard rows.count >= 2, let selected = rows.firstIndex(where: { $0.reading == shown }) else { return nil }
-        // The flip key walks the bar: the next reading, and from the last one back to the first.
-        let alternate = (selected + 1) % rows.count
-        let readings = rows.map { HUDReading(text: $0.text, language: $0.reading.language) }
+        // The flip key walks the bar: the next reading, and from the last one back to the first. A
+        // split commits the start of the word, so the walk enters one only as the first flip from the
+        // original; a digit or a click still chooses the others.
+        var alternate = (selected + 1) % rows.count
+        while alternate != selected, case .split = rows[alternate].reading, !(selected == 0 && alternate == 1) {
+            alternate = (alternate + 1) % rows.count
+        }
+        let readings = rows.map { HUDReading(text: $0.text, language: $0.language) }
         return ChoiceList(readings: rows.map(\.reading),
                           choice: HUDChoice(readings: readings, selected: selected, alternate: alternate,
                                             numbered: t.locked != nil || t.choicesRevealed),
@@ -141,7 +153,8 @@ extension CompositionEngine {
 
     /// The reading the flip key switches `t` to: the next one on the bar (SPEC.md 4.11절), so a
     /// first flip goes to the other script (or to a likelier reading of the end of the word) and
-    /// further flips walk the other readings and come back to the original. It is the bar the user
+    /// further flips walk the other readings, stepping over readings of the end, and come back to
+    /// the original. It is the bar the user
     /// sees (the right ⌘ press reveals it with the readings of the end of the word). Without a bar
     /// (one reading the client can choose), the R11 alternative, so the flip can still say why it
     /// cannot change the word.

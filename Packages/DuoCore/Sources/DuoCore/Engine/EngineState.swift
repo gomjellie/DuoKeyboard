@@ -160,15 +160,16 @@ final class SplitHead {
     let token: Token
     /// What the commit inserted: `render(raw, shown)`.
     let text: String
-    /// For a chosen end: the whole word's shown and original readings before the split, which it
-    /// gets back when the end flips back to Korean.
-    let wholeShown: Hypothesis?
+    /// For a chosen end: when the end flips back to Korean and joins the start, the whole word is
+    /// locked to `joinReading` (the reading after the split on its bar, so the flip key walks on)
+    /// with `wholeOriginal` as its original reading.
+    let joinReading: Hypothesis?
     let wholeOriginal: Hypothesis?
 
-    init(token: Token, text: String, wholeShown: Hypothesis? = nil, wholeOriginal: Hypothesis? = nil) {
+    init(token: Token, text: String, joinReading: Hypothesis? = nil, wholeOriginal: Hypothesis? = nil) {
         self.token = token
         self.text = text
-        self.wholeShown = wholeShown
+        self.joinReading = joinReading
         self.wholeOriginal = wholeOriginal
     }
 }

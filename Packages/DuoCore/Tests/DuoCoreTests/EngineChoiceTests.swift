@@ -503,7 +503,14 @@ struct EngineChoiceTests {
         #expect(h.marked == "english")
         #expect(h.engine.token?.locked == .english)
         #expect(h.notifications.contains(.flipped(to: .english)))
-        #expect(Self.readings(h) == ["두히ㅑ노", "english"], "the end's own bar")
+        guard case .alternative(let choice, _)? = h.hud?.content else {
+            Issue.record("expected the end's own bar")
+            return
+        }
+        #expect(choice.readings == [HUDReading(text: "wndrksdpenglish", language: .english),
+                                    HUDReading(text: "english", language: .english)],
+                "its Korean reading joins the word again, as the whole word's reading after the split")
+        #expect(choice.alternate == 0)
         #expect(Self.isNumbered(h))
     }
 
@@ -520,21 +527,59 @@ struct EngineChoiceTests {
         #expect(h.store.count == 0, "neither the start nor the end is a word the user typed on its own")
     }
 
-    @Test func flippingTheEndBackJoinsTheWordAgain() {
+    @Test func flippingTheEndBackJoinsTheWordAndWalksOn() {
         let h = EngineHarness()
         Self.scriptKoreanThenEnglish(h.detector)
         h.type("wndrksdpenglish")
         h.flip()
         let back = h.flip()
         #expect(back.filter(\.isMutation) == [.insert("english", nil),
-                                              .mark("중간에두히ㅑ노", NSRange(location: 0, length: 10))],
+                                              .mark("wndrksdpenglish", NSRange(location: 0, length: 10))],
                 "end the composition first, then mark the whole word over the start and the end")
-        #expect(h.text == "중간에두히ㅑ노")
-        #expect(h.marked == "중간에두히ㅑ노", "one word again")
+        #expect(h.text == "wndrksdpenglish", "the reading after the split on the whole word's bar")
+        #expect(h.marked == "wndrksdpenglish", "one word again")
         #expect(h.engine.token?.raw == "wndrksdpenglish")
-        #expect(Self.readings(h) == ["중간에두히ㅑ노", "중간에english", "wndrksdpenglish"])
+        #expect(h.engine.token?.locked == .english)
+        #expect(h.engine.token?.lockedOriginal == .korean)
+        #expect(Self.readings(h) == ["중간에두히ㅑ노", "중간에english", "wndrksdpenglish"], "the same bar as before the split")
         h.flip()
-        #expect(h.text == "중간에english", "the flip key walks the bar again")
+        #expect(h.text == "중간에두히ㅑ노", "the walk comes back to the original")
+        h.flip()
+        #expect(h.text == "중간에english", "and starts again")
+    }
+
+    @Test func choosingTheJoinRowWithADigitDoesWhatTheRowShows() throws {
+        let h = EngineHarness()
+        Self.scriptKoreanThenEnglish(h.detector)
+        h.type("wndrksdpenglish")
+        h.flip()
+        h.modifier(down: true)
+        #expect(h.press(.character("1"), .command).consumed)
+        h.modifier(down: false)
+        #expect(h.text == "wndrksdpenglish")
+        #expect(h.marked == "wndrksdpenglish")
+    }
+
+    @Test func theFlipKeyStepsOverAnEndThatIsNotTheFirstFlip() {
+        // 초at is listed after chat: a flip from chat would commit 초 and lose the walk back to 촘ㅅ.
+        let h = EngineHarness()
+        h.detector.korean("ch")
+        h.detector.scores["cha"] = [.korean: -3000, .english: -6000]
+        h.detector.scores["chat"] = [.korean: -8000, .english: -9000]
+        h.detector.scores["at"] = [.english: -3000, .korean: -12_000]
+        h.type("chat")
+        h.modifier(down: true)
+        #expect(Self.readings(h) == ["촘ㅅ", "chat", "초at"])
+        h.modifier(down: false)
+        #expect(h.marked == "chat")
+        guard case .alternative(let choice, _)? = h.hud?.content else {
+            Issue.record("expected the bar")
+            return
+        }
+        #expect(choice.alternate == 0, "the walk goes back to the original")
+        h.flip()
+        #expect(h.marked == "촘ㅅ")
+        #expect(h.text == "촘ㅅ", "nothing was committed")
     }
 
     @Test func backspaceOverTheWholeEndReopensTheStart() {

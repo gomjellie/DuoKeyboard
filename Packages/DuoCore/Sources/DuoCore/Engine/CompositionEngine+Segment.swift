@@ -191,12 +191,26 @@ extension CompositionEngine {
 
     // MARK: Choosing a split
 
-    /// Commits the Korean start of `t` as shown and keeps typing its end as a word of its own in the
-    /// reading `tail` (SPEC.md 4.11절): 중간에두히ㅑ노 → 중간에 + english. The end is locked, so
-    /// English then a Korean ending works as after any Latin choice (english가). Backspace over the
-    /// whole end re-opens the start where committed text can be replaced, as after a capital (4.3절 8).
+    /// Commits the Korean start of `t` and keeps typing its end as a word of its own in the reading
+    /// `tail` (SPEC.md 4.11절 14): 중간에두히ㅑ노 → 중간에 + english. The start is committed as Korean
+    /// even where the word showed another reading. The end is locked, so English then a Korean
+    /// ending works as after any Latin choice (english가). Backspace over the whole end re-opens the
+    /// start where committed text can be replaced, as after a capital (4.3절 8).
     func splitToken(_ t: Token, head s: Int, tail h: Hypothesis, client: any TextClient) -> Bool {
         guard t.committed == 0, s > 0, s < t.count else { return false }
+        // The join goes on to the whole word's reading after the split on its bar, so the flip key
+        // reaches every reading of the bar and comes back to the original.
+        let original = t.lockedOriginal ?? t.shown
+        var joinReading = original
+        if let scores = t.scores, let bar = choiceList(t, scores),
+           let i = bar.readings.firstIndex(of: .split(head: s, tail: h)) {
+            for k in 1..<bar.readings.count {
+                if case .whole(let w) = bar.readings[(i + k) % bar.readings.count] {
+                    joinReading = w
+                    break
+                }
+            }
+        }
         var head = t
         head.raw = String(t.raw.prefix(s))
         head.count = s
@@ -229,8 +243,8 @@ extension CompositionEngine {
         tail.segmentTail = true
         tail.scores = prefixScores(tail.raw, tail.context)
         if clientProfile.canReplaceCommittedText {
-            tail.splitHead = SplitHead(token: reopened, text: headText, wholeShown: t.shown,
-                                       wholeOriginal: t.lockedOriginal ?? t.shown)
+            tail.splitHead = SplitHead(token: reopened, text: headText, joinReading: joinReading,
+                                       wholeOriginal: original)
         }
         setMarked(display(tail, h), in: &tail, client: client)
         token = tail
@@ -239,17 +253,26 @@ extension CompositionEngine {
         return true
     }
 
+    /// What the end of a split turns into when it goes back to its original Korean reading: the
+    /// whole word again, locked to the reading after the split on its bar (SPEC.md 4.11절 14).
+    /// `nil` where the start cannot be re-opened: the end alone turns Korean then.
+    func joinTarget(of t: Token) -> (raw: String, reading: Hypothesis)? {
+        guard t.segmentTail, let head = t.splitHead, let reading = head.joinReading,
+              clientProfile.canReplaceCommittedText else { return nil }
+        let raw = head.token.raw + t.raw
+        if case .mixed(let b) = reading, b >= raw.count || raw.contains("'") { return (raw, .english) }
+        return (raw, reading)
+    }
+
     /// The end of a split goes back to its original Korean reading: where committed text can be
-    /// replaced, it joins its Korean start again and the word gets back the reading it showed
-    /// before the split (사진 + jpg → 사지너ㅔㅎ, not 사진ㅓㅔㅎ), locked as after any flip. Returns
-    /// `false` (the end alone turns Korean) where the start cannot be re-opened.
+    /// replaced, it joins its Korean start again as `joinTarget(of:)` says (사진 + jpg →
+    /// tkwlsjpg when the bar listed it after 사진jpg). Returns `false` (the end alone turns Korean)
+    /// where the start cannot be re-opened.
     func joinSegmentTail(_ t: Token, client: any TextClient) -> Bool {
-        let shown = t.splitHead?.wholeShown ?? .korean
-        let original = t.splitHead?.wholeOriginal ?? shown
-        guard var joined = reopenSplitHead(of: t, appending: t.raw, reading: shown, client: client) else {
+        guard let target = joinTarget(of: t), let original = t.splitHead?.wholeOriginal,
+              var joined = reopenSplitHead(of: t, appending: t.raw, locked: target.reading, client: client) else {
             return false
         }
-        joined.locked = joined.shown
         joined.lockedOriginal = original
         joined.lockedLatin = Self.latinCount(of: joined.shown, count: joined.count)
         joined.choicesRevealed = t.choicesRevealed
