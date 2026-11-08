@@ -194,8 +194,15 @@ public enum InputMethodPing {
         await reply(timeout: timeout) != nil
     }
 
-    /// Posts `ping` and returns the next `pong`'s string values (`DuoIDs.Notifications.pong`), or
-    /// `nil` when none arrives within `timeout` (the IME is not running).
+    /// Whether a pong with `values` answers the ping that carried `token`.
+    nonisolated static func answers(_ values: [String: String], token: String) -> Bool {
+        values[DuoIDs.pingTokenKey].map { $0 == token } ?? true
+    }
+
+    /// Posts `ping` and returns the string values of the `pong` that answers it
+    /// (`DuoIDs.Notifications.pong`), or `nil` when none arrives within `timeout` (the IME is not
+    /// running). A pong that carries another ping's token is not this answer; one without a token
+    /// (an IME from before the token) is.
     public static func reply(timeout: Duration) async -> [String: String]? {
         let waiter = PongWaiter()
         return await withCheckedContinuation { continuation in
@@ -213,17 +220,20 @@ private final class PongWaiter {
     func start(_ continuation: CheckedContinuation<[String: String]?, Never>, timeout: Duration) {
         self.continuation = continuation
         let center = DistributedNotificationCenter.default()
+        let token = UUID().uuidString
         observer = center.addObserver(forName: DuoIDs.Notifications.pong, object: nil, queue: .main) { [weak self] note in
             let values = (note.userInfo ?? [:]).reduce(into: [String: String]()) { out, pair in
                 if let key = pair.key as? String, let value = pair.value as? String { out[key] = value }
             }
+            guard InputMethodPing.answers(values, token: token) else { return }
             MainActor.assumeIsolated { self?.finish(values) }
         }
         self.timeout = Task { [weak self] in
             try? await Task.sleep(for: timeout)
             self?.finish(nil)
         }
-        center.postNotificationName(DuoIDs.Notifications.ping, object: nil, userInfo: nil, deliverImmediately: true)
+        center.postNotificationName(DuoIDs.Notifications.ping, object: nil,
+                                    userInfo: [DuoIDs.pingTokenKey: token], deliverImmediately: true)
     }
 
     private func finish(_ answer: [String: String]?) {

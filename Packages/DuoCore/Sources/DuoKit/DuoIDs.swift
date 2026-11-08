@@ -32,6 +32,10 @@ public enum DuoIDs {
         public static let requestAccessibility = Notification.Name("com.inkyuoh.Duo.accessibility.request")
     }
 
+    /// `ping` and `pong` key: a token the IME copies from the ping into its pong, so a waiter takes
+    /// only the answer to its own ping (Settings polls while a learning command waits on its barrier).
+    public static let pingTokenKey = "token"
+
     /// `pong` key: `"true"` when the IME may read the client's focused element (Accessibility),
     /// which places the HUD in xterm.js terminals (`ClientProfile.compositionAtFocusedElement`).
     public static let pongAccessibilityKey = "accessibilityTrusted"
