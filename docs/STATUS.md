@@ -541,10 +541,11 @@ contenteditable, Terminal(zsh 줄 편집기), VS Code였어요. 호스트 앱 �
   언어 배지는 "한"/"A"를 텍스트로 그림.
 - **Orca 말고 다른 xterm.js 터미널은 확인하지 않았음.** 그래서 `xtermTerminals`에는 Orca만 있음.
 - **재설치 뒤 다시 연결.** `make install`이나 `install-ime.sh` 뒤에는, Duo를 쓰던 앱이 평범한 ABC로 입력함.
-  - 그 앱이 맨 앞에 있을 때 Duo를 다시 고르거나(⌃Space 두 번, 또는 메뉴 막대), 포커스가 다른 앱으로 갔다가
-    돌아오면 풀림. 스크립트가 이 안내를 출력함.
-  - 호스트 앱의 설치, 업데이트, 다시 시작은 다시 고르기를 스스로 함 (`InputSourceManager.reselect`). 그래도
-    뒤에 있는 앱은 다음 포커스 변경 때에야 다시 연결됨.
+  - 그 앱이 맨 앞에 있을 때 Duo를 다시 고르면(⌃Space 두 번, 또는 메뉴 막대) 풀림. 스크립트가 이 안내를 출력함.
+  - 호스트 앱의 설치, 업데이트, 다시 시작은 맨 앞 앱에 다시 고르기를 스스로 함 (`InputSourceManager.reselect`).
+  - 뒤에 있던 앱은 앞으로 와도 저절로 다시 붙지 않았음 (2026-11-08, TextEdit). 그 앱에서 다시 골라야 함.
+  - `e2e.sh`도 학습 파일을 되돌리려고 끝날 때 입력기를 멈춤. 이제 `DuoHarness --reconnect`로 입력기를 다시
+    띄우고 맨 앞 앱을 다시 연결함. 그 전에는 맨 앞 앱(Orca)에 아무것도 입력되지 않았음.
 - **켜기는 macOS의 허용 창을 거침 (2차 수정 뒤 고쳤음).**
   - 허용받지 않은 서드파티 입력 소스에 `TISEnableInputSource`를 부르면 시스템 설정 ▸ 키보드가
     "Allow “Duo” to enable “Duo”?"와 함께 열림. 허용하면 `AppleEnabledThirdPartyInputSources` 허용 목록이 써짐.
