@@ -69,16 +69,10 @@ extension CompositionEngine {
         let bestPrefix = prefix.best?.score ?? 0
         let bestFinal = final.best?.score ?? 0
 
-        var segments: [Segment] = []
         // The end of a split is not split again: its bar walks its own readings back to the original.
-        if !t.segmentTail, wanted ?? wantsSegments(t) {
-            var texts: Set<String> = []
-            for s in self.segments(raw: t.raw, context: t.context, committed: t.committed, scored: [prefix, final])
-            where s.score >= bestFinal - Self.candidateFloor && texts.insert(s.text).inserted {
-                segments.append(s)
-                if segments.count == Self.maxSegmentRows { break }
-            }
-        }
+        let segments = !t.segmentTail && (wanted ?? wantsSegments(t))
+            ? listedSegments(raw: t.raw, context: t.context, committed: t.committed, prefix: prefix, final: final)
+            : []
         let first = segmentBeating(firstWhole, shown: t.lockedOriginal ?? t.shown, in: segments, final: final,
                                    prefix: prefix)?.reading
             ?? firstWhole.map(ChoiceReading.whole)

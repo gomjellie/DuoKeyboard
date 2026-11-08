@@ -146,6 +146,22 @@ extension CompositionEngine {
         return found.sorted { $0.score > $1.score }
     }
 
+    /// The readings of the end of `raw` a bar lists, best first: within ``candidateFloor`` of the best
+    /// whole reading in final mode, one per text, at most ``maxSegmentRows``. The composing bar, the
+    /// commit and flip (b) use the same list, so the last word offers what its bar would have.
+    func listedSegments(raw: String, context: LanguageContext, committed: Int, prefix: HypothesisScores?,
+                        final: HypothesisScores) -> [Segment] {
+        let floor = (final.best?.score ?? 0) - Self.candidateFloor
+        var texts: Set<String> = []
+        var listed: [Segment] = []
+        for s in segments(raw: raw, context: context, committed: committed, scored: [prefix, final].compactMap { $0 })
+        where s.score >= floor && texts.insert(s.text).inserted {
+            listed.append(s)
+            if listed.count == Self.maxSegmentRows { break }
+        }
+        return listed
+    }
+
     /// `prefixScores(raw, context)`, kept for the rest of the word (SPEC.md 4.11절).
     func memoizedPrefixScores(_ raw: String, _ context: LanguageContext) -> HypothesisScores {
         if prefixMemo.context != context || prefixMemo.biasKO != biasKO {

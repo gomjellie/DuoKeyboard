@@ -448,6 +448,20 @@ struct EngineFlipTests {
         #expect(h.text == "사지너ㅔㅎ ")
     }
 
+    @Test func aFlipOfAnEagerlyCommittedWordKeepsItsLatinStart() {
+        // abi was committed early as English: as on the composing bar, no end reading makes ab Korean
+        // (뮤 + ide beats abide by 7 nats).
+        let h = EngineHarness()
+        h.detector.english("abide")
+        h.detector.scores["ab"] = [.korean: -1000, .english: -9000]
+        h.detector.scores["abide"] = [.korean: -25_000, .english: -9000]
+        h.detector.scores["ide"] = [.english: -1000, .korean: -20_000]
+        h.type("abide ")
+        #expect(h.text == "abide ")
+        h.flip()
+        #expect(h.text == FakeDetector.hangul("abide") + " ", "the other script, as a flip before the commit")
+    }
+
     @Test func aFlipOfAWordThatReadsWellGoesToTheOtherScript() {
         // 그럼 + us beats rmfjaus by 19 nats, but not 그러면 itself.
         let h = EngineHarness()

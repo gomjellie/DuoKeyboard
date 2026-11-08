@@ -67,8 +67,9 @@ extension CompositionEngine {
         var segmentLikely = false
         let looksNow = !t.isLocked && !t.segmentTail && keepsCommit
             && (t.count >= Self.segmentAutoKeys || (offersBar && (surprising || uncertain)))
-        if looksNow, let final, let found = segmentBeating(alternative, shown: h, in: segments(
-            raw: t.raw, context: t.context, committed: t.committed, scored: [final]), final: final) {
+        if looksNow, let final, let found = segmentBeating(alternative, shown: h, in: listedSegments(
+            raw: t.raw, context: t.context, committed: t.committed, prefix: t.scores, final: final), final: final,
+            prefix: t.scores) {
             lastAlternative = found.reading
             lastAlternativeText = found.text
             segmentLikely = t.count >= Self.segmentAutoKeys && found.mayLead
@@ -122,7 +123,7 @@ extension CompositionEngine {
             lastCommit = LastCommit(
                 text: fullText, length: fullText.utf16.count, raw: t.raw, context: t.context, hypothesis: .whole(h),
                 alternative: lastAlternative, alternativeText: lastAlternativeText,
-                segmentsChecked: looksNow || t.isLocked || t.segmentTail,
+                segmentsChecked: looksNow || t.isLocked || t.segmentTail, eagerLatin: t.committed,
                 endLocation: end, boundaryLength: trailing.isEmpty ? boundaryLength : trailing.utf16.count,
                 time: clock(), clientBundleID: clientProfile.bundleIdentifier, committedHypothesis: h,
                 committedVotes: votes, appliedVotes: votes, learnable: learnable)
@@ -159,8 +160,10 @@ extension CompositionEngine {
         checked.segmentsChecked = true
         let final = detector.choiceScores(raw: lc.raw, context: lc.context, user: userCounts(lc.raw, lc.context),
                                           biasKO: biasKO)
-        let found = segmentBeating(other, shown: shown, in: segments(raw: lc.raw, context: lc.context, committed: 0,
-                                                                     scored: [final]), final: final)
+        let prefix = prefixScores(lc.raw, lc.context)
+        let found = segmentBeating(other, shown: shown, in: listedSegments(
+            raw: lc.raw, context: lc.context, committed: lc.eagerLatin, prefix: prefix, final: final),
+            final: final, prefix: prefix)
         if let found, found.reading != lc.hypothesis, found.text != lc.text {
             checked.alternative = found.reading
             checked.alternativeText = found.text

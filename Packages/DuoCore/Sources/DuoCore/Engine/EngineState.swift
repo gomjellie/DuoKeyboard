@@ -194,6 +194,9 @@ struct LastCommit {
     /// Readings that change only the end of the word were looked for (they are costly, so a
     /// certain commit leaves it to a flip).
     var segmentsChecked: Bool
+    /// Keys committed eagerly as Latin before the commit (`Token.committed`): as on the composing
+    /// bar, no reading of the end keeps them as a Korean start.
+    let eagerLatin: Int
     /// `selectedRange().location` right after the insert; `nil` = not flippable (client reported
     /// `NSNotFound`, or it cannot replace text).
     var endLocation: Int?
