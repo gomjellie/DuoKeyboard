@@ -58,8 +58,23 @@ def split_of(word: str) -> str:
 
 
 def korean_counts() -> Counter:
-    """Hangul eojeol -> pseudo-count (2 x OpenSubtitles + kowiki chunk-1 [count>=2] + chat jamo)."""
-    path = os.path.join(CACHE, "ko_counts_v2.tsv")
+    """Hangul eojeol -> pseudo-count (2 x OpenSubtitles + kowiki chunk-1 [count>=2] + chat words)."""
+    c = korean_corpus_counts()
+    total = sum(c.values())
+    with open(os.path.join(DATA, "ko_chat.txt"), encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("#") or not line.strip():
+                continue
+            w, pm = line.rstrip("\n").split("\t")
+            if roundtrip_keys(w) is not None:
+                c[w] += max(1, round(float(pm) * total / 1e6))
+    return c
+
+
+def korean_corpus_counts() -> Counter:
+    """The corpus part of `korean_counts`, cached: `data/ko_chat.txt` is added on every call, so an
+    edit there reaches the next build without clearing the cache."""
+    path = os.path.join(CACHE, "ko_corpus_counts.tsv")
     if os.path.exists(path):
         return _read_tsv(path)
     fw = corpora.load_fw(os.path.join(RAW, "fw_ko_full.txt"))
@@ -74,14 +89,6 @@ def korean_counts() -> Counter:
         if n >= 2 and is_syllable_word(w):
             c[w] += n
     c = Counter({w: n for w, n in c.items() if roundtrip_keys(w) is not None})
-    total = sum(c.values())
-    with open(os.path.join(DATA, "ko_chat.txt"), encoding="utf-8") as f:
-        for line in f:
-            if line.startswith("#") or not line.strip():
-                continue
-            w, pm = line.rstrip("\n").split("\t")
-            if roundtrip_keys(w) is not None:
-                c[w] += max(1, round(float(pm) * total / 1e6))
     _write_tsv(path, c)
     return c
 
