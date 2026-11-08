@@ -168,6 +168,17 @@ struct EngineScenarioTests {
         Row(.korean, "dLTdj ", "있어 "),
         // A stray Shift inside a Korean word joins it again once the next keys read Korean
         Row(.korean, "dkssudGktpdy ", "안녕하세요 "),
+        // One Latin capital + a Korean suffix (MIX_INITIAL), not in an English sentence
+        Row(.korean, "ATl ", "A씨 "),
+        Row(.korean, "Adid ", "A양 "),
+        Row(.korean, "Arns ", "A군 "),
+        Row(.start, "Brmq ", "B급 "),
+        Row(.korean, "roffjrtlSrk ", "갤럭시S가 "),
+        Row(.english, "Arns ", "Arns "),
+        // ... one lowercase letter + a suffix only through the flip key or the bar
+        Row(.korean, "arns ", "arns "),
+        Row(.korean, "ask ", "ask "),
+        Row(.korean, "rTlsms ", "ㄱ씨는 "),
         Row(.korean, "McDonald ", "McDonald "),
         Row(.korean, "YouTube ", "YouTube "),
         Row(.korean, "KakaoTalk ", "KakaoTalk "),

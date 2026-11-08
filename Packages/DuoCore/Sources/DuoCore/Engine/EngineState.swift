@@ -76,6 +76,14 @@ struct Token {
     /// Readings the engine may show or commit without a flip.
     func isAllowed(_ h: Hypothesis) -> Bool {
         isConsistent(h) && (languageLock == nil || h.language == languageLock) && !(latinStart && h == .korean)
+            && !isChoiceOnly(h)
+    }
+
+    /// One lowercase Latin letter + a Korean suffix outside a number (a양, SPEC.md 4.3절 4): only the
+    /// flip key or the choice bar picks it. As a reading of its own it mostly mistakes English words
+    /// (ask, ago) and Korean initials (ㄱ씨는).
+    func isChoiceOnly(_ h: Hypothesis) -> Bool {
+        h == .mixed(latin: 1) && context != .number && raw.first?.isLowercase == true
     }
 
     /// Hysteresis (detection.md §5.6) on the current `scores`. Returns `true` if `shown` changed.

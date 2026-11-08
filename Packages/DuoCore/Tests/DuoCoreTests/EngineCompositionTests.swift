@@ -68,6 +68,29 @@ struct EngineCompositionTests {
         #expect(h.text == "go ", "commit is the final-mode argmax, not what was shown (R2)")
     }
 
+    @Test func lowercaseInitialWithASuffixIsOnlyChosen() {
+        let h = EngineHarness()
+        h.detector.scores["a"] = [.korean: -3000, .english: -2000]
+        h.detector.scores["ar"] = [.korean: -6000, .english: -4000]
+        h.detector.scores["arn"] = [.korean: -9000, .english: -6000]
+        h.detector.scores["arns"] = [.korean: -12_000, .english: -8000, .mixed(latin: 1): -5000]
+        h.type("arns")
+        #expect(h.marked == "arns", "a군 leads, but one lowercase letter + a suffix is never shown by itself")
+        h.flip()
+        #expect(h.marked == "a군", "the flip key picks it")
+        h.press(.space)
+        #expect(h.text == "a군 ")
+    }
+
+    @Test func lowercaseInitialAfterADigitIsShown() {
+        let h = EngineHarness()
+        h.detector.scores["m"] = [.korean: -3000, .english: -2000]
+        h.detector.scores["md"] = [.korean: -6000, .english: -4000]
+        h.detector.scores["mdp"] = [.korean: -9000, .english: -8000, .mixed(latin: 1): -3000]
+        h.type("3mdp ")
+        #expect(h.text == "3m에 ", "after a digit the reading is a unit + a suffix (100m에서)")
+    }
+
     @Test func englishContextInitShowsLatinFromTheFirstKey() {
         let h = EngineHarness()
         h.detector.english("hi")

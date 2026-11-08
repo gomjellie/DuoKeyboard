@@ -262,9 +262,15 @@ struct DetectionScorer: Sendable {
         entries.reserveCapacity(2 + f.mix.count)
         entries.append(ScoredHypothesis(.korean, ko))
         entries.append(ScoredHypothesis(.english, en))
-        for x in f.mix where x.shortOK || context == .number {
-            let fromTable = x.suffix.map { $0 + p.mix }
-            let fromLM = x.generic.map { $0 + p.mixGeneric }
+        for x in f.mix {
+            // A single lowercase letter takes table suffixes only (m에, h의).
+            let short = !x.shortOK && context != .number
+            if short && x.suffix == nil { continue }
+            var fromTable = x.suffix.map { $0 + p.mix }
+            if fromTable != nil, x.latin == 1, x.enCase != .lower, context != .english {
+                fromTable! += p.mixInitial  // A씨, B양, C가
+            }
+            let fromLM = short ? nil : x.generic.map { $0 + p.mixGeneric }
             let tail: Int  // a Mix always has a table suffix, a generic tail, or both
             if let a = fromTable, let g = fromLM { tail = a >= g ? a : g } else { tail = fromTable ?? fromLM! }
             let s = Self.word(x.enLM, x.enLex, p.ngEN, p.lexEN) + p.cost(x.enCase) + tail

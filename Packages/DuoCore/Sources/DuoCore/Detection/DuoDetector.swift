@@ -15,7 +15,7 @@ public final class DuoDetector: LanguageDetector, Sendable {
         bundle.url(forResource: "duo-model", withExtension: "bin")
     }
 
-    /// FNV-1a-64 content hash from the header (hex, e.g. "aa722069c1e3076e").
+    /// FNV-1a-64 content hash from the header (hex, e.g. "5c028cbea247bcc5").
     public let contentHash: String
 
     /// Tuned constants from the model's `meta.params` (HYST, USER_UNIT, …).

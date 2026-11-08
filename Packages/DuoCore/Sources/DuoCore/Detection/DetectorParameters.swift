@@ -4,7 +4,7 @@ struct DetectorParameters: Sendable, Hashable {
     var ngKO, lexKO, ngEN, lexEN: Int
     var orphan, rollover, stray: Int
     var caseLower, caseInitcap, caseAllcaps, caseMixed, caseExact: Int
-    var mix, mixMinLatin, mixGeneric: Int
+    var mix, mixMinLatin, mixGeneric, mixInitial: Int
     var termDigitEN, termHyphenEN: Int
     var priorStartKO, priorStartEN, priorKOKO, priorKOEN, priorENKO, priorENEN, priorNumKO, priorNumEN: Int
     var numUnitEN: Int
@@ -22,6 +22,7 @@ struct DetectorParameters: Sendable, Hashable {
         caseLower = try p("CASE_LOWER"); caseInitcap = try p("CASE_INITCAP"); caseAllcaps = try p("CASE_ALLCAPS")
         caseMixed = try p("CASE_MIXED"); caseExact = try p("CASE_EXACT")
         mix = try p("MIX"); mixMinLatin = try p("MIX_MIN_LATIN"); mixGeneric = try p("MIX_GENERIC")
+        mixInitial = try p("MIX_INITIAL")
         termDigitEN = try p("TERM_DIGIT_EN"); termHyphenEN = try p("TERM_HYPHEN_EN")
         priorStartKO = try p("PRIOR_START_KO"); priorStartEN = try p("PRIOR_START_EN")
         priorKOKO = try p("PRIOR_KO_KO"); priorKOEN = try p("PRIOR_KO_EN")
