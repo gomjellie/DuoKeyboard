@@ -189,8 +189,9 @@ private struct OtherReadingStyle: ButtonStyle {
     }
 }
 
-/// A circle with "가" (orange, Korean) or "A" (blue, English): the language of a reading or of the
-/// next word.
+/// A circle with "한" (orange, Korean) or "A" (blue, English): the language of a reading or of the
+/// next word. Drawn as text: there is no SF Symbol for 한, and `character` is localized (가 in a
+/// Korean locale).
 private struct LanguageBadge: View {
     let language: ScriptLanguage
     var size: CGFloat = 20
@@ -199,12 +200,12 @@ private struct LanguageBadge: View {
     static func color(for language: ScriptLanguage) -> Color { language == .english ? .blue : .orange }
 
     var body: some View {
-        Image(systemName: language == .english ? "character" : "character.ko")
-            .font(.system(size: size * 0.55, weight: .semibold))
+        Text(verbatim: language == .english ? "A" : "한")
+            .font(.system(size: size * (language == .english ? 0.56 : 0.5), weight: .bold, design: .rounded))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
             .background(Circle().fill(Self.color(for: language)))
-            .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace.downUp))
+            .contentTransition(reduceMotion ? .opacity : .interpolate)
             .animation(.snappy(duration: 0.22), value: language)
     }
 }

@@ -52,7 +52,7 @@ extension Hypothesis: Codable {
     }
 }
 
-/// The language the user sees (HUD badge 가 / A, one-shot flips).
+/// The language the user sees (HUD badge 한 / A, one-shot flips).
 public enum ScriptLanguage: String, Sendable, Codable, Hashable {
     case korean, english
 
