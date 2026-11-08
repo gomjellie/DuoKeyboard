@@ -26,6 +26,7 @@
   {"name": "flip-rcmd-composing-then-continue", "keys": "hello go{rcmd}s{space}", "expect": "hello 핸 ", "expectMarked": ""},
   {"name": "flip-rcmd-composing-to-korean", "keys": "hello go{rcmd}{space}", "expect": "hello 해 ", "expectMarked": ""},
   {"name": "flip-rcmd-composing-stays-marked", "keys": "go{rcmd}", "expect": "go", "expectMarked": "go"},
+  {"name": "flip-rcmd-reopens-eager-latin-with-marked-tail", "keys": "thanks{rcmd}", "expect": "소무ㅏㄴ", "expectMarked": "소무ㅏㄴ"},
   {"name": "flip-rcmd-last-committed-word", "keys": "hello so{space}{rcmd}", "expect": "hello 내 ", "expectMarked": ""},
   {"name": "flip-rcmd-last-word-and-back", "keys": "dkssud{space}{rcmd}{rcmd}", "expect": "안녕 ", "expectMarked": ""},
   {"name": "flip-rcmd-reopens-eager-english", "keys": "dkssud hello{rcmd}{space}", "expect": "안녕 ㅗ디ㅣㅐ ", "expectMarked": ""},
