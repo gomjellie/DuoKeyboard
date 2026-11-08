@@ -107,6 +107,7 @@ Duo는 입력 소스 하나로 ABC와 2-Set Korean을 함께 대신해요. 단�
 - 보이는 읽기를 골라도 고정됨. 이때는 경계에서 다른 읽기로 확정됐을 단어만 학습함
 - **마지막 단어의 후보 막대**: 확정한 읽기가 보이던 것과 달랐거나 애매했으면 확정한 단어 아래에 두 읽기를 번호 없이 보여 줌. 4초 동안 뜨고 포인터가 올라가 있으면 사라지지 않음. 다른 읽기를 클릭하면 확정한 단어를 바꿈. 이때 숫자는 글자로 입력됨
 - HUD는 앱이 알려 준 캐럿 사각형이 올바르고 그 앱의 창 안에 있을 때만 따라감. 아니면 뜨지 않음
+- Orca 같은 xterm.js 터미널은 입력기에 입력 위치를 틀리게 알려 줌(최대 100 pt 오른쪽). 입력기에 손쉬운 사용 권한을 주면 입력 칸의 실제 위치를 읽어 막대를 단어 시작 아래에 띄움. 읽는 것은 그 입력 칸의 클래스 이름, 위치, 크기뿐임. 권한이 없으면 앱이 알려 준 위치를 씀
 - 2026-11-07까지는 다른 읽기가 가까울 때만(P ≥ 5 %), 300 ms 멈춘 뒤에 떴고 바꾸기 키는 두 읽기만 오갔음
 
 ### 영어로 고른 단어 뒤의 조사
@@ -148,7 +149,7 @@ Duo는 고친 단어를 이 Mac 안에서 기억해요. 문장은 저장하지 �
 |---|---|
 | Terminal | 캐럿 앞 글자만 바꿀 수 있음. 마지막 단어는 캐럿에서 거꾸로 재서 찾음 |
 | iTerm2, Hyper, JetBrains IDE, Android Studio | 글자를 바꾸지 못함. 영어를 일찍 확정하지 않고, 확정한 단어를 바꾸지 않음 |
-| Orca(xterm.js) | `replacementRange`를 무시함. 조합 중인 단어는 바꿀 수 있음. 영어는 일찍 확정하지만 확정한 글자를 다시 열거나 바꾸지 않고, 마지막 단어의 후보 막대를 띄우지 않음 |
+| Orca(xterm.js) | `replacementRange`를 무시함. 조합 중인 단어는 바꿀 수 있음. 영어는 일찍 확정하지만 확정한 글자를 다시 열거나 바꾸지 않고, 마지막 단어의 후보 막대를 띄우지 않음. 입력 위치를 틀리게 알려 주므로, 손쉬운 사용 권한이 있으면 후보 막대 자리를 입력 칸의 접근성 위치에서 읽음 |
 | VS Code, VS Code Insiders, Cursor, VSCodium, Windsurf, Code OSS(Monaco) | `replacementRange`를 무시함. 영어는 일찍 확정하지만 확정한 글자를 다시 열거나 바꾸지 않고, 마지막 단어의 후보 막대를 띄우지 않음 |
 
 ### Caps Lock, 보안 입력, 그 밖의 키
@@ -223,6 +224,14 @@ Duo는 고친 단어를 이 Mac 안에서 기억해요. 문장은 저장하지 �
 - 두 방식을 오가도 친 글자가 남음
 - 언어 모델은 앱에 든 입력기 번들에서 읽음
 
+**터미널에서 후보 막대 위치** (일반 ▸ 입력)
+
+- 입력기에 손쉬운 사용 권한이 있는지 보여 줌. 2초마다 입력기에 물음
+- 권한이 없으면 "허용…" 버튼이 있음. 누르면 입력기의 이전 항목을 지우고(서명이 바뀐 빌드의 항목은 macOS가 무시함), 입력기가 macOS 확인 창을 띄우고, 손쉬운 사용 목록을 엶. DuoInputMethod를 켬
+- 목록에 DuoInputMethod가 없으면 상태 절의 "다시 시작" 뒤 다시 누름. 같은 입력기 프로세스는 확인 창을 한 번만 띄움
+- 입력기가 이 권한을 모르는 이전 버전이면 "입력기 업데이트 필요"를 보여 줌
+- Input Monitoring 권한은 필요 없음
+
 **VoiceOver와 손쉬운 사용**
 
 - HUD는 VoiceOver 포커스를 가져가지 않음. 대신 바꾸기를 소리로 알림. 예: "해, 한국어로 바꿈"
@@ -249,7 +258,7 @@ make app          # Release 호스트 앱을 build/Release/Duo.app에 만들어�
 | `make test` | `Packages/DuoCore`에서 `swift test`를 돌림. 중간 파일은 `build/spm` |
 | `make build` | `DuoInputMethod`, `DuoHarness`, `Duo`를 Debug로 빌드함 |
 | `make build-release` | `Duo`(입력기 포함)를 Release로 빌드함 |
-| `make install` | Debug 입력기를 빌드해 `~/Library/Input Methods`에 넣고 옛 입력기 서버를 멈춤 |
+| `make install` | Debug 입력기를 빌드해 `~/Library/Input Methods`에 넣고 옛 입력기 서버를 멈춤. `Tools/scripts/dev-signing.sh setup`을 한 번 해 두면 고정 인증서로 서명해서, 손쉬운 사용 허용이 재설치 뒤에도 유지됨 |
 | `make e2e` | `install` 다음 하네스를 빌드하고 실제 IMK 경로로 E2E 사례를 돌림. 보고서는 `build/e2e/report.json` |
 | `make app` | `build-release` 다음 `build/Release/Duo.app`으로 복사함 |
 | `make model` | 말뭉치로 언어 모델을 다시 만듦(`Tools/ModelBuilder/build_model.py`) |
