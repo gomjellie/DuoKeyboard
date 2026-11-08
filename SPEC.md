@@ -596,7 +596,7 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
    - release(`swift test -c release`)에서 300 µs 이하가 목표. Debug 숫자도 보고함;
    - 핫 경로에서 작은 배열 말고는 할당하지 않음;
    - 필요하면 단어마다 n-gram 조회를 캐시함(DET 7.4절이 허용함).
-5. 모델 내용 해시 `20dd934c2856173a`를 확인하는 단위 테스트.
+5. 모델 내용 해시 `55b16fa7b192bc20`를 확인하는 단위 테스트.
 
 ### B — 조합 엔진 (`Sources/DuoCore/Engine/`, `Sources/DuoKit/{KeyEventMapper,LearningPersistence}.swift`, `Tests/DuoCoreTests/Engine*`)
 
@@ -747,7 +747,7 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
 | 호스트 앱 테스트 | `xcodebuild test -project Duo.xcodeproj -scheme Duo -destination 'platform=macOS' -derivedDataPath build/dd` | 11개 묶음의 테스트 50개 통과 |
 | live E2E | `make e2e` | 51/51 |
 | 문자열 카탈로그 | `Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/Duo.build` | 206/206개 키 |
-| DET 골든 벡터 | `make test` | 비트 단위로 같음, 모델 해시 `20dd934c2856173a` |
+| DET 골든 벡터 | `make test` | 비트 단위로 같음, 모델 해시 `55b16fa7b192bc20` |
 | 점수 계산 시간 | `swift test -c release` (벤치마크, release에서만 300 µs 예산을 검사함) | 2차 수정 때 접두 p99 15.6 µs, 최종 p99 17.1 µs. 최신 작업 뒤에는 다시 재지 않음 |
 
 알려진 문제 2개는 UX의 기대와 DET의 결과가 다른 시나리오 행이에요(`withKnownIssue`, R8). 그 밖의 실패는 없어요.
