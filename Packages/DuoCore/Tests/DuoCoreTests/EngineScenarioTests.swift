@@ -445,6 +445,15 @@ struct EngineScenarioTests {
         #expect(h.text == "길어졌을때중간에english가 ")
     }
 
+    @Test func anEnglishWordFarFromTheCaretIsStillReadAsTheEnd() {
+        // 중간에 + english가섞여있어도: the end is 21 keys, its English start 21 keys from the caret.
+        let h = Self.harness()
+        h.type("wndrksdpenglishrktjRdudlTdjeh")
+        #expect(h.marked == "중간에두히ㅑ노가섞여있어도")
+        h.flip()
+        #expect(h.text == "중간에english가섞여있어도")
+    }
+
     @Test func theLastWordsBarOffersTheEndOfALongWord() {
         let h = Self.harness()
         h.type("rlfdjwuTdmfEowndrksdpenglish ")

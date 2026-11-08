@@ -32,7 +32,7 @@ extension CompositionEngine {
     /// Fewest keys on each side of a split.
     static let segmentMinimumKeys = 2
     /// Longest end of a word read back from the caret.
-    static let maxSegmentKeys = 16
+    static let maxSegmentKeys = maxTokenLength - segmentMinimumKeys
     /// The keys before a split must read as their language by this much in prefix mode (the best
     /// other reading of those keys is this far behind).
     static let segmentHeadMargin = 3_000

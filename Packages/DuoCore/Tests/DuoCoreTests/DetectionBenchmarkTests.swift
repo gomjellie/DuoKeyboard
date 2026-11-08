@@ -95,7 +95,7 @@ struct DetectionBenchmarkTests {
 
     /// The worst case of a key while the choice bar lists the readings of the word's end (SPEC.md
     /// 4.11절): the flip key went down at the first key, so every key of the 32-key word scores the
-    /// word (prefix mode, then the bar's final mode) and each end of up to 16 keys as a word of its own.
+    /// word (prefix mode, then the bar's final mode) and each end of up to 30 keys as a word of its own.
     @MainActor
     @Test func perKeyCostWithTheEndsOfTheWordOnTheBar() throws {
         let d = try DetectionFixtures.detector.get()
