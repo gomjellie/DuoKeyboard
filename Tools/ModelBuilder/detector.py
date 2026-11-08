@@ -247,32 +247,33 @@ KEY_IS_CONSONANT = set("qwertasdfgzxcvQWERT")
 # Jamo that chat repeats for laughter and feelings (ㅋㅋㅋ, ㅎㅎ, ㅠㅠ, ㅜㅜ, ㅡㅡ, ㄷㄷ, ㅉㅉ). A run of two or
 # more of the same one is not charged as orphans, alone or next to syllables (ㅋㅋㅋ난, 흥해라ㅡㅡ).
 EMOTIVE_JAMO = set("ㅋㅎㅠㅜㅡㄷㅉ")
-
-
-def emotive_runs(text: str) -> tuple[int, bool]:
-    """(jamo in runs of >= 2 identical emotive jamo, whether the last character is in one)."""
-    exempt, i, last = 0, 0, False
-    while i < len(text):
-        j = i
-        while j < len(text) and text[j] == text[i]:
-            j += 1
-        if text[i] in EMOTIVE_JAMO and j - i >= 2:
-            exempt += j - i
-            last = j == len(text)
-        i = j
-    return exempt, last
+# Jamo chat repeats for emphasis (ㅇㅇㅇㅇ, ㄱㄱㄱ, ㄴㄴㄴ, ㅊㅊㅊ): free from three on. Two of them are often
+# part of an abbreviation (ㄱㅇㅇ) and stay in that piece.
+REPEAT_JAMO = set("ㅇㄱㄴㅊㅅㅍ")
+# ㅠ and ㅜ count as the same jamo in such a run (ㅠㅜㅜ).
+CRY_JAMO = set("ㅠㅜ")
+# Keyboard-mash laughter: a whole run of these with at least two ㅋ (ㅋㄱㅋㄱㄱㅋ, ㅋㄲㅋㅅㅋ).
+MASH_JAMO = set("ㅋㄱㄲㄷㅅㅎ")
+# One of these alone right after a syllable (올ㅋ, 굿ㅋ굿).
+TRAIL_JAMO = set("ㅋㅎ")
 
 
 def _is_jamo(ch: str) -> bool:
     return "\u3131" <= ch <= "\u3163"
 
 
-def chat_runs(m: DetectorModel, text: str) -> tuple[int, bool]:
-    """(orphans the K reading is not charged for, whether the last character is one of them).
+def _is_syllable(ch: str) -> bool:
+    return "\uac00" <= ch <= "\ud7a3"
 
-    Inside each maximal run of jamo: runs of >= 2 identical emotive jamo (ㅋㅋㅋ, ㅠㅠ), and each other
-    piece of >= 2 jamo that is a Korean lexicon word (ㄹㅇ, ㅈㄹ, ㅂㅅ): ㅈㄹ하고, 뭔ㅅㅂ, ㄹㅇㅋㅋ."""
-    exempt, last, n, i = 0, False, len(text), 0
+
+def jamo_pieces(text: str) -> list[tuple[int, int, bool]]:
+    """(start, end, free) for the pieces of every maximal run of jamo in `text`, in order.
+
+    free: not charged as orphans whatever the lexicon says -- the whole run as mash laughter, a single
+    ㅋ/ㅎ after a syllable, a run of >= 2 of one emotive jamo (ㅠ = ㅜ) or >= 3 of one repeated jamo. The
+    jamo between such runs form one piece each (free = False)."""
+    out = []
+    n, i = len(text), 0
     while i < n:
         if not _is_jamo(text[i]):
             i += 1
@@ -280,24 +281,43 @@ def chat_runs(m: DetectorModel, text: str) -> tuple[int, bool]:
         j = i
         while j < n and _is_jamo(text[j]):
             j += 1
-        pieces, start, k = [], i, i
-        while k < j:
-            e = k
-            while e < j and text[e] == text[k]:
-                e += 1
-            if text[k] in EMOTIVE_JAMO and e - k >= 2:
-                if start < k:
-                    pieces.append((start, k, False))
-                pieces.append((k, e, True))
-                start = e
-            k = e
-        if start < j:
-            pieces.append((start, j, False))
-        for a, b, emotive in pieces:
-            if emotive or (b - a >= 2 and m.lex_ko.get(korean_normalize(hangul_to_keys(text[a:b]))) is not None):
-                exempt += b - a
-                last = last or b == n
+        run = text[i:j]
+        if run.count("ㅋ") >= 2 and all(c in MASH_JAMO for c in run):
+            out.append((i, j, True))
+        elif j - i == 1 and run in TRAIL_JAMO and i > 0 and _is_syllable(text[i - 1]):
+            out.append((i, j, True))
+        else:
+            start, k = i, i
+            while k < j:
+                cls = "ㅠ" if text[k] in CRY_JAMO else text[k]
+                e = k + 1
+                while e < j and ("ㅠ" if text[e] in CRY_JAMO else text[e]) == cls:
+                    e += 1
+                if (text[k] in EMOTIVE_JAMO and e - k >= 2) or (text[k] in REPEAT_JAMO and e - k >= 3):
+                    if start < k:
+                        out.append((start, k, False))
+                    out.append((k, e, True))
+                    start = e
+                k = e
+            if start < j:
+                out.append((start, j, False))
         i = j
+    return out
+
+
+def _lex_piece(m: DetectorModel, piece: str) -> bool:
+    return len(piece) >= 2 and m.lex_ko.get(korean_normalize(hangul_to_keys(piece))) is not None
+
+
+def chat_runs(m: DetectorModel, text: str) -> tuple[int, bool]:
+    """(orphans the K reading is not charged for, whether the last character is one of them):
+    the free pieces of `jamo_pieces`, and each other piece of >= 2 jamo that is a Korean lexicon word
+    (ㄹㅇ, ㅈㄹ, ㅂㅅ): ㅈㄹ하고, 뭔ㅅㅂ, ㄹㅇㅋㅋ."""
+    exempt, last = 0, False
+    for a, b, free in jamo_pieces(text):
+        if free or _lex_piece(m, text[a:b]):
+            exempt += b - a
+            last = last or b == len(text)
     return exempt, last
 
 
