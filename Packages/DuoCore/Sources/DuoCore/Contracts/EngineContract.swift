@@ -193,12 +193,16 @@ public struct HUDChoice: Hashable, Sendable {
     public let selected: Int
     /// Index in ``readings`` of the reading the flip key switches to.
     public let alternate: Int
+    /// Digit keys choose readings (SPEC.md 4.11절): the user has flipped or chosen in this word. Before
+    /// that, digits are text (S24, iOS26), so the bar shows no numbers.
+    public let numbered: Bool
 
     /// `selected` and `alternate` must be different indices of `readings`.
-    public init(readings: [HUDReading], selected: Int, alternate: Int) {
+    public init(readings: [HUDReading], selected: Int, alternate: Int, numbered: Bool = false) {
         self.readings = readings
         self.selected = selected
         self.alternate = alternate
+        self.numbered = numbered
     }
 
     /// Two readings. - Parameter currentFirst: whether `current` is drawn first.

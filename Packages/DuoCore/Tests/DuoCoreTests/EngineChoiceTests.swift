@@ -73,7 +73,7 @@ struct EngineChoiceTests {
         h.type("cmdfh")
     }
 
-    @Test func theListShowsLikelyReadingsBestFirst() throws {
+    @Test func theListLeadsWithTheWordThenTheFlipTarget() throws {
         let h = EngineHarness()
         Self.typeCmdFh(h)
         guard case .alternative(let choice, let eligible)? = h.hud?.content else {
@@ -82,9 +82,12 @@ struct EngineChoiceTests {
         }
         #expect(choice.readings.map(\.text) == ["층로", "cmd로", "cmdfh"], "c층로 is 11 nats behind")
         #expect(choice.selected == 0)
-        #expect(eligible, "cmd로 is within 5 %")
-        let numbered = HUDPresentation(h.hud!.content, flipKey: .rightCommand).isNumbered
-        #expect(numbered)
+        #expect(choice.alternate == 1, "the flip key walks the bar from the word to the next reading")
+        #expect(eligible)
+        #expect(!HUDPresentation(h.hud!.content, flipKey: .rightCommand).isNumbered,
+                "digits are text until the user flips in this word")
+        h.flip()
+        #expect(HUDPresentation(h.hud!.content, flipKey: .rightCommand).isNumbered)
     }
 
     @Test func atMostFiveReadingsAreListed() {
@@ -210,10 +213,17 @@ struct EngineChoiceTests {
         h.detector.scores["cmdfh"] = [.korean: -16000, .mixed(latin: 3): -26000, .english: -27000]
         h.type("fh")
         #expect(h.marked == "cmd로")
+        guard case .alternative(let choice, _)? = h.hud?.content else {
+            Issue.record("expected the choice bar")
+            return
+        }
+        #expect(choice.readings.map(\.text) == ["층로", "cmdfh", "cmd로"], "the original first, then its flip target")
         h.flip()
-        #expect(h.marked == "층로")
+        #expect(h.marked == "층로", "from the last reading back to the first")
         h.flip()
-        #expect(h.marked == "cmd로", "back to what the user chose, not to cmdfh")
+        #expect(h.marked == "cmdfh")
+        h.flip()
+        #expect(h.marked == "cmd로", "the flip key walks the whole bar")
     }
 
     @Test func keepingTheShownReadingAgainstTheModelTeachesIt() throws {

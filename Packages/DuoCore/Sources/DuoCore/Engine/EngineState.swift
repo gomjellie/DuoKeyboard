@@ -22,9 +22,6 @@ struct Token {
     /// Keys the user confirmed as Latin by choosing E or M(b) (flip or the choice bar). A Korean
     /// ending may follow them: `cmd`, chosen as English, then `fh` reads cmd로 (SPEC.md §4.11).
     var lockedLatin: Int?
-    /// The reading the user last locked away from `lockedOriginal`: from the original, the flip key
-    /// returns to it (cmd로 after cmd + flip + fh, then a flip back to 층로).
-    var lockedReturn: Hypothesis?
     /// The user kept the shown reading on the choice bar: an explicit choice, taught at the commit
     /// when the model would have committed another reading.
     var keptByChoice = false

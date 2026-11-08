@@ -8,7 +8,8 @@ import Foundation
 ///
 /// Rules:
 /// - A non-immediate request appears only after a typing pause of ``Timing/appearDelay``; every
-///   keystroke restarts the pause.
+///   keystroke restarts the pause. With no pause (the standard timing) it appears on the next timer
+///   tick: showing the panel inside the key event left it off screen in the input method.
 /// - An immediate request (chips, badges) appears at once.
 /// - Once an alternative is on screen it **latches**: it stays and updates in place while the token
 ///   is composing, even when a later request says `eligible == false`.
@@ -26,8 +27,9 @@ import Foundation
 public struct HUDTimeline: Sendable, Equatable {
     /// Durations in seconds.
     public struct Timing: Sendable, Equatable {
-        /// Typing pause before a non-immediate request appears.
-        public var appearDelay: TimeInterval = 0.300
+        /// Typing pause before a non-immediate request appears. 0: the choice bar comes up with the
+        /// key that composed the word, as a Pinyin candidate window does (user request, 2026-11-08).
+        public var appearDelay: TimeInterval = 0
         /// Delay between a hide request and the start of the fade-out.
         public var hideDebounce: TimeInterval = 0.140
         /// Fade-in on first appearance.

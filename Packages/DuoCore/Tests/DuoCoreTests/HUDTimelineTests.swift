@@ -16,29 +16,45 @@ private let chip = HUDRequest(
 private let oneShot = HUDRequest(content: .oneShot(.english), anchor: .caret, immediate: true, lifetime: 0.9)
 
 private let timing = HUDTimeline.Timing.standard
+/// A typing pause, as the timeline still supports one (the standard timing has none since 2026-11-08).
+private let paused: HUDTimeline.Timing = {
+    var t = HUDTimeline.Timing()
+    t.appearDelay = 0.300
+    return t
+}()
 
 @Suite("HUD timeline: appearing")
 struct HUDTimelineAppearTests {
-    @Test("an eligible alternative appears only after a 300 ms typing pause")
-    func appearsAfterPause() {
+    @Test("the standard timing brings the choice bar up with the key, as a candidate window does")
+    func appearsAtOnce() {
         var t = HUDTimeline()
+        #expect(timing.appearDelay == 0)
+        #expect(t.receive(alternative("dk"), at: 10) == nil, "shown on the next timer tick, outside the key event")
+        #expect(t.nextDeadline == 10)
+        #expect(t.advance(to: 10) == .show(alternative("dk")))
+        #expect(t.receive(alternative("dks"), at: 10.08) == .update(alternative("dks"), pulse: false))
+    }
+
+    @Test("with a typing pause, an eligible alternative appears only after it")
+    func appearsAfterPause() {
+        var t = HUDTimeline(timing: paused)
         #expect(t.receive(alternative("dk"), at: 10) == nil)
-        #expect(t.nextDeadline == 10 + timing.appearDelay)
+        #expect(t.nextDeadline == 10 + paused.appearDelay)
         #expect(t.advance(to: 10.299) == nil)
-        #expect(t.advance(to: 10 + timing.appearDelay) == .show(alternative("dk")))
+        #expect(t.advance(to: 10 + paused.appearDelay) == .show(alternative("dk")))
         #expect(t.isVisible)
         #expect(t.nextDeadline == nil)
     }
 
-    @Test("every keystroke restarts the pause; the latest request is the one shown")
+    @Test("with a typing pause, every keystroke restarts it; the latest request is the one shown")
     func keystrokesRestartPause() {
-        var t = HUDTimeline()
+        var t = HUDTimeline(timing: paused)
         _ = t.receive(alternative("dk"), at: 10)
         _ = t.receive(alternative("dks"), at: 10.2)
         #expect(t.advance(to: 10.35) == nil)
         _ = t.receive(alternative("dkss"), at: 10.4)
         #expect(t.advance(to: 10.69) == nil)
-        #expect(t.advance(to: 10.4 + timing.appearDelay) == .show(alternative("dkss")))
+        #expect(t.advance(to: 10.4 + paused.appearDelay) == .show(alternative("dkss")))
     }
 
     @Test("an ineligible alternative never brings the HUD up")
@@ -59,9 +75,9 @@ struct HUDTimelineAppearTests {
         #expect(t.advance(to: 11) == nil)
     }
 
-    @Test("nil cancels a pending appearance without a hide command")
+    @Test("with a typing pause, nil cancels a pending appearance without a hide command")
     func nilCancelsPending() {
-        var t = HUDTimeline()
+        var t = HUDTimeline(timing: paused)
         _ = t.receive(alternative("dk"), at: 10)
         #expect(t.receive(nil, at: 10.1) == nil)
         #expect(t.phase == .hidden)
@@ -75,9 +91,9 @@ struct HUDTimelineAppearTests {
         #expect(t.isVisible)
     }
 
-    @Test("an immediate request replaces a pending one at once")
+    @Test("with a typing pause, an immediate request replaces a pending one at once")
     func immediateReplacesPending() {
-        var t = HUDTimeline()
+        var t = HUDTimeline(timing: paused)
         _ = t.receive(alternative("go"), at: 10)
         #expect(t.receive(chip, at: 10.1) == .show(chip))
     }
@@ -118,7 +134,10 @@ struct HUDTimelineLatchTests {
     func noPulseOnShow() {
         var t = HUDTimeline()
         _ = t.receive(alternative("rk", pulse: true), at: 10)
-        #expect(t.advance(to: 10 + timing.appearDelay) == .show(alternative("rk", pulse: true)))
+        #expect(t.advance(to: 10) == .show(alternative("rk", pulse: true)))
+        var p = HUDTimeline(timing: paused)
+        _ = p.receive(alternative("rk", pulse: true), at: 10)
+        #expect(p.advance(to: 10 + paused.appearDelay) == .show(alternative("rk", pulse: true)))
     }
 
     @Test("an ineligible alternative while a chip is up starts the hide debounce")
@@ -165,10 +184,10 @@ struct HUDTimelineFeedbackPauseTests {
         #expect(t.advance(to: 10.08 + timing.appearDelay) == .show(alternative("dk")))
     }
 
-    @Test("typing straight through after `go␣`'s chip brings up nothing: the burst never paused")
+    @Test("with a typing pause, typing straight through after `go␣`'s chip brings up nothing")
     func burstAfterChipShowsNothing() {
         // `go␣` commits uncertainly (chip), then `dkssud` at 80 ms per key; only `dk` is eligible.
-        var t = HUDTimeline()
+        var t = HUDTimeline(timing: paused)
         _ = t.receive(chip, at: 10)
         var commands: [HUDTimeline.Command] = []
         let keys: [(String, Bool)] = [("d", false), ("dk", true), ("dks", false), ("dkss", false), ("dkssu", false), ("dkssud", false)]
@@ -313,10 +332,10 @@ struct HUDTimelineHideTests {
 struct HUDTimelineTriggerTests {
     @Test("identical requests from non-keystroke events are ignored")
     func nonKeystrokeDedupes() {
-        var t = HUDTimeline()
+        var t = HUDTimeline(timing: paused)
         _ = t.receive(alternative("dk"), at: 10)
         _ = t.receive(alternative("dk"), at: 10.25, trigger: .other)   // ⇧ pressed: must not restart the pause
-        #expect(t.nextDeadline == 10 + timing.appearDelay)
+        #expect(t.nextDeadline == 10 + paused.appearDelay)
     }
 
     @Test("an expired chip is not resurrected by a modifier press")

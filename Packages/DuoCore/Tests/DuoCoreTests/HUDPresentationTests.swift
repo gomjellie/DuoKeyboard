@@ -57,9 +57,13 @@ struct HUDPresentationTests {
         #expect(p.keycaps.isEmpty)
     }
 
-    @Test("only the word being typed gets numbers")
+    @Test("only the word being typed gets numbers, once the user flipped or chose in it")
     func numbering() {
-        #expect(HUDPresentation(.alternative(choice, eligible: true), flipKey: .rightCommand).isNumbered)
+        #expect(!HUDPresentation(.alternative(choice, eligible: true), flipKey: .rightCommand).isNumbered,
+                "before a flip, digits are text (S24)")
+        let flipped = HUDChoice(readings: choice.readings, selected: choice.selected, alternate: choice.alternate,
+                                numbered: true)
+        #expect(HUDPresentation(.alternative(flipped, eligible: true), flipKey: .rightCommand).isNumbered)
         #expect(!HUDPresentation(.flipLastWord(choice), flipKey: .rightCommand).isNumbered)
         #expect(!HUDPresentation(.oneShot(.korean), flipKey: .rightCommand).isNumbered)
     }

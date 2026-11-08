@@ -60,7 +60,7 @@ public struct HUDPresentation: Hashable, Sendable {
 
     /// The readings carry the numbers 1, 2, 3 …: the digit keys choose them. Only the word being
     /// typed, since a digit typed after a committed word is text.
-    public var isNumbered: Bool { kind == .alternative && choice != nil }
+    public var isNumbered: Bool { kind == .alternative && choice?.numbered == true }
 
     /// The reading a digit key chooses on a numbered bar: 1 → the first … 9 → the ninth. `nil` for
     /// any other key and for a digit with ⌘, ⌃ or ⌥ (a shortcut).

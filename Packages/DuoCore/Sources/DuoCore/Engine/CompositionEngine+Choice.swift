@@ -33,22 +33,29 @@ extension CompositionEngine {
         var selected: Int { choice.selected }
     }
 
-    /// The readings the bar lists for `t`, best first by prefix-mode score (unscored ones last).
+    /// The readings the bar lists for `t`, in the order the flip key walks them.
     ///
+    /// - First the word's original reading (what it showed before any flip), then the reading a
+    ///   first flip switches to (R11: the other script), then the rest best first by prefix-mode
+    ///   score (unscored ones last). The order stays while the word does not change.
     /// - K, E and every M(b) the detector scored, without two that render alike.
     /// - Readings inconsistent with eagerly committed Latin only where the client can re-open it.
-    /// - At most ``maxCandidates``; the shown reading and the flip key's target always stay.
+    /// - At most ``maxCandidates``; the original, the first flip's target, the shown reading and a
+    ///   chosen Latin-plus-ending always stay.
     /// - The scores carry a Latin word's learned English to its endings (`userCounts` with
     ///   `carryLatinPrefixes`), so cmd로 rises on the bar; what is shown and committed does not.
     func choiceList(_ t: Token, _ shownScores: HypothesisScores) -> ChoiceList? {
-        guard let flipTarget = flipTarget(t, shownScores) else { return nil }
+        let original = t.lockedOriginal ?? t.shown
         let plain = userCounts(t.raw, t.context)
         let carried = userCounts(t.raw, t.context, carryLatinPrefixes: true)
         let prefix = carried == plain ? shownScores
             : detector.prefixScores(raw: t.raw, context: t.context, user: carried, biasKO: biasKO)
         let final = detector.choiceScores(raw: t.raw, context: t.context, user: carried, biasKO: biasKO)
+        let first = alternative(of: original, raw: t.raw, in: prefix)
 
-        var kept: [Hypothesis] = [t.shown, flipTarget]
+        var kept: [Hypothesis] = [original]
+        if let first { kept.append(first) }
+        kept.append(t.shown)
         if let b = t.lockedLatin, b < t.count, !t.raw.contains("'") { kept.append(.mixed(latin: b)) }
 
         let bestPrefix = prefix.best?.score ?? 0
@@ -70,7 +77,11 @@ extension CompositionEngine {
                 || final[entry.hypothesis].map { bestFinal - $0 <= Self.candidateFloor } ?? false
             if close { add(entry.hypothesis) }
         }
-        rows.sort { a, b in
+        // The original and the first flip's target lead; the rest by score.
+        let lead = rows.filter { $0.hypothesis == original || $0.hypothesis == first }
+            .sorted { a, _ in a.hypothesis == original }
+        var rest = rows.filter { $0.hypothesis != original && $0.hypothesis != first }
+        rest.sort { a, b in
             switch (a.score, b.score) {
             case let (x?, y?) where x != y: return x > y
             case (_?, nil): return true
@@ -78,32 +89,27 @@ extension CompositionEngine {
             default: return Self.displayRank(a.hypothesis) < Self.displayRank(b.hypothesis)
             }
         }
+        rows = lead + rest
         while rows.count > Self.maxCandidates, let i = rows.lastIndex(where: { !kept.contains($0.hypothesis) }) {
             rows.remove(at: i)
         }
-        guard rows.count >= 2, let selected = rows.firstIndex(where: { $0.hypothesis == t.shown }),
-              let alternate = rows.firstIndex(where: { $0.hypothesis == flipTarget }), alternate != selected else {
-            return nil
-        }
+        guard rows.count >= 2, let selected = rows.firstIndex(where: { $0.hypothesis == t.shown }) else { return nil }
+        // The flip key walks the bar: the next reading, and from the last one back to the first.
+        let alternate = (selected + 1) % rows.count
         let readings = rows.map { HUDReading(text: $0.text, language: $0.hypothesis.language) }
         return ChoiceList(hypotheses: rows.map(\.hypothesis),
-                          choice: HUDChoice(readings: readings, selected: selected, alternate: alternate),
+                          choice: HUDChoice(readings: readings, selected: selected, alternate: alternate,
+                                            numbered: t.locked != nil),
                           prefix: prefix, final: final)
     }
 
-    /// The reading the flip key switches `t` to: back to the original after a flip; from the
-    /// original, back to the reading the user last chose (cmd로 after cmd + flip + fh); otherwise
-    /// the R11 alternative.
+    /// The reading the flip key switches `t` to: the next one on the bar (SPEC.md 4.11절), so a
+    /// first flip goes to the other script and further flips walk the other readings and come back
+    /// to the original. Without a bar (one reading the client can choose), the R11 alternative, so
+    /// the flip can still say why it cannot change the word.
     func flipTarget(_ t: Token, _ scores: HypothesisScores) -> Hypothesis? {
-        if let locked = t.locked, let original = t.lockedOriginal {
-            if locked != original { return original }
-            if let back = t.lockedReturn, back != original, t.isWellFormed(back), canChoose(t, back),
-               render(t.raw, back) != render(t.raw, original) {
-                return back
-            }
-            return alternative(of: original, raw: t.raw, in: scores)
-        }
-        return alternative(of: t.shown, raw: t.raw, in: scores)
+        if let bar = choiceList(t, scores) { return bar.hypotheses[bar.choice.alternate] }
+        return alternative(of: t.lockedOriginal ?? t.shown, raw: t.raw, in: scores)
     }
 
     /// A reading the token can switch to: consistent with the Latin committed eagerly, or the

@@ -162,8 +162,6 @@ extension LanguageDetector {
 public enum Margins {
     /// P(alt) ≥ 20 %: HUD offers the alternative; implicit learning counts the commit.
     public static let hudAlternative = 1386
-    /// P(alt) ≥ 5 %: the choice bar lists the word's readings (SPEC.md §4.11).
-    public static let hudCandidates = 2944
     /// P(alt) ≥ 35 %: "uncertain commit" chip.
     public static let uncertainCommit = 619
     /// P(alt) < 1 %: eager English commit.

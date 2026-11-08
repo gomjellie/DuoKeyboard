@@ -357,10 +357,11 @@ struct EngineScenarioTests {
     func anEnglishWordThatAlsoReadsKoreanListsBoth(_ keys: String, _ korean: String, _ mixed: String) throws {
         let h = Self.harness()
         let bar = try #require(Self.listed(h, keys))
-        #expect(bar.texts.prefix(2) == [korean, mixed], "both readings, best first")
-        #expect(bar.eligible, "close enough for the bar to come up")
+        #expect(bar.texts.first == korean, "the shown reading leads")
+        let index = try #require(bar.texts.firstIndex(of: mixed), "the Latin-plus-ending reading is listed")
+        #expect(bar.eligible)
         let shown = try #require(h.hud)
-        #expect(h.engine.selectReading(at: 1, on: shown, client: h.client) == .chosen)
+        #expect(h.engine.selectReading(at: index, on: shown, client: h.client) == .chosen)
         h.press(.space)
         #expect(h.text == mixed + " ")
     }
@@ -388,8 +389,9 @@ struct EngineScenarioTests {
         let h = Self.harness()
         h.store.record(raw: "cmd", context: .start, hypothesis: .english, votes: LearningStore.flipVotes)
         let bar = try #require(Self.listed(h, "cmdfh"))
-        #expect(bar.texts.prefix(2) == ["층로", "cmd로"], "the shown reading first, cmd로 one digit away")
-        #expect(bar.eligible, "the learned cmd brings the bar up")
+        #expect(bar.texts.first == "층로", "the shown reading first")
+        #expect(bar.texts.contains("cmd로"), "cmd로 on the bar")
+        #expect(bar.eligible)
         h.press(.space)
         #expect(h.text == "층로 ", "what is typed stays the model's: 층 is still possible")
     }
@@ -405,12 +407,17 @@ struct EngineScenarioTests {
         #expect(h.text == "안녕 go를 해 ")
     }
 
-    @Test func pausingInsideAKoreanSyllableShowsNoBar() {
+    @Test func pausingInsideAKoreanSyllableKeepsItShown() throws {
         // Review: final mode reads 감ㅅ as a finished word, so rkat (E) looked likely.
         let h = Self.harness()
         h.type("dkssud rkat")
         #expect(h.marked == "감ㅅ")
-        #expect(h.hud?.isEligible != true)
+        guard case .alternative(let choice, _)? = h.hud?.content else {
+            Issue.record("expected the choice bar")
+            return
+        }
+        #expect(choice.current.text == "감ㅅ")
+        #expect(choice.selected == 0, "the word leads the bar")
     }
 
     @Test func bilingualSentenceOneMutationPerKey() {
