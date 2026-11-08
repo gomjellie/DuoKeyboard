@@ -243,6 +243,61 @@ struct EngineBoundaryTests {
         #expect(choice.other.text == "do")
     }
 
+    @Test func aPieceAfterAnEnglishPieceNeedsAFlipToReadKorean() {
+        // src_dir: `dir` alone reads 약, but after an English piece and `_` K is not allowed until it
+        // leads every other reading by `snakeKoreanMargin`. The flip still reaches it.
+        let h = EngineHarness()
+        h.detector.english("src")
+        h.detector.scores["d"] = [.korean: -3000, .english: -3200]
+        h.detector.scores["di"] = [.korean: -5000, .english: -5300]
+        h.detector.scores["dir"] = [.korean: -6000, .english: -6500]
+        h.type("src_dir")
+        #expect(h.marked == "dir")
+        #expect(h.engine.token?.snakePiece == true)
+        h.press(.space)
+        #expect(h.text == "src_dir ")
+        h.flip()
+        #expect(h.text == "src_약 ")
+    }
+
+    @Test func aPieceAfterAnEnglishPieceReadsKoreanWhenKoreanLeadsByFar() {
+        let h = EngineHarness()
+        h.detector.english("file")
+        h.detector.scores["g"] = [.korean: -3000, .english: -2000]
+        h.detector.scores["gh"] = [.korean: -4000, .english: -4000 - CompositionEngine.snakeKoreanMargin]
+        for i in 3..."ghdrlfehd".count {
+            h.detector.scores[String("ghdrlfehd".prefix(i))] = [.korean: -1000 * i, .english: -20_000]
+        }
+        h.type("file_g")
+        #expect(h.marked == "g")
+        h.type("h")
+        #expect(h.marked == "호")
+        #expect(h.engine.token?.snakePiece == false)
+        h.type("drlfehd ")
+        #expect(h.text == "file_홍길동 ")
+    }
+
+    @Test func aPieceAfterAKoreanPieceIsNotHeldBack() {
+        let h = EngineHarness()
+        h.detector.korean("qhrhtj")
+        h.detector.scores["d"] = [.korean: -3000, .english: -3200]
+        h.type("qhrhtj_d")
+        #expect(h.engine.token?.snakePiece == false)
+        #expect(h.marked == "ㅇ")
+    }
+
+    @Test func theBoundaryAfterASnakeCasePieceIsNotLiteral() {
+        // max_len)은: unlike a dotted word, the piece's boundary does not start L.
+        let h = EngineHarness()
+        h.detector.english("max")
+        h.detector.english("len")
+        h.detector.korean("dms")
+        h.type("max_len)")
+        #expect(!h.engine.literal)
+        h.type("dms ")
+        #expect(h.text == "max_len)은 ")
+    }
+
     @Test func colonAfterEnglishThenSlashIsLiteral() {
         let h = EngineHarness()
         h.detector.english("https")

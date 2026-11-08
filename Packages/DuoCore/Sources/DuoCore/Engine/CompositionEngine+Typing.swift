@@ -18,11 +18,19 @@ extension CompositionEngine {
     /// model, such words pass 8 nats by their 2nd to 5th key; Latin ones stay ≤ 1.7 nats (A를,
     /// SDI가, API를, B마트, A군).
     static let latinMergeMargin = 6_000
+    /// Prefix margin of K over every other reading at which a piece after an English `_` piece may
+    /// read Korean (``Token/snakePiece``). On the shipped model in EN context (TextEdit), Korean
+    /// words of two syllables pass 8 nats by their second key (사랑, 안녕); snake_case pieces that
+    /// read Korean at a boundary stay lower (dir 0.7, fn 5.1 nats).
+    static let snakeKoreanMargin = 6_000
 
     // MARK: Letters (§4.3)
 
-    /// - Parameter dotted: the key follows the `.` that ended an English word (``Token/dotted``).
-    func handleLetter(_ key: Keystroke, event: KeyEvent, dotted: Bool = false, client: any TextClient) -> Bool {
+    /// - Parameters:
+    ///   - dotted: the key follows the `.` that ended an English word (``Token/dotted``).
+    ///   - snakePiece: the key follows the `_` that ended an English word (``Token/snakePiece``).
+    func handleLetter(_ key: Keystroke, event: KeyEvent, dotted: Bool = false, snakePiece: Bool = false,
+                      client: any TextClient) -> Bool {
         if let t = token, t.count >= Self.maxTokenLength,
            startsLatinWord(key, after: t) || !carryLastSyllable(of: t, before: key, at: event.timestamp, client: client) {
             commitToken(terminator: .space, boundaryLength: 0, client: client)
@@ -42,6 +50,7 @@ extension CompositionEngine {
         if token == nil {
             startToken(at: event.timestamp)
             token?.dotted = dotted
+            token?.snakePiece = snakePiece
         }
         // A new letter ends flip case (b) for the previous word.
         lastCommit = nil
@@ -83,6 +92,10 @@ extension CompositionEngine {
             // The `.` ended a sentence: the word reads Korean by as much as a word a capital may
             // end (ok.알겠어). Extensions and domains stay below 7 nats (gg, ac, qq).
             t.dotted = false
+        }
+        if t.snakePiece, let scores = t.scores, let k = scores[.korean],
+           let other = scores.best(where: { $0 != .korean }), k - other.score >= Self.snakeKoreanMargin {
+            t.snakePiece = false
         }
         if t.latinStart, t.count >= 2, let scores = t.scores, let k = scores[.korean],
            let best = scores.best(where: t.isAllowed), k - best.score >= Self.latinMergeMargin,
@@ -362,6 +375,8 @@ extension CompositionEngine {
                 // github.com/foo, example.com:8080, node.js?: the rest is a URL or a path.
                 beginLiteral()
                 return false
+            } else if ch == "_" {
+                context.underscoreAfterEnglishToken = true
             }
             if ch == ":" { context.colonAfterEnglishToken = true }
         }

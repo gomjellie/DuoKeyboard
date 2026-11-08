@@ -138,8 +138,10 @@ public final class CompositionEngine {
         let mods = event.modifiers
         // One-key look-behinds for the literal triggers (SPEC.md §4.6).
         let dotAfterEnglish = context.dotAfterEnglishToken
+        let underscoreAfterEnglish = context.underscoreAfterEnglishToken
         let slashStartsLiteral = context.colonAfterEnglishToken || context.tildeAtWordStart
         context.dotAfterEnglishToken = false
+        context.underscoreAfterEnglishToken = false
         context.colonAfterEnglishToken = false
         context.tildeAtWordStart = false
 
@@ -182,7 +184,8 @@ public final class CompositionEngine {
                 return passRaw(event, terminator: .space, boundaryLength: 0, client: client)
             }
             if literal { return passLetterOrRaw(event, terminator: .space, client: client) }
-            return handleLetter(k, event: event, dotted: dotAfterEnglish && token == nil, client: client)
+            return handleLetter(k, event: event, dotted: dotAfterEnglish && token == nil,
+                                snakePiece: underscoreAfterEnglish && token == nil, client: client)
 
         case .character(let ch):
             if mods.contains(.option) {

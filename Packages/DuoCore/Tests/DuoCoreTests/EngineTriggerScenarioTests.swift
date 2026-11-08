@@ -51,6 +51,17 @@ struct EngineTriggerScenarioTests {
         all(.korean, "node_modules ", "node_modules "),
         all(.korean, "IMG_1234.jpg ", "IMG_1234.jpg "),
         all(.korean, "user_id@example.com ", "user_id@example.com "),
+        // A piece after an English piece reads Korean only when Korean leads by far: pieces that
+        // read Korean alone (dir 약, z ㅋ) stay Latin there
+        all(.start, "src_dir ", "src_dir "),
+        all(.english, "base_dir ", "base_dir "),
+        all(.korean, "out_dir ", "out_dir "),
+        all(.korean, "my_z ", "my_z "),
+        all(.start, "test_ghdrlfehd ", "test_홍길동 "),
+        // ... but the first piece reads as it does alone: the flip before `_` keeps it Latin
+        all(.start, "dir_name ", "약_name "),
+        only(.textEdit, .start, "dir⌘_name ", "dir_name "),
+        only(.kakao, .start, "dir⌘_name ", "dir_name "),
         // Korean file names
         all(.start, "qhrhtj_chlwhd.hwp ", "보고서_최종.hwp "),
         all(.english, "qhrhtj_chlwhd.hwp ", "보고서_최종.hwp "),

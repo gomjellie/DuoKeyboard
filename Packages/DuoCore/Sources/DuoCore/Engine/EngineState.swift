@@ -42,6 +42,11 @@ struct Token {
     /// reading by `latinSplitMargin` (ok.알겠어): then the flag is cleared. Committed as English
     /// at a boundary other than `.`, the rest up to whitespace is a URL or a path: L.
     var dotted = false
+    /// The word starts right after the `_` that ended an English word (SPEC.md 4.6절): a snake_case
+    /// piece (src_dir, my_fn). K is not allowed without a flip until it leads every other reading
+    /// by `snakeKoreanMargin` (KakaoTalk_Chat_홍길동): then the flag is cleared. Unlike a dotted
+    /// word, its boundary never starts L (is_ok?응).
+    var snakePiece = false
     /// Prefix-mode scores of `raw`, computed once per key and reused for display, eager commit, the
     /// HUD and flips (SPEC.md §5 B.6). `nil` while stale (keys passed raw in the eager-E state).
     var scores: HypothesisScores?
@@ -82,7 +87,7 @@ struct Token {
     /// Readings the engine may show or commit without a flip.
     func isAllowed(_ h: Hypothesis) -> Bool {
         isConsistent(h) && (languageLock == nil || h.language == languageLock)
-            && !((latinStart || dotted) && h == .korean)
+            && !((latinStart || dotted || snakePiece) && h == .korean)
             && !isChoiceOnly(h)
     }
 
@@ -205,6 +210,8 @@ struct ContextTracker {
     var colonAfterEnglishToken = false
     /// The previous key was a `~` typed at word start (`~/`).
     var tildeAtWordStart = false
+    /// The previous key was the `_` that ended an English token (src_dir).
+    var underscoreAfterEnglishToken = false
 
     /// SPEC.md §4.2.
     var contextForNewToken: LanguageContext {
@@ -238,6 +245,7 @@ struct ContextTracker {
         dotAfterEnglishToken = false
         colonAfterEnglishToken = false
         tildeAtWordStart = false
+        underscoreAfterEnglishToken = false
     }
 
     /// Effect of a key the app handles itself (after any commit), SPEC.md §4.1/§4.2.
