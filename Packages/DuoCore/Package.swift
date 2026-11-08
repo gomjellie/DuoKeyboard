@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "DuoCore",
     defaultLocalization: "ko",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v15)],
     products: [
         // Pure, platform-independent engine: 두벌식 automaton, language model, composition state machine.
         .library(name: "DuoCore", targets: ["DuoCore"]),
