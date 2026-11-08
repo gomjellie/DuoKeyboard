@@ -1,7 +1,7 @@
 // SPEC.md 4.6절: the symbols that used to start the literal phase, run with the REAL detector and the
 // shipped model in the three profiles that decide them differently: Automatic (TextEdit), English
 // first (Orca, an xterm.js terminal that cannot replace committed text) and Korean first (KakaoTalk).
-// `⌘` in the keys taps the flip key.
+// `⌘` in the keys taps the flip key, `⌫` presses Backspace.
 
 import Foundation
 import Testing
@@ -129,6 +129,8 @@ struct EngineTriggerScenarioTests {
         all(.start, "~/Library ", "~/Library "),
         all(.korean, "cd ~/Projects/duo ", "cd ~/Projects/duo "),
         all(.start, "ls ~/.ssh ", "ls ~/.ssh "),
+        all(.korean, "~/⌫/qkxkd ", "~/qkxkd "),
+        all(.korean, "~/⌫dkssud ", "~안녕 "),
     ].flatMap { $0 }
 
     /// A word after the `.` of an English word composes without K (extensions, domains, initials).
@@ -178,10 +180,10 @@ struct EngineTriggerScenarioTests {
         let before = h.text
         var chunk = ""
         for ch in row.keys {
-            if ch == "⌘" {
+            if ch == "⌘" || ch == "⌫" {
                 h.type(chunk)
                 chunk = ""
-                h.flip()
+                if ch == "⌘" { h.flip() } else { h.press(.backspace) }
             } else {
                 chunk.append(ch)
             }

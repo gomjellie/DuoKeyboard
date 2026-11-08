@@ -54,6 +54,9 @@ public final class CompositionEngine {
     /// L began at the boundary that ended `lastCommit`'s word (a dotted word, op.gg/). While that
     /// boundary is all L has typed, the flip key and the chip may still change the word, which ends L.
     var literalAfterCommit = false
+    /// The context before the key that started L where no word was composing (`/`, `~/`, `https:/`).
+    /// Backspace over that key restores it, so the same key typed again starts L again.
+    var contextBeforeLiteral: ContextTracker?
     /// The key after a dead key passes raw (é, ü, ñ).
     var passNextRaw = false
     var capsLockOn = false
@@ -139,6 +142,7 @@ public final class CompositionEngine {
 
     private func dispatch(_ event: KeyEvent, client: any TextClient) -> Bool {
         let mods = event.modifiers
+        let contextBeforeKey = context
         // One-key look-behinds for the literal triggers (SPEC.md §4.6).
         let dotAfterEnglish = context.dotAfterEnglishToken
         let underscoreAfterEnglish = context.underscoreAfterEnglishToken
@@ -203,7 +207,8 @@ public final class CompositionEngine {
                                    client: client)
             }
             if literal { return passThrough(event, terminator: .punctuation, client: client) }
-            return handleCharacter(ch, event: event, slashStartsLiteral: slashStartsLiteral, client: client)
+            return handleCharacter(ch, event: event, slashStartsLiteral: slashStartsLiteral,
+                                   contextBeforeKey: contextBeforeKey, client: client)
 
         case .space:
             endLiteral()
@@ -232,7 +237,11 @@ public final class CompositionEngine {
             if literal, token == nil {
                 // Deleting the trigger itself (`@`, `/`) ends L: what follows is a new word.
                 literalLength -= 1
-                if literalLength <= 0 { endLiteral() }
+                if literalLength <= 0 {
+                    let before = contextBeforeLiteral
+                    endLiteral()
+                    if let before { context = before }
+                }
             }
             return handleBackspace(event, client: client)
 
@@ -253,16 +262,18 @@ public final class CompositionEngine {
     // MARK: - Literal phase bookkeeping (SPEC.md §4.6)
 
     /// Enter L; the trigger key (or the first raw letter after `.`) is the first unit typed.
-    func beginLiteral(afterCommit: Bool = false) {
+    func beginLiteral(afterCommit: Bool = false, contextBefore: ContextTracker? = nil) {
         literal = true
         literalLength = 1
         literalAfterCommit = afterCommit
+        contextBeforeLiteral = contextBefore
     }
 
     func endLiteral() {
         literal = false
         literalLength = 0
         literalAfterCommit = false
+        contextBeforeLiteral = nil
     }
 
     /// Whether the last word can still change in L (``literalAfterCommit``).

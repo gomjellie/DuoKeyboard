@@ -318,10 +318,12 @@ extension CompositionEngine {
 
     // MARK: Characters, literal triggers (§4.5, §4.6)
 
-    /// - Parameter slashStartsLiteral: the previous key was the `:` after an English word (`https:/`)
-    ///   or a `~` at a word start (`~/`).
+    /// - Parameters:
+    ///   - slashStartsLiteral: the previous key was the `:` after an English word (`https:/`) or a
+    ///     `~` at a word start (`~/`).
+    ///   - contextBeforeKey: the context before this key's look-behinds were cleared.
     func handleCharacter(_ ch: Character, event: KeyEvent, slashStartsLiteral: Bool,
-                         client: any TextClient) -> Bool {
+                         contextBeforeKey: ContextTracker, client: any TextClient) -> Bool {
         switch ch {
         case "'":
             return handleApostrophe(event, client: client)
@@ -348,7 +350,7 @@ extension CompositionEngine {
         case "/", "\\", ":":
             if token == nil,
                context.atWordStart || (ch == "/" && (slashStartsLiteral || context.dotRun > 0)) {
-                beginLiteral()
+                beginLiteral(contextBefore: contextBeforeKey)
                 return passThrough(event, terminator: .punctuation, client: client)
             }
         case ".":

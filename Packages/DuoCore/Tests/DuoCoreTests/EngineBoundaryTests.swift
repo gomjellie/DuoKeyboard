@@ -490,6 +490,22 @@ struct EngineBoundaryTests {
         #expect(h.text == "~안녕 ")
     }
 
+    @Test(arguments: ["~/", "/", "https:/", "./"])
+    func theTriggerTypedAgainAfterBackspaceStartsLiteralAgain(_ prefix: String) {
+        // `~/` ⌫ `/`: the text is back to what it was before the trigger, and so is the context.
+        let h = EngineHarness()
+        h.detector.english("https")
+        h.detector.fallback = { raw in [.korean: 0, .english: -9000 - raw.count] }   // would read Korean
+        h.type(prefix)
+        #expect(h.engine.literal)
+        h.press(.backspace)
+        #expect(!h.engine.literal)
+        h.type("/")
+        #expect(h.engine.literal)
+        h.type("qkxkd ")
+        #expect(h.text == prefix + "qkxkd ")
+    }
+
     @Test func backspaceInsideTheLiteralTextKeepsLiteral() {
         let h = EngineHarness()
         h.detector.fallback = { raw in [.korean: 0, .english: -9000 - raw.count] }   // would read Korean
