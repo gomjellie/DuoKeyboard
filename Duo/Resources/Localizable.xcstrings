@@ -421,6 +421,16 @@
         }
       }
     },
+    "Orca 같은 터미널은 입력기에 입력 위치를 틀리게 알려 줘요. 손쉬운 사용 권한을 주면 Duo가 입력 칸의 위치만 읽어서 막대를 단어 아래에 띄워요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminals such as Orca report the wrong input position to input methods. With the Accessibility permission, Duo reads only where the input field is and shows the bar under the word."
+          }
+        }
+      }
+    },
     "Shift + Space" : {
       "localizations" : {
         "en" : {
@@ -1623,6 +1633,16 @@
         }
       }
     },
+    "입력기 응답 없음" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input method not responding"
+          }
+        }
+      }
+    },
     "입력기를 Input Methods 폴더에 복사하지 못했어요. (%@)" : {
       "localizations" : {
         "en" : {
@@ -1873,6 +1893,16 @@
         }
       }
     },
+    "터미널에서 후보 막대 위치" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choice bar position in terminals"
+          }
+        }
+      }
+    },
     "학습" : {
       "localizations" : {
         "en" : {
@@ -2039,6 +2069,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Just type. No more switching."
+          }
+        }
+      }
+    },
+    "허용…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow…"
+          }
+        }
+      }
+    },
+    "허용됨" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allowed"
           }
         }
       }

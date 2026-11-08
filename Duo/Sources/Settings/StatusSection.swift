@@ -139,7 +139,7 @@ private struct SummaryContent {
 }
 
 /// A trailing status value with a small colored symbol.
-private struct StatusValue: View {
+struct StatusValue: View {
     let ok: Bool
     let text: LocalizedStringKey
 

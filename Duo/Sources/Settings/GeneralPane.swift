@@ -45,6 +45,7 @@ struct GeneralPane: View {
                     Text("애매하지 않은 단어도 쓰는 동안 모든 읽기를 보여 줘요. 꺼 두어도 바꾸기 키를 누르면 보여요.")
                 }
                 .disabled(!settings.value.showHints)
+                TerminalHUDAccessRow()
                 Toggle(isOn: settings.binding(\.offerUndoAfterCommit)) {
                     Text("확정 후 바꾸기 제안")
                     Text("Duo가 확신하지 못한 단어를 확정하면 잠깐 ‘↺ 바꾸기’를 띄워요.")
