@@ -24,7 +24,7 @@ struct AppsPane: View {
             } header: {
                 Text("앱마다 Duo가 먼저 생각할 언어를 정해요")
             } footer: {
-                Text("터미널과 코드 편집기는 처음부터 English 우선이에요.")
+                Text("코드 편집기는 처음부터 English 우선이에요.")
             }
 
             Section("Duo로 입력한 앱") {
@@ -68,7 +68,7 @@ extension AppProfile {
         switch self {
         case .automatic: String(localized: "단어마다 알아서 판단해요.")
         case .koreanFirst: String(localized: "애매하면 한국어로 써요. 메신저에 좋아요.")
-        case .englishFirst: String(localized: "애매하면 English로 써요. 터미널과 코드에 좋아요.")
+        case .englishFirst: String(localized: "애매하면 English로 써요. 코드 편집기에 좋아요.")
         case .direct: String(localized: "키를 그대로 보내요. 바꾸기 키를 누르면 그 줄에서만 한국어를 써요.")
         }
     }

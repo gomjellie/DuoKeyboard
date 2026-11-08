@@ -1253,12 +1253,12 @@
         }
       }
     },
-    "애매하면 English로 써요. 터미널과 코드에 좋아요." : {
+    "애매하면 English로 써요. 코드 편집기에 좋아요." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Leans to English when unsure. Good for terminals and code."
+            "value" : "Leans to English when unsure. Good for code editors."
           }
         }
       }
@@ -1833,6 +1833,16 @@
         }
       }
     },
+    "코드 편집기는 처음부터 English 우선이에요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code editors start as English first."
+          }
+        }
+      }
+    },
     "키를 그대로 보내요. 바꾸기 키를 누르면 그 줄에서만 한국어를 써요." : {
       "localizations" : {
         "en" : {
@@ -1889,16 +1899,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap window"
-          }
-        }
-      }
-    },
-    "터미널과 코드 편집기는 처음부터 English 우선이에요." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terminals and code editors start as English First."
           }
         }
       }
