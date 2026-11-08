@@ -205,29 +205,60 @@ struct DubeolsikMachine {
     /// Jamo chat repeats for laughter and feelings (DET `EMOTIVE_JAMO`).
     static let emotiveJamo: Set<Character> = ["ㅋ", "ㅎ", "ㅠ", "ㅜ", "ㅡ", "ㄷ", "ㅉ"]
 
-    /// ``orphanStats(_:)`` plus the orphans that stand in runs of two or more identical emotive jamo
-    /// (ㅋㅋㅋ, ㅠㅠ; DET `emotive_runs`), which the K reading is not charged for, and whether the
-    /// last block is in such a run.
-    static func orphanRunStats(_ keys: UnsafeBufferPointer<UInt8>) -> (orphans: Int, lone: Bool, runs: Int, runAtEnd: Bool) {
+    /// ``orphanStats(_:)`` plus the orphans the K reading is not charged for (DET `chat_runs`), and
+    /// whether the last block is one of them. Inside each maximal run of orphan blocks: stretches of two
+    /// or more identical emotive jamo (ㅋㅋㅋ, ㅠㅠ), and each other piece of two or more jamo for which
+    /// `isWord(start, end)` holds; `start..<end` are the piece's keys in `keys` (ㅈㄹ하고, 뭔ㅅㅂ, ㄹㅇㅋㅋ).
+    static func orphanRunStats(_ keys: UnsafeBufferPointer<UInt8>, isWord: (Int, Int) -> Bool)
+        -> (orphans: Int, lone: Bool, runs: Int, runAtEnd: Bool) {
         var machine = DubeolsikMachine()
-        var orphans = 0, runs = 0
-        var runBlock: Block?
-        var runLength = 0
+        var orphans = 0, exempt = 0, atEnd = false
+        // Keys accounted for by emitted blocks and literals: an emitted block's keys start here.
+        var offset = 0
+        // The stretch of one identical jamo being read, and the piece of other jamo before it.
+        var stretch: Block?
+        var stretchLength = 0, stretchStart = 0, stretchEnd = 0
+        var pieceLength = 0, pieceStart = 0, pieceEnd = 0
+        func free(_ count: Int, endingAt end: Int) {
+            exempt += count
+            if end == keys.count { atEnd = true }
+        }
+        func closePiece() {
+            if pieceLength >= 2, isWord(pieceStart, pieceEnd) { free(pieceLength, endingAt: pieceEnd) }
+            pieceLength = 0
+        }
+        func closeStretch() {
+            guard let block = stretch else { return }
+            if stretchLength >= 2, emotiveJamo.contains(block.character) {
+                closePiece()
+                free(stretchLength, endingAt: stretchEnd)
+            } else {
+                if pieceLength == 0 { pieceStart = stretchStart }
+                pieceLength += stretchLength
+                pieceEnd = stretchEnd
+            }
+            stretch = nil
+            stretchLength = 0
+        }
         func endRun() {
-            if let block = runBlock, runLength >= 2, emotiveJamo.contains(block.character) { runs += runLength }
-            runBlock = nil
-            runLength = 0
+            closeStretch()
+            closePiece()
         }
         func note(_ block: Block?) {
             guard let block else { return }
+            let start = offset
+            offset += block.keyCount
             guard block.isOrphan else { return endRun() }
             orphans += 1
-            if block == runBlock {
-                runLength += 1
+            if block == stretch {
+                stretchLength += 1
+                stretchEnd = offset
             } else {
-                endRun()
-                runBlock = block
-                runLength = 1
+                closeStretch()
+                stretch = block
+                stretchLength = 1
+                stretchStart = start
+                stretchEnd = offset
             }
         }
         DubeolsikTables.keyConsonant.withUnsafeBufferPointer { cons in
@@ -243,15 +274,15 @@ struct DubeolsikMachine {
                     } else {
                         note(machine.flush())
                         endRun()  // a literal character breaks a run
+                        offset += 1
                     }
                 }
             }
         }
         let lone = machine.pendingIsLoneConsonant
         note(machine.flush())
-        let runAtEnd = runBlock.map { runLength >= 2 && emotiveJamo.contains($0.character) } ?? false
         endRun()
-        return (orphans, lone, runs, runAtEnd)
+        return (orphans, lone, exempt, atEnd)
     }
 }
 

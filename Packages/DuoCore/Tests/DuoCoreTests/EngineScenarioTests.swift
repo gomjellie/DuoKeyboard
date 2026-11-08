@@ -214,6 +214,14 @@ struct EngineScenarioTests {
         Row(.korean, "Wha ", "쫌 "),
         Row(.english, "aka ", "aka "),
         Row(.english, "bn ", "bn "),
+        // A chat abbreviation inside a word is not charged as orphans (ㅈㄹ하고, 뭔ㅅㅂ)
+        Row(.korean, "wfgkrh ", "ㅈㄹ하고 "),
+        Row(.korean, "qtdlejfk ", "ㅂㅅ이더라 "),
+        Row(.korean, "anjstq ", "뭔ㅅㅂ "),
+        Row(.korean, "fddla ", "ㄹㅇ임 "),
+        Row(.korean, "tqzzz ", "ㅅㅂㅋㅋㅋ "),
+        Row(.english, "class ", "class "),
+        Row(.start, "try ", "try "),
         // AI is an everyday word in Korean chat (en_terms tier 0): ai + a Korean suffix
         Row(.korean, "airk ", "ai가 "),
         Row(.start, "aidp ", "ai에 "),

@@ -106,7 +106,9 @@ struct DetectionScorer: Sendable {
         let n = t.count
         let final = mode == .final
         let m = model
-        let (orphans, lone, runs, runAtEnd) = DubeolsikMachine.orphanRunStats(UnsafeBufferPointer(start: t.kno, count: n))
+        let (orphans, lone, runs, runAtEnd) = DubeolsikMachine.orphanRunStats(UnsafeBufferPointer(start: t.kno, count: n)) {
+            m.koreanLexicon.value(hash: FNV1a64.hash(t.kno + $0, $1 - $0)) != nil
+        }
         let (rollover, stray) = Self.shiftCounts(t.raw, 0, n)
         let koLex = final ? m.koreanLexicon.value(hash: FNV1a64.hash(t.kno, n)) : nil
         let lowHash = FNV1a64.hash(t.low, n)
