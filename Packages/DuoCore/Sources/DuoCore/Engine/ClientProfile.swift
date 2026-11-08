@@ -22,25 +22,32 @@ public struct ClientProfile: Sendable, Hashable {
     /// `setMarkedText` and `insertText`, so such an edit would add the new reading next to the old
     /// one; eager English still runs there (IntelliSense needs real text), which `.none` would stop.
     public var canReplaceCommittedText: Bool
+    /// The client is an xterm.js terminal: its focused accessibility element is the hidden text
+    /// field xterm.js keeps at the composition, so that element's frame places the HUD. The rects
+    /// IMK gets from it come from that field's own text layout and land up to 100 pt off
+    /// (Orca, 2026-11-08).
+    public var compositionAtFocusedElement: Bool
 
     /// A profile with explicit values; ``forBundleIdentifier(_:)`` knows the built-in table.
     public init(bundleIdentifier: String, defaultAppProfile: AppProfile = .automatic,
                 replacement: ReplacementSupport = .full, isTerminal: Bool = false, needsMarkBeforeInsert: Bool = false,
-                canReplaceCommittedText: Bool = true) {
+                canReplaceCommittedText: Bool = true, compositionAtFocusedElement: Bool = false) {
         self.bundleIdentifier = bundleIdentifier
         self.defaultAppProfile = defaultAppProfile
         self.replacement = replacement
         self.isTerminal = isTerminal
         self.needsMarkBeforeInsert = needsMarkBeforeInsert
         self.canReplaceCommittedText = canReplaceCommittedText && replacement != .none
+        self.compositionAtFocusedElement = compositionAtFocusedElement
     }
 
     /// The built-in profile for a client (SPEC.md §4.10); unknown apps are `.automatic` with
     /// full replacement support (every replacement is verified before it is used anyway).
     public static func forBundleIdentifier(_ id: String) -> ClientProfile {
         if let terminal = terminals[id] {
+            let xterm = xtermTerminals.contains(id)
             return ClientProfile(bundleIdentifier: id, defaultAppProfile: .englishFirst, replacement: terminal,
-                                 isTerminal: true, canReplaceCommittedText: !xtermTerminals.contains(id))
+                                 isTerminal: true, canReplaceCommittedText: !xterm, compositionAtFocusedElement: xterm)
         }
         if isJava(id) {
             return ClientProfile(bundleIdentifier: id, defaultAppProfile: .englishFirst, replacement: .none,

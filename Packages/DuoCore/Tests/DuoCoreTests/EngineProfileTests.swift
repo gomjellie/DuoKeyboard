@@ -65,6 +65,14 @@ struct EngineProfileTests {
         #expect(h.hud?.content == .cannotChange)
     }
 
+    @Test func onlyXtermTerminalsPlaceTheHUDAtTheFocusedElement() {
+        #expect(ClientProfile.forBundleIdentifier("com.stablyai.orca").compositionAtFocusedElement)
+        for id in ["com.apple.Terminal", "com.googlecode.iterm2", "com.apple.TextEdit", "com.microsoft.VSCode",
+                   "com.google.Chrome"] {
+            #expect(!ClientProfile.forBundleIdentifier(id).compositionAtFocusedElement, "\(id)")
+        }
+    }
+
     @Test func directIsNeverADefault() {
         let ids = Array(ClientProfile.terminals.keys) + Array(ClientProfile.codeEditors) + Array(ClientProfile.koreanFirst)
         #expect(ids.allSatisfy { ClientProfile.forBundleIdentifier($0).defaultAppProfile != .direct })
