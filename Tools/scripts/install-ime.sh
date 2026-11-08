@@ -13,6 +13,9 @@
 # ⌃Space twice) or until focus moves to another app and back. The host app's installer does that
 # re-selection itself (InputSourceManager.reselect); this script has no binary that can, so it only
 # prints the reminder.
+#
+# When Tools/scripts/dev-signing.sh has set up its identity, the copy is re-signed with it, so the
+# Accessibility and Input Monitoring grants survive reinstalls (see that script).
 set -euo pipefail
 SRC="${1:-build/dd/Build/Products/Debug/DuoInputMethod.app}"
 DEST="$HOME/Library/Input Methods/DuoInputMethod.app"
@@ -23,6 +26,10 @@ STAGING="$DEST.installing"
 OLD="$DEST.old"
 rm -rf "$STAGING" "$OLD"
 ditto "$SRC" "$STAGING"
+DEV_SIGNING="${0:A:h}/dev-signing.sh"
+if "$DEV_SIGNING" status >/dev/null 2>&1; then
+  "$DEV_SIGNING" sign "$STAGING" || { rm -rf "$STAGING"; echo "could not sign $STAGING" >&2; exit 1; }
+fi
 if [[ -e "$DEST" ]]; then
   mv "$DEST" "$OLD"
   mv "$STAGING" "$DEST" || { mv "$OLD" "$DEST"; echo "could not swap in $STAGING" >&2; exit 1; }
