@@ -301,10 +301,10 @@ extension CompositionEngine {
             commitToken(terminator: .punctuation, boundaryLength: 1, trailing: "₩", client: client)
             context.notePassed(event.key)
             return true
-        case "@", "_":
+        case "@":
             if let t = token {
                 // A reading chosen with the flip key (or a one-shot) wins over the literal rule:
-                // ㅠ_ㅠ needs `b`, flip, `_`. The generic commit below keeps it.
+                // ㅠ@ㅠ needs `b`, flip, `@`. The generic commit below keeps it.
                 if !t.koreanChosen {
                     commitLiteral(client: client)
                     context.notePassed(event.key)
@@ -346,7 +346,7 @@ extension CompositionEngine {
         return false
     }
 
-    /// `@`, `_` and `www.` turn the token into literal Latin (§4.6): commit the E render whatever
+    /// `@` and `www.` turn the token into literal Latin (§4.6): commit the E render whatever
     /// the detector showed, never learn, never offer a flip. A Korean reading the user chose
     /// explicitly (`Token.koreanChosen`) is not overruled.
     func commitLiteral(client: any TextClient) {

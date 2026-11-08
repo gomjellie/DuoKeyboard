@@ -163,19 +163,62 @@ struct EngineBoundaryTests {
         #expect(h.text == "user@example.com ")
     }
 
-    @Test func underscoreInsideATokenStartsLiteral() {
+    @Test func underscoreInsideATokenIsPunctuation() {
+        // 보고서_최종.hwp: `_` ends the word like any other punctuation, and the piece after it is
+        // a word of its own.
         let h = EngineHarness()
-        h.detector.scores["u"] = [.korean: -3000, .english: -3500]
-        h.detector.scores["us"] = [.korean: -6000, .english: -5000]
-        h.detector.scores["use"] = [.korean: -9000, .english: -6000]
-        h.detector.scores["user"] = [.korean: -12000, .english: -8000]
-        h.type("user")
-        #expect(h.marked == "user")
+        h.detector.korean("qhrhtj")
+        h.detector.korean("chlwhd")
+        h.detector.english("hwp")
+        h.type("qhrhtj")
+        #expect(h.marked == "보고서")
         let underscore = h.press(.character("_"), .shift)
-        #expect(underscore.calls == [.insert("user", nil)])
-        h.type("name")
-        #expect(h.text == "user_name")
-        #expect(h.engine.literal)
+        #expect(!underscore.consumed)
+        #expect(underscore.mutations == [.insert("보고서", nil)])
+        #expect(h.detector.finalCalls.map(\.terminator) == [.punctuation])
+        #expect(!h.engine.literal)
+        h.type("chlwhd")
+        #expect(h.marked == "최종")
+        #expect(h.detector.prefixContexts.last == .korean, "the piece after `_` follows the piece before it")
+        h.type(".hwp ")
+        #expect(h.text == "보고서_최종.hwp ")
+    }
+
+    @Test func englishPiecesOfASnakeCaseNameStayEnglish() {
+        let h = EngineHarness()
+        h.detector.english("user")
+        h.detector.english("name")
+        h.type("user_name ")
+        #expect(h.text == "user_name ")
+        #expect(h.detector.prefixContexts.last == .english)
+    }
+
+    @Test func theWordBeforeAnUnderscoreCanBeFlipped() {
+        // Flip case (b) right after `_`: the word and its `_` are replaced, the caret stays after `_`.
+        let h = EngineHarness()
+        h.detector.scores["g"] = [.korean: -3500, .english: -3000]
+        h.detector.scores["go"] = [.korean: -6000, .english: -3000]
+        h.type("go_")
+        #expect(h.text == "go_")
+        let calls = h.flip()
+        #expect(calls == [.selectedRange, .string(NSRange(location: 0, length: 3)),
+                          .insert("해_", NSRange(location: 0, length: 3))])
+        #expect(h.text == "해_")
+        #expect(h.buffer.selection == NSRange(location: 2, length: 0))
+        #expect(h.learned("go", .start) == [.korean: 3])
+    }
+
+    @Test func anUncertainWordBeforeAnUnderscoreGetsTheChip() {
+        let h = EngineHarness()
+        h.detector.scores["d"] = [.korean: -3000, .english: -3200]
+        h.detector.scores["do"] = [.korean: -5000, .english: -5300]
+        h.type("do_")
+        #expect(h.text == "애_")
+        guard case .flipLastWord(let choice)? = h.hud?.content else {
+            Issue.record("the last word's choice bar is up")
+            return
+        }
+        #expect(choice.other.text == "do")
     }
 
     @Test func colonAfterEnglishThenSlashIsLiteral() {
@@ -380,10 +423,21 @@ struct EngineBoundaryTests {
         h.type("dkssud")
         h.flip()
         #expect(h.marked == "dkssud")
-        h.press(.character("_"))
+        h.press(.character("@"), .shift)
         #expect(h.engine.literal)
         h.type("x")
-        #expect(h.text == "dkssud_x")
+        #expect(h.text == "dkssud@x")
+    }
+
+    @Test func aFlipToEnglishIsKeptAtUnderscore() {
+        let h = EngineHarness()
+        h.detector.korean("dkssud")
+        h.type("dkssud")
+        h.flip()
+        h.press(.character("_"), .shift)
+        #expect(!h.engine.literal)
+        #expect(h.text == "dkssud_")
+        #expect(h.engine.lastCommit?.alternativeText == "안녕", "the flip right after `_` turns it back")
     }
 
     @Test func wwwFlippedToKoreanIsNotLiteral() {
