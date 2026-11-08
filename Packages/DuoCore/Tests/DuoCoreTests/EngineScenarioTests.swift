@@ -214,6 +214,10 @@ struct EngineScenarioTests {
         Row(.korean, "Wha ", "쫌 "),
         Row(.english, "aka ", "aka "),
         Row(.english, "bn ", "bn "),
+        // AI is an everyday word in Korean chat (en_terms tier 0): ai + a Korean suffix
+        Row(.korean, "airk ", "ai가 "),
+        Row(.start, "aidp ", "ai에 "),
+        Row(.korean, "AIfh ", "AI로 "),
         Row(.english, "see ", "see "),
         // Literal phase and dotted words (#36–48, #52)
         Row(.korean, "github.com/foo ", "github.com/foo "),
