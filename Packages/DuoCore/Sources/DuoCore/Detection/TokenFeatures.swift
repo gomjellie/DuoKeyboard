@@ -37,6 +37,8 @@ struct TokenFeatures: Sendable, Hashable {
     var enCase: CasePattern
     var enNumUnit: Bool
     var mix: [Mix]
+    /// Final mode: the K reading as chat words typed without a space (`split_reading`), if it applies.
+    var koSplit: Int?
 }
 
 /// Byte views of one raw token, one byte per Unicode scalar: `raw` (non-ASCII scalars replaced by
@@ -118,12 +120,12 @@ struct DetectionScorer: Sendable {
         let koOrphans = final ? orphans - runs : orphans - runs - (lone && !runAtEnd ? 1 : 0)
         let koSymbols = UnsafeBufferPointer(start: t.koSymbols, count: n)
 
-        guard n >= 2, !t.hasNonLetter else {  // no M(b): one K pass and one E pass
+        guard n >= 2, !t.hasNonLetter else {  // no M(b) and no split reading: one K pass and one E pass
             return TokenFeatures(
                 koLM: m.korean.score(koSymbols, eos: final), koLex: koLex, koOrphans: koOrphans,
                 koRollover: rollover, koStray: stray,
                 enLM: m.english.score(UnsafeBufferPointer(start: t.enSymbols, count: n), eos: final), enLex: enLex,
-                enCase: enCase, enNumUnit: enNumUnit, mix: [])
+                enCase: enCase, enNumUnit: enNumUnit, mix: [], koSplit: nil)
         }
 
         return CondCache.with(tokenLength: n) { cache in
@@ -183,11 +185,52 @@ struct DetectionScorer: Sendable {
                             enLex: lex, enCase: casePattern(t.raw, b), suffix: suffix, generic: generic,
                             rollover: r2, stray: s2, shortOK: b >= params.mixMinLatin || latinAllUpper))
                     }
+                    let koSplit = final ? splitReading(t, cache: &cache) : nil
                     return TokenFeatures(koLM: koLM, koLex: koLex, koOrphans: koOrphans, koRollover: rollover,
                                          koStray: stray, enLM: enLM, enLex: enLex, enCase: enCase,
-                                         enNumUnit: enNumUnit, mix: mix)
+                                         enNumUnit: enNumUnit, mix: mix, koSplit: koSplit)
                 }
             }
+        }
+    }
+
+    /// `split_reading` (final mode): the K reading as chat words typed without a space. Each syllable
+    /// run and each jamo piece of ``DubeolsikMachine/chatSegments(_:_:)`` scores as a word, plus `SPLIT`
+    /// per extra word. `nil` for one word, when a jamo piece is neither free nor a lexicon word of two or
+    /// more jamo, or when jamo come before a syllable. `t` has no character outside the letters.
+    func splitReading(_ t: TokenBytes, cache: inout CondCache) -> Int? {
+        let m = model
+        return withUnsafeTemporaryAllocation(of: (start: Int, end: Int).self, capacity: t.count) { words in
+            var count = 0
+            var valid = true, jamoFirst = false, syllables = false
+            _ = DubeolsikMachine.chatSegments(UnsafeBufferPointer(start: t.kno, count: t.count)) { segment, start, end in
+                guard valid else { return }
+                switch segment {
+                case .syllables:
+                    syllables = true
+                case .jamo(let jamo, let free):
+                    if count == 0 { jamoFirst = true }
+                    if !free, jamo < 2 || m.koreanLexicon.value(hash: FNV1a64.hash(t.kno + start, end - start)) == nil {
+                        valid = false
+                        return
+                    }
+                case .literal:
+                    valid = false
+                    return
+                }
+                words[count] = (start, end)
+                count += 1
+            }
+            guard valid, count >= 2, !(jamoFirst && syllables) else { return nil }
+            var total = params.split * (count - 1)
+            for i in 0..<count {
+                let (start, end) = words[i]
+                let lm = m.korean.score(UnsafeBufferPointer(start: t.koSymbols + start, count: end - start), eos: true,
+                                        cache: &cache)
+                total += Self.word(lm, m.koreanLexicon.value(hash: FNV1a64.hash(t.kno + start, end - start)),
+                                   params.ngKO, params.lexKO)
+            }
+            return total
         }
     }
 
@@ -245,6 +288,7 @@ struct DetectionScorer: Sendable {
         switch mode {
         case .final:
             ko = Self.word(f.koLM + p.orphan * f.koOrphans, f.koLex, p.ngKO, p.lexKO)
+            if let split = f.koSplit, split > ko { ko = split }
             en = Self.word(f.enLM, f.enLex, p.ngEN, p.lexEN)
             switch terminator {
             case .digit: en += p.termDigitEN

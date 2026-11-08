@@ -202,86 +202,137 @@ struct DubeolsikMachine {
         return (orphans, machine.pendingIsLoneConsonant)
     }
 
-    /// Jamo chat repeats for laughter and feelings (DET `EMOTIVE_JAMO`).
-    static let emotiveJamo: Set<Character> = ["ㅋ", "ㅎ", "ㅠ", "ㅜ", "ㅡ", "ㄷ", "ㅉ"]
+    /// A stretch of the K reading the chat rules see (DET `jamo_pieces`): a run of syllables, one
+    /// piece of a run of orphan jamo, or a literal.
+    enum ChatSegment: Equatable {
+        case syllables
+        /// `count` orphan jamo. `free`: never charged as orphans (mash laughter, one ㅋ/ㅎ after a
+        /// syllable, a run of one emotive or repeated jamo); the other jamo between such runs form one piece.
+        case jamo(count: Int, free: Bool)
+        case literal
+    }
 
-    /// ``orphanStats(_:)`` plus the orphans the K reading is not charged for (DET `chat_runs`), and
-    /// whether the last block is one of them. Inside each maximal run of orphan blocks: stretches of two
-    /// or more identical emotive jamo (ㅋㅋㅋ, ㅠㅠ), and each other piece of two or more jamo for which
-    /// `isWord(start, end)` holds; `start..<end` are the piece's keys in `keys` (ㅈㄹ하고, 뭔ㅅㅂ, ㄹㅇㅋㅋ).
-    static func orphanRunStats(_ keys: UnsafeBufferPointer<UInt8>, isWord: (Int, Int) -> Bool)
-        -> (orphans: Int, lone: Bool, runs: Int, runAtEnd: Bool) {
-        var machine = DubeolsikMachine()
-        var orphans = 0, exempt = 0, atEnd = false
-        // Keys accounted for by emitted blocks and literals: an emitted block's keys start here.
-        var offset = 0
-        // The stretch of one identical jamo being read, and the piece of other jamo before it.
-        var stretch: Block?
-        var stretchLength = 0, stretchStart = 0, stretchEnd = 0
-        var pieceLength = 0, pieceStart = 0, pieceEnd = 0
-        func free(_ count: Int, endingAt end: Int) {
-            exempt += count
-            if end == keys.count { atEnd = true }
-        }
-        func closePiece() {
-            if pieceLength >= 2, isWord(pieceStart, pieceEnd) { free(pieceLength, endingAt: pieceEnd) }
-            pieceLength = 0
-        }
-        func closeStretch() {
-            guard let block = stretch else { return }
-            if stretchLength >= 2, emotiveJamo.contains(block.character) {
-                closePiece()
-                free(stretchLength, endingAt: stretchEnd)
-            } else {
-                if pieceLength == 0 { pieceStart = stretchStart }
-                pieceLength += stretchLength
-                pieceEnd = stretchEnd
+    /// Chat code of an orphan block: its choseong index, or 19 + its jungseong index.
+    private static func chatCode(_ block: Block) -> Int { block.cho >= 0 ? Int(block.cho) : 19 + Int(block.jung) }
+
+    private static func chatCodes(_ jamo: String) -> [Bool] {
+        var table = [Bool](repeating: false, count: 40)
+        for c in jamo { table[Jamo.choIndex[c] ?? (19 + Jamo.jungIndex[c]!)] = true }
+        return table
+    }
+
+    /// Jamo chat repeats for laughter and feelings (DET `EMOTIVE_JAMO`): a run of two or more of one is free.
+    private static let emotiveCodes = chatCodes("ㅋㅎㅠㅜㅡㄷㅉ")
+    /// Jamo chat repeats for emphasis (DET `REPEAT_JAMO`): a run of three or more of one is free.
+    private static let repeatCodes = chatCodes("ㅇㄱㄴㅊㅅㅍ")
+    /// Mash laughter (DET `MASH_JAMO`): a whole run of these with at least two ㅋ is free.
+    private static let mashCodes = chatCodes("ㅋㄱㄲㄷㅅㅎ")
+    /// One of these alone right after a syllable is free (DET `TRAIL_JAMO`).
+    private static let trailCodes = chatCodes("ㅋㅎ")
+    private static let codeK = Jamo.choIndex["ㅋ"]!
+    private static let codeYu = 19 + Jamo.jungIndex["ㅠ"]!
+    private static let codeU = 19 + Jamo.jungIndex["ㅜ"]!
+
+    /// The K reading of `keys` in order as ``ChatSegment``s, each with its keys `start..<end`
+    /// (DET `jamo_pieces`), plus the `orphans` and `trailingLoneConsonant` outputs of DET §3.
+    static func chatSegments(_ keys: UnsafeBufferPointer<UInt8>,
+                             _ visit: (_ segment: ChatSegment, _ start: Int, _ end: Int) -> Void)
+        -> (orphans: Int, lone: Bool) {
+        // One unit per emitted block or literal: code = chat code, -1 syllable, -2 literal.
+        withUnsafeTemporaryAllocation(of: (code: Int, start: Int, end: Int).self, capacity: keys.count + 1) { units in
+            var count = 0, offset = 0, orphans = 0
+            var machine = DubeolsikMachine()
+            func note(_ block: Block?) {
+                guard let block else { return }
+                let start = offset
+                offset += block.keyCount
+                if block.isOrphan { orphans += 1 }
+                units[count] = (block.isOrphan ? chatCode(block) : -1, start, offset)
+                count += 1
             }
-            stretch = nil
-            stretchLength = 0
-        }
-        func endRun() {
-            closeStretch()
-            closePiece()
-        }
-        func note(_ block: Block?) {
-            guard let block else { return }
-            let start = offset
-            offset += block.keyCount
-            guard block.isOrphan else { return endRun() }
-            orphans += 1
-            if block == stretch {
-                stretchLength += 1
-                stretchEnd = offset
-            } else {
-                closeStretch()
-                stretch = block
-                stretchLength = 1
-                stretchStart = start
-                stretchEnd = offset
-            }
-        }
-        DubeolsikTables.keyConsonant.withUnsafeBufferPointer { cons in
-            DubeolsikTables.keyVowel.withUnsafeBufferPointer { vows in
-                var i = 0
-                while i < keys.count {
-                    let byte = keys[i]
-                    i &+= 1
-                    if byte < 0x80, cons[Int(byte)] >= 0 {
-                        note(machine.consonant(cons[Int(byte)]))
-                    } else if byte < 0x80, vows[Int(byte)] >= 0 {
-                        note(machine.vowel(vows[Int(byte)]))
-                    } else {
-                        note(machine.flush())
-                        endRun()  // a literal character breaks a run
-                        offset += 1
+            DubeolsikTables.keyConsonant.withUnsafeBufferPointer { cons in
+                DubeolsikTables.keyVowel.withUnsafeBufferPointer { vows in
+                    var i = 0
+                    while i < keys.count {
+                        let byte = keys[i]
+                        i &+= 1
+                        if byte < 0x80, cons[Int(byte)] >= 0 {
+                            note(machine.consonant(cons[Int(byte)]))
+                        } else if byte < 0x80, vows[Int(byte)] >= 0 {
+                            note(machine.vowel(vows[Int(byte)]))
+                        } else {
+                            note(machine.flush())
+                            units[count] = (-2, offset, offset + 1)
+                            count += 1
+                            offset += 1
+                        }
                     }
                 }
             }
+            let lone = machine.pendingIsLoneConsonant
+            note(machine.flush())
+
+            var i = 0
+            while i < count {
+                let code = units[i].code
+                if code == -2 {
+                    visit(.literal, units[i].start, units[i].end)
+                    i += 1
+                    continue
+                }
+                var j = i + 1
+                if code == -1 {
+                    while j < count, units[j].code == -1 { j += 1 }
+                    visit(.syllables, units[i].start, units[j - 1].end)
+                    i = j
+                    continue
+                }
+                while j < count, units[j].code >= 0 { j += 1 }
+                var ks = 0, mash = true
+                for u in i..<j {
+                    if units[u].code == codeK { ks += 1 }
+                    if !mashCodes[units[u].code] { mash = false }
+                }
+                if ks >= 2, mash {
+                    visit(.jamo(count: j - i, free: true), units[i].start, units[j - 1].end)
+                } else if j - i == 1, trailCodes[code], i > 0, units[i - 1].code == -1 {
+                    visit(.jamo(count: 1, free: true), units[i].start, units[i].end)
+                } else {
+                    // Stretches of one jamo (ㅠ = ㅜ); emotive ones of two or more and repeated ones of
+                    // three or more are free pieces.
+                    func cls(_ c: Int) -> Int { c == codeU ? codeYu : c }
+                    var piece = i, k = i
+                    while k < j {
+                        var e = k + 1
+                        while e < j, cls(units[e].code) == cls(units[k].code) { e += 1 }
+                        let c = units[k].code
+                        if (e - k >= 2 && emotiveCodes[c]) || (e - k >= 3 && repeatCodes[c]) {
+                            if piece < k { visit(.jamo(count: k - piece, free: false), units[piece].start, units[k - 1].end) }
+                            visit(.jamo(count: e - k, free: true), units[k].start, units[e - 1].end)
+                            piece = e
+                        }
+                        k = e
+                    }
+                    if piece < j { visit(.jamo(count: j - piece, free: false), units[piece].start, units[j - 1].end) }
+                }
+                i = j
+            }
+            return (orphans, lone)
         }
-        let lone = machine.pendingIsLoneConsonant
-        note(machine.flush())
-        endRun()
+    }
+
+    /// ``orphanStats(_:)`` plus the orphans the K reading is not charged for (DET `chat_runs`), and
+    /// whether the last block is one of them: the free pieces of ``chatSegments(_:_:)``, and each other
+    /// piece of two or more jamo for which `isWord(start, end)` holds; `start..<end` are the piece's keys
+    /// in `keys` (ㅈㄹ하고, 뭔ㅅㅂ, ㄹㅇㅋㅋ).
+    static func orphanRunStats(_ keys: UnsafeBufferPointer<UInt8>, isWord: (Int, Int) -> Bool)
+        -> (orphans: Int, lone: Bool, runs: Int, runAtEnd: Bool) {
+        var exempt = 0, atEnd = false
+        let (orphans, lone) = chatSegments(keys) { segment, start, end in
+            guard case .jamo(let count, let free) = segment, free || (count >= 2 && isWord(start, end)) else { return }
+            exempt += count
+            if end == keys.count { atEnd = true }
+        }
         return (orphans, lone, exempt, atEnd)
     }
 }

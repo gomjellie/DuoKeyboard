@@ -224,6 +224,48 @@ struct EngineScenarioTests {
         Row(.korean, "tqzzz ", "ㅅㅂㅋㅋㅋ "),
         Row(.english, "class ", "class "),
         Row(.start, "try ", "try "),
+        // Mash laughter, ㅠ and ㅜ in one run, one ㅋ after a syllable are not charged as orphans either
+        Row(.start, "dhfz ", "올ㅋ "),
+        Row(.korean, "rntzrnt ", "굿ㅋ굿 "),
+        Row(.korean, "bnnn ", "ㅠㅜㅜㅜ "),
+        Row(.korean, "zRzRzRz ", "ㅋㄲㅋㄲㅋㄲㅋ "),
+        Row(.korean, "zzzrdd ", "ㅋㅋㅋㄱㅇㅇ "),
+        Row(.korean, "fizz ", "fizz "),
+        Row(.korean, "css ", "css "),
+        Row(.korean, "www ", "www "),
+        // Chat words typed without a space read as one Korean word (split reading)
+        Row(.start, "zzzztq ", "ㅋㅋㅋㅋㅅㅂ "),
+        Row(.start, "zzzfd ", "ㅋㅋㅋㄹㅇ "),
+        Row(.start, "aczzzz ", "ㅁㅊㅋㅋㅋㅋ "),
+        Row(.korean, "eoqkrzz ", "대박ㅋㅋ "),
+        Row(.korean, "mmfmf ", "mm를 "),
+        // A single jamo that is not free is no word of the split reading (이ㅣ, 더ㅠ)
+        Row(.korean, "dll ", "dll "),
+        Row(.korean, "ejb ", "ejb "),
+        // Chat abbreviations, repeated jamo, mash laughter and short replies (ko_chat.txt 2026-11-09)
+        Row(.start, "fwe ", "ㄹㅈㄷ "),
+        Row(.start, "dddd ", "ㅇㅇㅇㅇ "),
+        Row(.start, "dzdz ", "ㅇㅋㅇㅋ "),
+        Row(.start, "zrzrzrrzz ", "ㅋㄱㅋㄱㅋㄱㄱㅋㅋ "),
+        Row(.start, "zrzrzrzrzrz ", "ㅋㄱㅋㄱㅋㄱㅋㄱㅋㄱㅋ "),
+        Row(.start, "bnn ", "ㅠㅜㅜ "),
+        Row(.start, "dhd ", "옹 "),
+        Row(.start, "spd ", "넹 "),
+        Row(.korean, "d ", "ㅇ "),
+        Row(.start, "d ", "d "),
+        Row(.english, "spa ", "spa "),
+        Row(.english, "rs ", "rs "),
+        Row(.english, "tt ", "tt "),
+        Row(.korean, "500rs ", "500rs "),
+        // English and code tokens that a chat word reads the same (build_model.py EN_GUARD)
+        Row(.start, "spa ", "spa "),
+        Row(.english, "ccc ", "ccc "),
+        Row(.english, "vv ", "vv "),
+        Row(.english, "ww ", "ww "),
+        Row(.english, "dpr ", "dpr "),
+        Row(.korean, "d2 ", "d2 "),
+        Row(.korean, "r6 ", "r6 "),
+        Row(.korean, "ww2 ", "ww2 "),
         // Lone jamo that chat uses far more than the Latin letter, at a low rate: Korean only after Korean
         Row(.korean, "m ", "ㅡ "),
         Row(.korean, "r ", "ㄱ "),
@@ -278,6 +320,45 @@ struct EngineScenarioTests {
         } else {
             #expect(produced == row.expected)
         }
+        #expect(h.markedRange == nil, "every row ends at a boundary")
+    }
+
+    /// A row typed in an app with the given profile (the app's built-in default does not matter).
+    struct ProfileRow: Sendable, CustomTestStringConvertible {
+        var profile: AppProfile
+        var row: Row
+
+        init(_ profile: AppProfile, _ prime: Prime, _ keys: String, _ expected: String) {
+            self.profile = profile
+            row = Row(prime, keys, expected)
+        }
+
+        var testDescription: String { "\(profile) \(row.testDescription)" }
+    }
+
+    /// Chat words whose keys are also English or code tokens: Korean at a message start in a Korean-first
+    /// app, English where the token is typed (build_model.py EN_GUARD).
+    nonisolated static let profileRows: [ProfileRow] = [
+        ProfileRow(.koreanFirst, .start, "spa ", "넴 "),
+        ProfileRow(.koreanFirst, .start, "dddd ", "ㅇㅇㅇㅇ "),
+        ProfileRow(.koreanFirst, .start, "fwe ", "ㄹㅈㄷ "),
+        ProfileRow(.koreanFirst, .korean, "d2 ", "d2 "),
+        ProfileRow(.koreanFirst, .korean, "ww2 ", "ww2 "),
+        ProfileRow(.englishFirst, .start, "ssh -vv host ", "ssh -vv host "),
+        ProfileRow(.englishFirst, .start, "format dddd ", "format dddd "),
+        ProfileRow(.englishFirst, .start, "color #ccc ", "color #ccc "),
+        ProfileRow(.englishFirst, .start, "tt ", "tt "),
+        ProfileRow(.englishFirst, .korean, "qkswlfma r rPtks ", "반지름 r 계산 "),
+        ProfileRow(.englishFirst, .korean, "wakdgoTek ", "ㅈ망했다 "),
+        ProfileRow(.automatic, .start, "color #ccc ", "color #ccc "),
+    ]
+
+    @Test(arguments: profileRows)
+    func chatWordsAndEnglishTokensByProfile(_ row: ProfileRow) {
+        var settings = DuoSettings.default
+        settings.appProfiles["com.apple.TextEdit"] = row.profile
+        let h = EngineHarness(settings: settings, scorer: RealModel.detector)
+        #expect(Self.run(h, row.row) == row.row.expected)
         #expect(h.markedRange == nil, "every row ends at a boundary")
     }
 

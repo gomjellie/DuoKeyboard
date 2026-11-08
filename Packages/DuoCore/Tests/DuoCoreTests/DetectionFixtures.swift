@@ -58,6 +58,7 @@ struct DetectionVectors: Decodable, Sendable {
         var enCase: String
         var enNumUnit: Bool
         var mix: [Mix]
+        var koSplit: Int?
     }
 
     struct Final: Decodable, Sendable, CustomTestStringConvertible {

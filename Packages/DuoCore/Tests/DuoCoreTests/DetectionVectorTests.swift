@@ -14,8 +14,8 @@ struct DetectionVectorTests {
         #expect(v.fnv1a64.count == 8)
         #expect(v.lexicon.count == 28)
         #expect(v.lm.count == 44)
-        #expect(v.final.count == 1117)
-        #expect(v.incremental.count == 672)
+        #expect(v.final.count == 1172)
+        #expect(v.incremental.count == 705)
         #expect(v.apostrophe.count == 63)
         #expect(v.user.count == 7)
         #expect(v.userBonus.count == 20)
@@ -23,10 +23,10 @@ struct DetectionVectorTests {
 
     @Test func modelContentHash() throws {
         let d = try detector
-        #expect(d.contentHash == "ff05a9602f67b6f7")
+        #expect(d.contentHash == "ce5bb10c9a6c025b")
         #expect(d.contentHash == DetectionFixtures.vectors.modelContentHash)
         // The header is truthful: FNV-1a-64 over every byte after the directory.
-        #expect(DuoDetector.hex(d.model.computeContentHash()) == "ff05a9602f67b6f7")
+        #expect(DuoDetector.hex(d.model.computeContentHash()) == "ce5bb10c9a6c025b")
     }
 
     @Test func parametersMatchVectors() throws {
@@ -107,6 +107,7 @@ struct DetectionVectorTests {
         #expect(f.koOrphans == e.koOrphans)
         #expect(f.koRollover == e.koRollover)
         #expect(f.koStray == e.koStray)
+        #expect(f.koSplit == e.koSplit)
         #expect(f.enLM == e.enLm)
         #expect(f.enLex == e.enLex)
         #expect(f.enCase.rawValue == e.enCase)
