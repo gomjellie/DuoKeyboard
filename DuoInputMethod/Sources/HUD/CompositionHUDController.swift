@@ -70,6 +70,13 @@ final class CompositionHUDController {
         rescheduleTimer()
     }
 
+    /// The provider's caret changed without a new request (an anchor read in the background
+    /// arrived): move the panel on screen, if it shows this provider's request.
+    func refreshPlacement(from provider: any HUDAnchorProvider) {
+        guard self.provider === provider, isOrderedIn, let request = timeline.visibleRequest else { return }
+        reposition(for: request, stabilize: true)
+    }
+
     /// Drops the HUD at once, without a fade (deactivate, secure input, screen sleep, source change).
     func forceHide() {
         timeline.reset()

@@ -12,9 +12,14 @@ import ApplicationServices
 @MainActor
 enum FocusedElementLocator {
     /// DOM class of xterm.js's hidden input field (Chromium reports it as `AXDOMClassList`).
-    static let xtermFieldClass = "xterm-helper-textarea"
-    /// Seconds a client may take to answer one attribute before the HUD falls back to IMK.
-    static let messagingTimeout: Float = 0.05
+    nonisolated static let xtermFieldClass = "xterm-helper-textarea"
+    /// Seconds the client may take to answer one attribute.
+    nonisolated static let messagingTimeout: Float = 0.25
+
+    /// Reads run here, never on the main thread: the client answers accessibility requests on its
+    /// main thread, which waits for the input method while IMK delivers a key, so a read made
+    /// inside an IMK callback stalls until the timeout and fails.
+    private static let queue = DispatchQueue(label: "com.inkyuoh.Duo.focused-element", qos: .userInteractive)
 
     private static var trust: (value: Bool, checkedAt: TimeInterval)?
 
@@ -28,10 +33,26 @@ enum FocusedElementLocator {
         return value
     }
 
-    /// The frame of the focused element of the app `pid`, top-left origin, when it is xterm.js's
-    /// input field.
-    static func xtermFieldFrame(pid: pid_t) -> CGRect? {
-        guard isTrusted else { return nil }
+    /// Reads the frame of xterm.js's input field in the app `pid` (top-left origin) off the main
+    /// thread and calls `completion` on the main thread: `nil` without the permission, when the
+    /// focused element is not that field, or when the client does not answer in time.
+    static func readXtermFieldFrame(pid: pid_t, completion: @escaping @MainActor @Sendable (CGRect?) -> Void) {
+        guard isTrusted else { return completion(nil) }
+        queue.async {
+            let frame = xtermFieldFrame(pid: pid)
+            DispatchQueue.main.async { MainActor.assumeIsolated { completion(frame) } }
+        }
+    }
+
+    /// Asks macOS to show its Accessibility prompt for the input method (`requestAccessibility`).
+    static func requestPermission() {
+        trust = nil
+        // The value of kAXTrustedCheckOptionPrompt, spelled out: the imported global is not
+        // concurrency-safe in Swift 6.
+        _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+    }
+
+    nonisolated private static func xtermFieldFrame(pid: pid_t) -> CGRect? {
         let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, messagingTimeout)
         guard let focused = value(of: app, kAXFocusedUIElementAttribute),
@@ -48,15 +69,7 @@ enum FocusedElementLocator {
         return CGRect(origin: origin, size: extent)
     }
 
-    /// Asks macOS to show its Accessibility prompt for the input method (`requestAccessibility`).
-    static func requestPermission() {
-        trust = nil
-        // The value of kAXTrustedCheckOptionPrompt, spelled out: the imported global is not
-        // concurrency-safe in Swift 6.
-        _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
-    }
-
-    private static func value(of element: AXUIElement, _ attribute: String) -> CFTypeRef? {
+    nonisolated private static func value(of element: AXUIElement, _ attribute: String) -> CFTypeRef? {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else { return nil }
         return value
