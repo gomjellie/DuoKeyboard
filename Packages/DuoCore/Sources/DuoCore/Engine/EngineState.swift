@@ -31,6 +31,11 @@ struct Token {
     /// A one-shot language chosen with nothing to flip (SPEC.md §4.7 c): only readings in this
     /// language are allowed, and hysteresis runs inside it.
     var languageLock: ScriptLanguage?
+    /// The word starts with a capital that ended a Korean word (한A, SPEC.md 4.3절 8): K is not
+    /// allowed without a flip, so the capital stays Latin and a Korean ending may follow (API를).
+    var latinStart = false
+    /// The Korean word that capital ended, kept to re-open it (only where committed text can be replaced).
+    var splitHead: SplitHead?
     /// Prefix-mode scores of `raw`, computed once per key and reused for display, eager commit, the
     /// HUD and flips (SPEC.md §5 B.6). `nil` while stale (keys passed raw in the eager-E state).
     var scores: HypothesisScores?
@@ -70,7 +75,7 @@ struct Token {
 
     /// Readings the engine may show or commit without a flip.
     func isAllowed(_ h: Hypothesis) -> Bool {
-        isConsistent(h) && (languageLock == nil || h.language == languageLock)
+        isConsistent(h) && (languageLock == nil || h.language == languageLock) && !(latinStart && h == .korean)
     }
 
     /// Hysteresis (detection.md §5.6) on the current `scores`. Returns `true` if `shown` changed.
@@ -122,6 +127,19 @@ struct Token {
 
     /// The `c` leading characters committed as Latin.
     var committedPrefix: Substring { raw.prefix(committed) }
+}
+
+/// A Korean word committed because a capital started a Latin word (SPEC.md 4.3절 8).
+final class SplitHead {
+    /// The word as it was before the commit.
+    let token: Token
+    /// What the commit inserted: `render(raw, shown)`.
+    let text: String
+
+    init(token: Token, text: String) {
+        self.token = token
+        self.text = text
+    }
 }
 
 /// The word committed last, for flip case (b) (SPEC.md §4.1 `lastCommit`, §4.7 b).

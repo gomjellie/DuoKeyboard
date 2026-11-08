@@ -150,8 +150,28 @@ struct EngineScenarioTests {
         Row(.korean, "mp3 ", "mp3 "),
         Row(.korean, "B2B ", "B2B "),
         Row(.start, "dkdlvhs16 ", "아이폰16 "),
-        Row(.start, "roffjrtlS24 ", "갤럭시S24 ",
-            knownIssue: "Hangul followed by Latin in one token is unsupported (detection.md §1): 갤럭신24"),
+        Row(.start, "roffjrtlS24 ", "갤럭시S24 "),
+        // A capital with no shifted jamo after a Korean word starts a Latin word (SPEC.md 4.3절 8)
+        Row(.start, "gksA ", "한A "),
+        Row(.korean, "tkatjdSDI ", "삼성SDI "),
+        Row(.korean, "tkatjdSDIrk ", "삼성SDI가 "),
+        Row(.korean, "rmfjsepAPIfmf ", "그런데API를 "),
+        Row(.korean, "dkdlvhsXS ", "아이폰XS "),
+        Row(.korean, "ghltkHRxla ", "회사HR팀 "),
+        // ... not after Shift held over from ㅆ (roll-over), nor inside English words
+        Row(.start, "goTDj ", "했어 "),
+        Row(.korean, "dlTDj ", "있어 "),
+        // ... nor after a short word that reads Korean only weakly (to 새, do 애, d ㅇ, z ㅋ)
+        Row(.korean, "toString ", "toString "),
+        Row(.korean, "doSomething ", "doSomething "),
+        Row(.korean, "zIndex ", "zIndex "),
+        Row(.korean, "dLTdj ", "있어 "),
+        // A stray Shift inside a Korean word joins it again once the next keys read Korean
+        Row(.korean, "dkssudGktpdy ", "안녕하세요 "),
+        Row(.korean, "McDonald ", "McDonald "),
+        Row(.korean, "YouTube ", "YouTube "),
+        Row(.korean, "KakaoTalk ", "KakaoTalk "),
+        Row(.korean, "LoL ", "LoL "),
         // Literal phase and dotted words (#36–48, #52)
         Row(.korean, "github.com/foo ", "github.com/foo "),
         Row(.start, "user@example.com ", "user@example.com "),

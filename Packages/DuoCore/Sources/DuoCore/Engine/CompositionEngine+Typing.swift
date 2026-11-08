@@ -9,12 +9,33 @@ extension CompositionEngine {
     static let eagerMinimumKeys = 3
     /// One-key tokens that are words in both scripts get the HUD without a second key (critique R12).
     static let collisionKeys: Set<String> = ["a", "e", "i", "o", "u", "x"]
+    /// Prefix margin of K over every other reading before a capital may end the word (SPEC.md 4.3절 8).
+    /// On the shipped model, Korean heads that end with a capital score ≥ 12.4 nats (한, 삼성, 회사,
+    /// 그런데), camelCase heads ≤ 10.6 nats (to 새, do 애, did 양, db 유, cnt 츠, z, e, d).
+    static let latinSplitMargin = 11_000
+    /// Prefix margin of K over the allowed readings of a word a capital started, at which the capital
+    /// was a stray Shift and the word joins the Korean word again (G in 안녕하세요). On the shipped
+    /// model, such words pass 8 nats by their 2nd to 5th key; Latin ones stay ≤ 1.7 nats (A를,
+    /// SDI가, API를, B마트, A군).
+    static let latinMergeMargin = 6_000
 
     // MARK: Letters (§4.3)
 
     func handleLetter(_ key: Keystroke, event: KeyEvent, client: any TextClient) -> Bool {
         if let t = token, t.count >= Self.maxTokenLength {
             commitToken(terminator: .space, boundaryLength: 0, client: client)
+        }
+        if var t = token, startsLatinWord(key, after: t) {
+            // The capital is not a word end: commit what is on screen, without final-mode scoring,
+            // learning or a chip, and keep it to re-open (Backspace, a stray Shift).
+            let head = SplitHead(token: t, text: render(t.raw, t.shown))
+            if t.locked == nil { t.locked = t.shown }
+            token = t
+            commitToken(terminator: .space, boundaryLength: 0, client: client)
+            hud = nil
+            startToken(at: event.timestamp)
+            token?.latinStart = true
+            if clientProfile.canReplaceCommittedText { token?.splitHead = head }
         }
         if token == nil { startToken(at: event.timestamp) }
         // A new letter ends flip case (b) for the previous word.
@@ -52,6 +73,14 @@ extension CompositionEngine {
         }
 
         t.scores = prefixScores(t.raw, t.context)
+        if t.latinStart, t.count >= 2, let scores = t.scores, let k = scores[.korean],
+           let best = scores.best(where: t.isAllowed), k - best.score >= Self.latinMergeMargin,
+           let merged = reopenSplitHead(of: t, appending: t.raw, client: client) {
+            // The capital was a stray Shift inside the Korean word.
+            token = merged
+            hud = alternativeHUD(merged, pulse: true, isRepeat: event.isRepeat)
+            return true
+        }
         continueAfterLatinChoice(&t)
         let changed = t.applyHysteresis(hysteresis) && t.count >= 2
         if shouldEagerCommit(t) {
@@ -65,6 +94,52 @@ extension CompositionEngine {
         token = t
         hud = alternativeHUD(t, pulse: changed, isRepeat: event.isRepeat)
         return true
+    }
+
+    /// SPEC.md 4.3절 8: a capital on a key whose 두벌식 jamo has no shifted form (A–Z but Q W E R T O P) is
+    /// Latin, since Shift there types the same jamo. After a Korean word it ends that word: no reading
+    /// puts Latin after Korean (한A, 삼성SDI, 그런데API를).
+    ///
+    /// The word must read as Korean: chosen so by the user, or shown as K with a prefix margin of
+    /// ``latinSplitMargin`` (camelCase heads such as to or do read as 새 or 애 by less). Not after
+    /// another capital: Shift still held from a shifted jamo (했 + D for 했어) is a roll-over. Not when
+    /// the word with the capital reads as English (GitHub, iOS).
+    func startsLatinWord(_ key: Keystroke, after t: Token) -> Bool {
+        guard key.shift, !key.shiftIsMeaningfulInKorean, t.count > 0, !t.isFullyCommitted,
+              let previous = t.raw.last, !previous.isUppercase,
+              t.locked?.language != .english, t.languageLock != .english else { return false }
+        if !t.koreanChosen {
+            guard t.shown == .korean else { return false }
+            let head = t.scores ?? prefixScores(t.raw, t.context)
+            guard let k = head[.korean] else { return false }
+            if let other = head.best(where: { $0 != .korean }), k - other.score < Self.latinSplitMargin { return false }
+        }
+        let scores = prefixScores(t.raw + String(key.latin), t.context)
+        return scores.best(where: t.isAllowed)?.hypothesis != .english
+    }
+
+    /// Re-opens the Korean word a capital split off (SPEC.md 4.3절 8) as one marked word: the
+    /// committed word plus `raw` (the keys typed after it that belong to it, or none). Only where
+    /// committed text can be replaced, and only if the word is still right before the marked text.
+    func reopenSplitHead(of tail: Token, appending raw: String, client: any TextClient) -> Token? {
+        guard let head = tail.splitHead, clientProfile.canReplaceCommittedText else { return nil }
+        let marked = tail.marked.isEmpty ? nil : client.markedRange()
+        let length = head.text.utf16.count
+        guard let anchor = marked?.location ?? client.selectedRange()?.location, anchor >= length,
+              client.string(in: NSRange(location: anchor - length, length: length)) == head.text else { return nil }
+        var t = head.token
+        t.raw += raw
+        t.count = t.raw.count
+        t.committed = 0
+        t.lastKeyAt = tail.lastKeyAt
+        t.scores = prefixScores(t.raw, t.context)
+        t.keepShownIfPossible()
+        let text = display(t, t.shown)
+        // NSTextView ignores the replacement range while text is marked: unmark first.
+        if marked != nil { client.setMarkedText("", replacementRange: nil) }
+        client.setMarkedText(text, replacementRange: NSRange(location: anchor - length, length: length))
+        t.marked = text
+        return t
     }
 
     func startToken(at time: TimeInterval) {
@@ -263,6 +338,12 @@ extension CompositionEngine {
         t.count -= n
         t.lastKeyAt = event.timestamp
         if t.count == t.committed {
+            if t.count == 0, let head = reopenSplitHead(of: t, appending: "", client: client) {
+                // The capital that split the word is gone: the Korean word is composing again.
+                token = head
+                hud = alternativeHUD(head, pulse: false, isRepeat: event.isRepeat)
+                return true
+            }
             client.setMarkedText("", replacementRange: nil)
             t.marked = ""
             if t.count == 0 {
