@@ -50,8 +50,6 @@ final class PlaygroundModel {
     @ObservationIgnored private var flipSerial = 0
     @ObservationIgnored private var hudExpiry: Task<Void, Never>?
     @ObservationIgnored private var pointerOverHUD = false
-    /// When an eligible numbered bar came up (`systemUptime`, the clock of `NSEvent.timestamp`).
-    @ObservationIgnored private var numberedSince: TimeInterval?
     @ObservationIgnored private var flipObserver: (any NSObjectProtocol)?
     @ObservationIgnored private weak var nativeTextView: NSTextView?
     /// Called after every change the canvas view has to draw.
@@ -85,11 +83,10 @@ final class PlaygroundModel {
     /// A key-down in the canvas. Returns what the view should do with keys the engine passed on.
     func handleKeyDown(_ event: NSEvent) -> PassThrough {
         guard let session, let key = KeyEventMapper.keyEvent(from: event) else { return .unhandled }
-        // A digit while the chip lists numbered readings chooses one, as in the IME: only a bar
-        // that earned the HUD and has been up for the IME's typing pause.
+        // A digit while the chip lists numbered readings chooses one, as in the IME: the bar of the
+        // word being typed, once the user flipped or chose in it (before that, digits are text).
         if let index = HUDPresentation.readingIndex(for: key), let shown = hud,
-           case .alternative(_, eligible: true) = shown.content,
-           let since = numberedSince, event.timestamp - since >= HUDTimeline.Timing.standard.appearDelay,
+           HUDPresentation(shown.content, flipKey: session.settings.flipKey).isNumbered,
            session.selectReading(at: index, on: shown) != .notOnBar {
             sync()
             return .handled
@@ -206,12 +203,6 @@ final class PlaygroundModel {
 
     private func setHUD(_ request: HUDRequest?) {
         guard request != hud else { return }
-        // Digits choose only once an eligible bar has been up for a while (as the IME's pause).
-        if case .alternative(_, eligible: true)? = request?.content {
-            if numberedSince == nil { numberedSince = ProcessInfo.processInfo.systemUptime }
-        } else {
-            numberedSince = nil
-        }
         hud = request
         hudExpiry?.cancel()
         hudExpiry = nil
