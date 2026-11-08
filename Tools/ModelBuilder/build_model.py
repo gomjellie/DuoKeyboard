@@ -207,6 +207,41 @@ def load_binary(path: str) -> tuple[D.DetectorModel, D.Params, dict]:
     return model, D.Params(**meta["params"]), meta
 
 
+# ------------------------------------------------------------ English guard --
+
+# (ctx, biasKO, terminator, tokens): English and code tokens whose keys a chat word in data/ko_chat.txt also
+# reads, where E must win the final reading. biasKO is the app's (+1000 Korean-first, -1000 English-first); the
+# engine adds it to S_K. The build fails when one of them reads K or M, so lower or drop the chat word instead.
+EN_GUARD = [
+    # after an English word, no app bias: ssh -vv, color #ccc, window dpr, the spa
+    ("EN", 0, "S", ["vv", "ww", "wa", "spa", "rs", "tt", "ccc", "dpr", "spd", "tua", "frs"]),
+    # after an English word in an English-first app: date and time format strings
+    ("EN", -1000, "S", ["dddd", "ddddd", "cccc", "ssss", "rrrr"]),
+    # line start in an English-first app (code editors, JetBrains)
+    ("START", -1000, "S", ["vv", "ww", "spa", "rs", "tt", "ccc", "spd", "dpr"]),
+    # line start, no app bias: dictionary words
+    ("START", 0, "S", ["spa", "wa"]),
+    # after a Korean word with a digit next, even in a Korean-first app: d2, r6, ww2
+    ("KO", 1000, "D", ["d", "r", "ww"]),
+    # after a Korean word in an English-first app: a one-letter name in a comment
+    ("KO", -1000, "S", ["d", "r"]),
+]
+
+
+def check_en_guard(model: D.DetectorModel, p: D.Params) -> list[str]:
+    """`EN_GUARD` rows where the final reading is not E, as messages (empty when all hold)."""
+    bad = []
+    for ctx, bias, term, tokens in EN_GUARD:
+        for raw in tokens:
+            f = D.features(model, raw, p, True)
+            scored = [(h, s + (bias if h == ("K",) else 0)) for h, s in D.hyp_scores(f, p, ctx, True, None, term)]
+            h, s = D.best(D.automatic(raw, ctx, scored))
+            if h != ("E",):
+                e = dict(scored)[("E",)]
+                bad.append(f"{raw!r} ctx={ctx} biasKO={bias} term={term}: {D.render(raw, h)} by {s - e} millinats")
+    return bad
+
+
 # ----------------------------------------------------------- test vectors --
 
 AUTOMATON_CASES = [
@@ -375,6 +410,10 @@ def main():
     for k in rnd.sample(kprobe, 300):
         assert bm.lm_ko.score(k, True) == model.lm_ko.score(k, True), k
     print("[bin] reader cross-check OK")
+    bad = check_en_guard(bm, bp)
+    if bad:
+        sys.exit("[guard] English tokens read as Korean (data/ko_chat.txt):\n  " + "\n  ".join(bad))
+    print("[guard] English tokens OK")
     tv = make_vectors(bm, bp, meta)
     with open(os.path.join(OUT, "test_vectors.json"), "w", encoding="utf-8") as f:
         json.dump(tv, f, ensure_ascii=False, indent=1)
