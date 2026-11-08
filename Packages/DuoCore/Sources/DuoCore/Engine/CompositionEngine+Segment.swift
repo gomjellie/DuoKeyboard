@@ -37,7 +37,7 @@ extension CompositionEngine {
     /// other reading of those keys is this far behind).
     static let segmentHeadMargin = 3_000
     /// Words with at least this many keys get the readings of their end on every key, so the bar can
-    /// offer one by itself. Shorter words get them once the flip key or the bar is used.
+    /// offer one by itself. Shorter words get them once the flip key is used.
     static let segmentAutoKeys = 10
     /// A reading of the end of the word goes first on the bar when it beats the shown reading and
     /// the other script's reading by this much; it brings the bar up by itself (a word of
@@ -77,10 +77,11 @@ extension CompositionEngine {
         return segment.headScore + score - shownScore >= Self.segmentMargin
     }
 
-    /// Readings of the end of a word are worth computing: the user pressed the flip key or chose a
-    /// reading in this word, or the word is long.
+    /// Readings of the end of a word are worth computing: the user used the flip key in this word,
+    /// or the word is long. A reading chosen on the bar with a click adds none, so the bar it was
+    /// chosen on keeps its rows.
     func wantsSegments(_ t: Token) -> Bool {
-        t.choicesRevealed || t.locked != nil || t.count >= Self.segmentAutoKeys
+        t.choicesRevealed || t.count >= Self.segmentAutoKeys
     }
 
     /// The readings of `raw` that change only its end, best first:

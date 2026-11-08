@@ -24,7 +24,7 @@ extension CompositionEngine {
             return
         }
 
-        if let t = token {
+        if var t = token {
             var markedRange: NSRange?
             var checked = false
             if !t.marked.isEmpty, time.map({ $0 - t.lastKeyAt > 1 }) ?? true {
@@ -34,6 +34,8 @@ extension CompositionEngine {
             if checked, markedRange == nil {
                 dropToken()
             } else {
+                // Every flip key flips to what the right ⌘ press reveals (SPEC.md 4.11절 14).
+                t.choicesRevealed = true
                 flipToken(t, markedRange: markedRange, checked: checked, client: client)
                 return
             }

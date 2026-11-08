@@ -683,6 +683,38 @@ struct EngineChoiceTests {
         #expect(h.detector.choiceCalls.contains("at"), "the flip key brings them")
     }
 
+    /// 사진 + jpg: the end beats 사지너ㅔㅎ by 7 nats and tkwlsjpg by 21.
+    static func scriptPhotoJpg(_ d: FakeDetector) {
+        d.korean("tkwls")
+        d.scores["tkwlsj"] = [.korean: -6000, .english: -26_000]
+        d.scores["tkwlsjp"] = [.korean: -8000, .english: -27_000]
+        d.scores["tkwlsjpg"] = [.korean: -16_000, .english: -30_000]
+        d.scores["jpg"] = [.english: -4000, .korean: -16_000]
+    }
+
+    @Test(arguments: [FlipKey.rightCommand, .shiftSpace])
+    func everyFlipKeyFlipsAShortWordToTheSameReading(_ key: FlipKey) {
+        var settings = DuoSettings.default
+        settings.flipKey = key
+        let h = EngineHarness(settings: settings)
+        Self.scriptPhotoJpg(h.detector)
+        h.type("tkwlsjpg")
+        if key == .shiftSpace { h.press(.space, .shift) } else { h.flip() }
+        #expect(h.text == "사진jpg", "the end, as the right ⌘ press shows it first")
+        #expect(h.marked == "jpg")
+    }
+
+    @Test func aReadingChosenWithAClickKeepsTheBarItWasChosenOn() throws {
+        let h = EngineHarness()
+        Self.scriptPhotoJpg(h.detector)
+        h.type("tkwlsjpg")
+        #expect(Self.readings(h) == ["사지너ㅔㅎ", "tkwlsjpg"])
+        let shown = try #require(h.hud)
+        #expect(h.engine.selectReading(at: 1, on: shown, client: h.client) == .chosen)
+        #expect(h.marked == "tkwlsjpg")
+        #expect(Self.readings(h) == ["사지너ㅔㅎ", "tkwlsjpg"], "no readings of the end join the bar after a click")
+    }
+
     @Test func aLatinStartWithAKoreanEndTheDetectorDoesNotScoreIsOffered() {
         // regex + 쓰면: the detector scores no M(5) (regex is no lexicon word and 쓰면 no suffix).
         var settings = DuoSettings.default
