@@ -211,6 +211,7 @@ extension CompositionEngine {
                 }
             }
         }
+        let memo = prefixMemo
         var head = t
         head.raw = String(t.raw.prefix(s))
         head.count = s
@@ -244,7 +245,7 @@ extension CompositionEngine {
         tail.scores = prefixScores(tail.raw, tail.context)
         if clientProfile.canReplaceCommittedText {
             tail.splitHead = SplitHead(token: reopened, text: headText, joinReading: joinReading,
-                                       wholeOriginal: original)
+                                       wholeOriginal: original, memo: memo)
         }
         setMarked(display(tail, h), in: &tail, client: client)
         token = tail
@@ -255,10 +256,13 @@ extension CompositionEngine {
 
     /// What the end of a split turns into when it goes back to its original Korean reading: the
     /// whole word again, locked to the reading after the split on its bar (SPEC.md 4.11절 14).
-    /// `nil` where the start cannot be re-opened: the end alone turns Korean then.
+    /// `nil` where the start cannot be re-opened or the joined word would pass ``maxTokenLength``:
+    /// the end alone turns Korean then.
     func joinTarget(of t: Token) -> (raw: String, reading: Hypothesis)? {
         guard t.segmentTail, let head = t.splitHead, let reading = head.joinReading,
-              clientProfile.canReplaceCommittedText else { return nil }
+              clientProfile.canReplaceCommittedText, head.token.count + t.count <= Self.maxTokenLength else {
+            return nil
+        }
         let raw = head.token.raw + t.raw
         if case .mixed(let b) = reading, b >= raw.count || raw.contains("'") { return (raw, .english) }
         return (raw, reading)

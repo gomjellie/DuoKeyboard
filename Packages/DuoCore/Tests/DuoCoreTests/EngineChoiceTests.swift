@@ -582,6 +582,23 @@ struct EngineChoiceTests {
         #expect(h.text == "촘ㅅ", "nothing was committed")
     }
 
+    @Test func aWordWhoseEndWasChosenTooLongToJoinFlipsItsEndAlone() {
+        // The start (8 keys) and the end typed on to 25 keys make 33: one word that long is not allowed.
+        let h = EngineHarness()
+        Self.scriptKoreanThenEnglish(h.detector)
+        h.type("wndrksdpenglish")
+        h.flip()
+        h.type("abcdefghijklmnopqr")
+        #expect(h.engine.token?.count == 25)
+        #expect(Self.readings(h).first == FakeDetector.hangul("englishabcdefghijklmnopqr"),
+                "the end's Korean reading is the end alone")
+        h.modifier(down: true)
+        #expect(h.press(.character("1"), .command).consumed)
+        h.modifier(down: false)
+        #expect(h.text == "중간에" + FakeDetector.hangul("englishabcdefghijklmnopqr"))
+        #expect(h.marked == FakeDetector.hangul("englishabcdefghijklmnopqr"))
+    }
+
     @Test func backspaceOverTheWholeEndReopensTheStart() {
         let h = EngineHarness()
         Self.scriptKoreanThenEnglish(h.detector)

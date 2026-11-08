@@ -127,4 +127,39 @@ struct DetectionBenchmarkTests {
         #expect(k.p99 <= 1000, "per-key p99 \(k.p99) µs exceeds the 1 ms budget")
         #endif
     }
+
+    /// Joining the end of a split word back to its start (SPEC.md 4.11절 14) is one key event: the
+    /// joined word of 32 keys is scored and gets its bar with the readings of its end again.
+    @MainActor
+    @Test func costOfJoiningTheEndOfALongWordBack() throws {
+        let d = try DetectionFixtures.detector.get()
+        // Invented: 길어졌을때중간에 + english가서 (32 keys), 오늘회의는 + zoom으로하자고 (28 keys)
+        let words = [("rlfdjwuTdmfEowndrksdpenglish", "rktj"), ("dhsmfghldmlsmszoom", "dmfhgkwkrh")]
+        var joins: [Double] = []
+        for _ in 0..<20 {
+            for (word, more) in words {
+                let h = EngineHarness(scorer: d)
+                h.type(word)
+                h.flip()
+                try #require(h.engine.token?.segmentTail == true, "the first flip splits \(word)")
+                h.type(more)
+                let shown = try #require(h.hud)
+                joins.append(Self.time { h.engine.selectReading(at: 0, on: shown, client: h.client) })
+                try #require(h.engine.token?.count == word.count + more.count, "the end joined its start")
+            }
+        }
+        let j = Stats(samples: joins)
+        #if DEBUG
+        let build = "debug"
+        #else
+        let build = "release"
+        #endif
+        print("""
+            [DetectionBenchmark] \(build), joins of a split word of \(words.map { $0.0.count + $0.1.count }) keys
+              join (engine, bar with ends)    \(j)
+            """)
+        #if !DEBUG
+        #expect(j.p99 <= 1000, "join p99 \(j.p99) µs exceeds the 1 ms budget")
+        #endif
+    }
 }

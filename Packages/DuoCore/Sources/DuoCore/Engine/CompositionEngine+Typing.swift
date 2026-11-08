@@ -203,7 +203,8 @@ extension CompositionEngine {
         t.count = t.raw.count
         t.committed = 0
         t.lastKeyAt = tail.lastKeyAt
-        t.scores = prefixScores(t.raw, t.context)
+        if let memo = head.memo { prefixMemo = memo }
+        t.scores = memoizedPrefixScores(t.raw, t.context)
         if let locked { t.locked = locked }
         t.keepShownIfPossible()
         let text = display(t, t.shown)

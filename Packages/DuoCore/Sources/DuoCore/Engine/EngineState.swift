@@ -165,12 +165,16 @@ final class SplitHead {
     /// with `wholeOriginal` as its original reading.
     let joinReading: Hypothesis?
     let wholeOriginal: Hypothesis?
+    /// The whole word's prefix-mode scores (`PrefixMemo`), for its bar after the join.
+    let memo: PrefixMemo?
 
-    init(token: Token, text: String, joinReading: Hypothesis? = nil, wholeOriginal: Hypothesis? = nil) {
+    init(token: Token, text: String, joinReading: Hypothesis? = nil, wholeOriginal: Hypothesis? = nil,
+         memo: PrefixMemo? = nil) {
         self.token = token
         self.text = text
         self.joinReading = joinReading
         self.wholeOriginal = wholeOriginal
+        self.memo = memo
     }
 }
 
