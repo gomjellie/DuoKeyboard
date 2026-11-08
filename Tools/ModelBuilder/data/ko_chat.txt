@@ -141,3 +141,51 @@
 ㅈ	3
 ㅂ	3
 ㅣ	3
+# 2026-11-09: chat words that a KakaoTalk chat export typed often and the corpora lack (common chat
+# vocabulary only): initial-consonant abbreviations, repeated jamo and repeated abbreviations, keyboard-mash
+# laughter (the LM learns ㅋ ㄱ alternating from these), ㅠ and ㅜ mixed, short replies and interjections.
+# A word whose keys are also an English or code token (넴 = spa, ㄱㄴ = rs, ㅅㅅ = tt, ㅊㅊㅊ = ccc, 넹 = spd,
+# ㅇㅇㅇㅇ = dddd) gets a rate at which it still wins a message start in a Korean-first app (biasKO +1000)
+# but loses where the token is English; build_model.py `EN_GUARD` lists those places and fails the build.
+# Below about 0.91 per million a word drops out of the 100 000-word lexicon, so ㅇㅇㅇㅇ and ㄱㄱㄱㄱ cannot go
+# low enough for E after an English word with no app bias (dddd, rrrr), only in an English-first app.
+ㄹㅈㄷ	30
+ㄲㅂ	15
+ㄱㄴ	7
+ㄹㄱㄴ	1.1
+ㅁㅌㅊ	10
+ㅅㅌㅊ	10
+ㅎㅌㅊ	10
+ㅍㅌㅊ	5
+ㅇㄸ	15
+ㅎㅇㅌ	15
+ㄱㅇㄷ	10
+ㄷㄱㄷㄱ	5
+ㅇㅇㅇㅇ	1.3
+ㅇㅇㅇㅇㅇ	1
+ㄱㄱㄱㄱ	1
+ㅊㅊㅊ	1
+ㅅㅅ	2.3
+ㅇㅋㅇㅋ	20
+ㄱㅊㄱㅊ	5
+ㅇㅈㅇㅈ	10
+ㅎㅇㅎㅇ	10
+ㅇㅎㅇㅎ	5
+ㅈㅅㅈㅅ	5
+ㅋㅎ	30
+ㅋㅎㅎ	10
+ㅋㄱㅋㄱ	30
+ㅋㄱㅋㄱㅋㄱ	20
+ㅋㄱㅋㄱㅋㄱㅋㄱ	10
+ㅋㄲㅋㄲ	10
+ㅠㅜㅜ	5
+ㅠㅠㅜ	5
+옹	30
+넹	1.5
+넴	3.5
+뿡	10
+크	5
+냠냠	20
+노맛	10
+개웃	10
+새복많	5
