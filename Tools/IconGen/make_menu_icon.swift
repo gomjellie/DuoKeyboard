@@ -1,13 +1,11 @@
-// Renders the input-source icon as a TIFF in Apple's format (ui-design 4.4절): a full-bleed 16 pt
-// rounded tile with "한A" on it; one 16×16 px rep at 72 dpi and one 32×32 px rep at 144 dpi,
-// combined with `tiffutil -cathidpicheck` like KoreanIM's 2SetKorean.tiff.
+// Renders the input-source icon as a template TIFF: a 22×16 pt rounded tile, black, with "한A"
+// knocked out to transparent; one 22×16 px rep at 72 dpi and one 44×32 px rep at 144 dpi, combined
+// with `tiffutil -cathidpicheck` like KoreanIM's 2SetKorean.tiff.
 //
-// Not a template (Info.plist: TISIconIsTemplate = false). macOS 26's input source switcher shows
-// Apple's sources by their mode labels and tints a mode-less source's template icon with its own
-// background (dark on the dark panel, green on the green selection), so a template icon vanished.
-// The tile is drawn the way the system draws Apple's template tiles in dark menus and menu bars:
-// a light tile with dark glyphs. Two glyphs share the tile, so they are heavy and as large as the
-// tile allows, to match the stroke weight of Apple's single glyphs (한, A, 拼).
+// A template (Info.plist: TISIconIsTemplate = true), like Apple's: menus and the menu bar tint it, so
+// it is a dark tile in light mode and a light tile in dark mode. The size and type match the label
+// badges macOS 26 draws for Apple's sources in the input menu (22×16 pt, ~4 pt corners, semibold
+// ~12 pt glyphs; measured from the menu on macOS 26.6.2).
 //
 // Usage: swift Tools/IconGen/make_menu_icon.swift <out.tiff> [--preview <dir>]
 //   --preview writes 16x-enlarged PNGs of both reps on light and dark backdrops for inspection.
@@ -23,28 +21,24 @@ let previewDir = arguments.firstIndex(of: "--preview").flatMap { arguments.indic
 
 /// Icon geometry in points.
 enum Metrics {
-    static let size: CGFloat = 16
-    /// Apple's tiles are full-bleed with a ~3.5 pt corner radius.
-    static let cornerRadius: CGFloat = 3.5
-    /// Widest ink run of "한A": the tile minus ~1 pt per side.
-    static let maximumInkWidth: CGFloat = 13.8
-    static let tracking: CGFloat = -0.2
-    /// The tile: Apple's template tiles as dark menus draw them (systemGray6 light, #E5E5EA).
-    static let tile = CGColor(srgbRed: 0xE5 / 255, green: 0xE5 / 255, blue: 0xEA / 255, alpha: 1)
-    /// The glyphs: near black (#1C1C1E), like the dark menu showing through Apple's knocked-out glyphs.
-    static let glyph = NSColor(srgbRed: 0x1C / 255, green: 0x1C / 255, blue: 0x1E / 255, alpha: 1)
+    static let width: CGFloat = 22
+    static let height: CGFloat = 16
+    static let cornerRadius: CGFloat = 4
+    /// Widest ink run of "한A": the tile minus ~1.5 pt per side.
+    static let maximumInkWidth: CGFloat = 19
+    /// Apple's badge glyphs (A, 한) are ~12 pt.
+    static let maximumFontSize: CGFloat = 12
 }
 
 func glyphLine(size: CGFloat) -> CTLine {
-    let font = NSFont.systemFont(ofSize: size, weight: .heavy)
-    let text = NSAttributedString(string: "한A", attributes: [.font: font, .kern: Metrics.tracking,
-                                                              .foregroundColor: Metrics.glyph])
+    let font = NSFont.systemFont(ofSize: size, weight: .semibold)
+    let text = NSAttributedString(string: "한A", attributes: [.font: font, .foregroundColor: NSColor.black])
     return CTLineCreateWithAttributedString(text)
 }
 
 /// The largest glyph run whose ink fits ``Metrics/maximumInkWidth`` (in 0.1 pt steps).
 func fittedGlyphLine(in cg: CGContext) -> CTLine {
-    var size: CGFloat = 12
+    var size = Metrics.maximumFontSize
     while size > 6 {
         let line = glyphLine(size: size)
         if CTLineGetImageBounds(line, cg).width <= Metrics.maximumInkWidth { return line }
@@ -54,35 +48,37 @@ func fittedGlyphLine(in cg: CGContext) -> CTLine {
 }
 
 func render(scale: CGFloat) -> NSBitmapImageRep {
-    let pixels = Int(Metrics.size * scale)
-    guard let cg = CGContext(data: nil, width: pixels, height: pixels, bitsPerComponent: 8, bytesPerRow: 0,
+    let size = CGSize(width: Metrics.width, height: Metrics.height)
+    guard let cg = CGContext(data: nil, width: Int(size.width * scale), height: Int(size.height * scale),
+                             bitsPerComponent: 8, bytesPerRow: 0,
                              space: CGColorSpace(name: CGColorSpace.sRGB)!,
                              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
         fatalError("cannot create bitmap")
     }
     // Draw in points; the context maps them onto `scale` device pixels each.
     cg.scaleBy(x: scale, y: scale)
-    cg.clear(CGRect(x: 0, y: 0, width: Metrics.size, height: Metrics.size))
+    cg.clear(CGRect(origin: .zero, size: size))
 
     // Tile.
-    let tile = CGPath(roundedRect: CGRect(x: 0, y: 0, width: Metrics.size, height: Metrics.size),
+    let tile = CGPath(roundedRect: CGRect(origin: .zero, size: size),
                       cornerWidth: Metrics.cornerRadius, cornerHeight: Metrics.cornerRadius, transform: nil)
     cg.addPath(tile)
-    cg.setFillColor(Metrics.tile)
+    cg.setFillColor(CGColor(gray: 0, alpha: 1))
     cg.fillPath()
 
-    // Glyphs, optically centred on their ink bounds, snapped to the pixel grid.
+    // Glyphs, knocked out and optically centred on their ink bounds, snapped to the pixel grid.
     let line = fittedGlyphLine(in: cg)
     let ink = CTLineGetImageBounds(line, cg)
     func snap(_ v: CGFloat) -> CGFloat { (v * scale).rounded() / scale }
-    let x = snap((Metrics.size - ink.width) / 2 - ink.minX)
-    let y = snap((Metrics.size - ink.height) / 2 - ink.minY)
+    let x = snap((size.width - ink.width) / 2 - ink.minX)
+    let y = snap((size.height - ink.height) / 2 - ink.minY)
     cg.textPosition = CGPoint(x: x, y: y)
+    cg.setBlendMode(.destinationOut)
     CTLineDraw(line, cg)
 
     guard let image = cg.makeImage() else { fatalError("cannot snapshot bitmap") }
     let rep = NSBitmapImageRep(cgImage: image)
-    rep.size = NSSize(width: Metrics.size, height: Metrics.size)
+    rep.size = size
     return rep
 }
 
@@ -128,10 +124,10 @@ print("wrote \(outPath)")
 
 if let previewDir {
     try FileManager.default.createDirectory(atPath: previewDir, withIntermediateDirectories: true)
-    for (rep, label) in zip(reps, ["16px", "32px"]) {
+    for (rep, label) in zip(reps, ["1x", "2x"]) {
         for dark in [false, true] {
             let url = URL(fileURLWithPath: previewDir).appending(path: "menu-icon-\(label)-\(dark ? "dark" : "light").png")
-            try preview(rep, factor: label == "16px" ? 16 : 8, dark: dark).write(to: url)
+            try preview(rep, factor: label == "1x" ? 16 : 8, dark: dark).write(to: url)
             print("preview \(url.path)")
         }
     }
