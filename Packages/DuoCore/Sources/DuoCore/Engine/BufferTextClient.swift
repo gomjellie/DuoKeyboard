@@ -76,7 +76,8 @@ public final class BufferTextClient: TextClient {
     }
 
     public func setMarkedText(_ s: String, replacementRange: NSRange?) {
-        let r = target(for: replacementRange)
+        // Like NSTextView: while text is marked, the new marked text replaces it and the range is ignored.
+        let r = target(for: marked == nil ? replacementRange : nil)
         replace(r, with: s)
         let len = (s as NSString).length
         marked = len == 0 ? nil : NSRange(location: r.location, length: len)

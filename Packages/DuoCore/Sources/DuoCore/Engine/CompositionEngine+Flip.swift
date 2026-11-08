@@ -102,8 +102,8 @@ extension CompositionEngine {
         if target == t.lockedOriginal, let previous = t.locked, previous != target { t.lockedReturn = previous }
 
         if t.committed > 0, !t.isConsistent(target) {
-            // The Latin committed by eager E must be re-opened: verify it, then replace committed +
-            // marked text with the new reading in one `setMarkedText`.
+            // The Latin committed by eager E must be re-opened: verify it, unmark the tail, then
+            // replace the committed text with the new reading.
             guard clientProfile.canReplaceCommittedText else {
                 // The client would ignore the range and add the new reading after the old one.
                 hud = cannotChangeHUD(anchor: t.marked.isEmpty ? .caret : .markedText)
@@ -117,7 +117,9 @@ extension CompositionEngine {
                 return false
             }
             let text = render(t.raw, target)
-            client.setMarkedText(text, replacementRange: NSRange(location: anchor - c, length: c + (marked?.length ?? 0)))
+            // NSTextView ignores the replacement range while text is marked: unmark first.
+            if marked != nil { client.setMarkedText("", replacementRange: nil) }
+            client.setMarkedText(text, replacementRange: NSRange(location: anchor - c, length: c))
             t.marked = text
             t.committed = 0
         } else {

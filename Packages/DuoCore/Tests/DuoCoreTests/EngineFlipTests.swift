@@ -101,7 +101,8 @@ struct EngineFlipTests {
         let korean = FakeDetector.hangul("tabs")
         let calls = h.flip()
         #expect(calls == [.markedRange, .string(NSRange(location: 0, length: 3)),
-                          .mark(korean, NSRange(location: 0, length: 4))])
+                          .mark("", nil), .mark(korean, NSRange(location: 0, length: 3))],
+                "unmark first: NSTextView ignores the range while text is marked")
         #expect(h.text == korean)
         #expect(h.markedRange == NSRange(location: 0, length: (korean as NSString).length))
     }

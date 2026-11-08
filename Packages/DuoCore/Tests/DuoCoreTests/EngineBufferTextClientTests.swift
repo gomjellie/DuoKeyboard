@@ -37,10 +37,19 @@ struct EngineBufferTextClientTests {
         #expect(c.text == "해 ")
         #expect(c.selection == NSRange(location: 2, length: 0))
         c.setText("push")
-        c.setMarkedText("ㅎ", replacementRange: nil)
-        c.setMarkedText("ㅔㅕ노ㅎ", replacementRange: NSRange(location: 0, length: 5))
+        c.setMarkedText("ㅔㅕ노ㅎ", replacementRange: NSRange(location: 0, length: 4))
         #expect(c.text == "ㅔㅕ노ㅎ")
         #expect(c.marked == NSRange(location: 0, length: 4))
+    }
+
+    @Test func markingWhileMarkedIgnoresTheReplacementRange() {
+        // NSTextView (TextEdit, the E2E harness) replaces the marked text and ignores the range.
+        let c = BufferTextClient()
+        c.setText("push")
+        c.setMarkedText("ㅎ", replacementRange: nil)
+        c.setMarkedText("ㅔㅕ노ㅎ", replacementRange: NSRange(location: 0, length: 5))
+        #expect(c.text == "pushㅔㅕ노ㅎ")
+        #expect(c.marked == NSRange(location: 4, length: 4))
     }
 
     @Test func replacementElsewhereLeavesOldMarkedTextAsText() {
