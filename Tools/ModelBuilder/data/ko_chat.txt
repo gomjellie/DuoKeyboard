@@ -130,3 +130,14 @@
 넘	60
 첨	20
 ㅈ도	10
+# 2026-11-08: lone jamo that community text uses far more often than the same key as one Latin letter
+# (ㅡ 189 : m 10, ㄱ 36 : r 0 in the NSMC, korean-hate-speech and site-comment corpora). After an English
+# word, at a sentence start and right after a digit (e2e) E still wins. Not ㅁ ㄴ ㅏ ㅐ ㅌ ㅔ ㅅ ㅗ ㄷ: their Latin
+# letters (a s k o x p t h) are as common, Korean news and Wikipedia use them alone, or e.g. needs e.
+ㅡ	3
+ㅉ	3
+ㅇ	3
+ㄱ	3
+ㅈ	3
+ㅂ	3
+ㅣ	3
