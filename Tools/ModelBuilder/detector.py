@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass, field, asdict
 
 import kn
-from hangul import keys_to_hangul, korean_normalize, SHIFT_MEANINGFUL
+from hangul import hangul_to_keys, keys_to_hangul, korean_normalize, SHIFT_MEANINGFUL
 
 QWERTOP_UP = set("QWERTOP")
 
@@ -263,11 +263,49 @@ def emotive_runs(text: str) -> tuple[int, bool]:
     return exempt, last
 
 
+def _is_jamo(ch: str) -> bool:
+    return "\u3131" <= ch <= "\u3163"
+
+
+def chat_runs(m: DetectorModel, text: str) -> tuple[int, bool]:
+    """(orphans the K reading is not charged for, whether the last character is one of them).
+
+    Inside each maximal run of jamo: runs of >= 2 identical emotive jamo (ㅋㅋㅋ, ㅠㅠ), and each other
+    piece of >= 2 jamo that is a Korean lexicon word (ㄹㅇ, ㅈㄹ, ㅂㅅ): ㅈㄹ하고, 뭔ㅅㅂ, ㄹㅇㅋㅋ."""
+    exempt, last, n, i = 0, False, len(text), 0
+    while i < n:
+        if not _is_jamo(text[i]):
+            i += 1
+            continue
+        j = i
+        while j < n and _is_jamo(text[j]):
+            j += 1
+        pieces, start, k = [], i, i
+        while k < j:
+            e = k
+            while e < j and text[e] == text[k]:
+                e += 1
+            if text[k] in EMOTIVE_JAMO and e - k >= 2:
+                if start < k:
+                    pieces.append((start, k, False))
+                pieces.append((k, e, True))
+                start = e
+            k = e
+        if start < j:
+            pieces.append((start, j, False))
+        for a, b, emotive in pieces:
+            if emotive or (b - a >= 2 and m.lex_ko.get(korean_normalize(hangul_to_keys(text[a:b]))) is not None):
+                exempt += b - a
+                last = last or b == n
+        i = j
+    return exempt, last
+
+
 def features(m: DetectorModel, raw: str, p: Params, final: bool = True) -> Feats:
     kno = korean_normalize(raw)
     low = raw.lower()
     txt, orph, lone = keys_to_hangul(kno)
-    runs, run_at_end = emotive_runs(txt)
+    runs, run_at_end = chat_runs(m, txt)
     nr, ns = shift_counts(raw)
     if final:
         ko_lm = m.lm_ko.score(kno, True)

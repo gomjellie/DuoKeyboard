@@ -269,7 +269,11 @@ def make_vectors(model: D.DetectorModel, p: D.Params, meta: dict, seed: int = 20
                 "aTl", "adid", "arns", "mdp", "mfh", "hdml", "ask",
                 # emotive jamo runs (no orphan charge) and chat words
                 "zzzzzzzzzz", "zzzzsks", "gmdgofkmm", "bbbqnfjqek", "rkxspzzzz", "gggg", "eee", "see",
-                "zz'zz", "mmm", "WW", "ws", "tq", "wrkxek", "rne"])
+                "zz'zz", "mmm", "WW", "ws", "tq", "wrkxek", "rne",
+                # lexicon jamo pieces inside a run (no orphan charge): before and after syllables, next to
+                # an emotive stretch, broken by a literal; English words whose K reading has such a piece
+                "wfgkrh", "anjstq", "fdzz", "fdzzz", "qtemfdl", "actlzl", "fddla", "dwfzzzz", "hni", "acek",
+                "fd'zz", "zfdz", "class", "try", "gdp", "rcrc"])
     with open(os.path.join(md.DATA, "mixed_sentences.txt"), encoding="utf-8") as fh:
         for line in fh:
             if line.startswith("#"):
