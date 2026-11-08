@@ -15,9 +15,12 @@
   라틴 뒤 접미사 1 684개, 문맥 사전 확률(START / KO / EN / NUM), 종결 키 단서, 사용자별 횟수를 더함.
   이것들을 millinats 단위의 정수 로그 선형 점수로 합침. 그래서 Swift 포팅이 **비트 단위로 똑같을(bit-exact)** 수 있음.
 * **측정 결과**: 실제로 배포하는 5.63 MB 파일로, 학습에 한 번도 쓰지 않은 문체(register)에서 잼.
-  * 문맥 없는 낱단어: 한국어 99.48 %, 한국어 글 속 영어 99.44 %, 영어 뉴스 99.89 %
-  * 문맥 있는 이어진 글: 한국어 뉴스 **99.90 %**, 한국어 위키백과 **99.89 %**, 영어 뉴스
-    **99.99 %**, 직접 쓴 혼합 개발자 채팅 세트 **99.86 %**(오류 2개: `so`, `go`)
+  * 문맥 없는 낱단어: 한국어 99.55 %, 한국어 글 속 영어 99.43 %, 영어 뉴스 99.74 %(모든 낱말을 문장
+    시작으로 봄. 문장 시작의 `so`를 내로 읽음)
+  * 문맥 있는 이어진 글: 한국어 뉴스 **99.91 %**, 한국어 위키백과 **99.90 %**, 영어 뉴스
+    **99.98 %**, 직접 쓴 혼합 개발자 채팅 세트 **99.78 %**(오류 3개: `so` 2개, `go`)
+  * 커뮤니티 댓글(NSMC, korean-hate-speech, 5만 6천 문장)을 엔진으로 치면 단어 **99.56 %**, 문장 96.43 %
+  * 이 수치는 2026-11-08 모델(`6610e67e1ca8e3e3`)의 것임. 아래 9절의 표는 그 전 모델로 잰 것임
   * 표시: 한국어 단어는 절대 깜빡이지 않음(0.000 바뀜/단어). 영어 문맥 속 영어는 0.012
     바뀜/단어. Shift 롤오버(rollover) 오타에 100 % 견딤.
 * **런타임 형식**: mmap할 수 있는 리틀 엔디언 파일 하나, `duo-model.bin`(DUOM v1: 정렬해 묶은
@@ -316,6 +319,22 @@ for b in 1 ..< len(raw), only if raw contains no apostrophe:
 새로 틀리는 영어: `rid` → 걍과 `cc` → ㅊㅊ(문장 시작에서만. 영어 문맥에서는 E가 이김), `WW` → ㅉㅉ,
 위키의 `mm까지` → ㅡㅡ까지(3건). 같은 영어 글자가 두 번 이어지는 단어(see, mmm)는 영어로 남아요.
 
+**어휘 사전 코드북** (2026-11-08, 해시 `6610e67e1ca8e3e3`, `out/eval/ship_uniform_lex.json`): 어휘 사전 값은 처음에
+LM처럼 Lloyd-Max 코드북(256칸)으로 양자화했어요. Lloyd-Max는 수가 많은 드문 낱말에 칸을 쓰고 가장 흔한 낱말을
+맨 위 한 칸으로 합쳐요. 한국어 맨 위 칸이 −7.025냇이라 이(−5.266)는 1.76냇, 내(−5.908)는 1.1냇을 잃었어요.
+매개변수는 양자화 전 값으로 튜닝했으니 출하 모델에서만 흔한 낱말이 손해를 봤어요. 지금은 같은 간격의 256칸을
+써요(한국어 약 34밀리냇, 영어 약 48밀리냇 간격). 평가 결과는 양자화 전 값과 모든 세트에서 같아요.
+
+| | Lloyd-Max | 같은 간격 |
+|---|---|---|
+| ko_news / ko_wiki 문장 (예측 문맥) | 98.634 / 98.822 % | 98.674 / 98.854 % |
+| en_news 토큰 (예측 문맥) | 99.985 % | 99.984 % (문장 시작의 so 4건) |
+| 혼합 개발자 채팅 토큰 | 99.856 % | 99.783 % (so 이제 어떻게 할까요) |
+| 커뮤니티 글 (엔진, 문장 / 단어 오류) | 96.00 % / 0.496 % | 96.43 % / 0.444 % |
+
+바뀐 토큰은 모두 문장 시작의 `so`예요. 문장 시작에서 K가 0.07냇 앞서요. 문장 시작 사전 확률(`PRIOR_START_EN`)을
+낮추는 방법은 버렸어요. 문장 시작의 SK바이오사이언스 같은 섞인 단어까지 K로 바뀌었어요.
+
 **접두 모드**(표시): 다음만 빼고 같아요.
 `S_K = scoreKO(kno, no eos) + ORPHAN·(orph − runs − (lone && !runAtEnd ? 1 : 0)) + ROLLOVER·nr + STRAY·ns + PRIOR[ctx].KO`
 (어휘 사전 없음, NG/LEX 오프셋 없음), `S_E = scoreEN(low, no eos) + CASE[…] + PRIOR[ctx].EN`
@@ -432,7 +451,7 @@ en-news-dev 5 000 문장이에요(greedy, 예측한 문맥). `ROLLOVER`/`STRAY`/
 | `ko.{n}.lp`, `en.{n}.lp` | `u8` | `meta.lm.<lang>.lpCodebook["n"]`(Int, millinats)의 인덱스 — `key`와 나란히 놓임 |
 | `ko.{n}.bow`, `en.{n}.bow` | `u8` | `meta.lm.<lang>.bowCodebook["n"]`의 인덱스. n < order일 때 있음. 문맥이 아닌 항목은 정확한 0 코드워드를 가리킴 |
 | `lexko.key`, `lexen.key` | `u64` | 정규화한 키 문자열(KO는 `kno`, EN은 `low`)의 FNV-1a-64, 정렬함 |
-| `lexko.val`, `lexen.val` | `u8` | `meta.lexicon.<lang>.codebook`(ln P(word|lang), millinats)의 인덱스 |
+| `lexko.val`, `lexen.val` | `u8` | `meta.lexicon.<lang>.codebook`(ln P(word|lang), millinats)의 인덱스. 코드북은 최솟값과 최댓값 사이를 같은 간격으로 나눈 256칸(`uniform_codebook`) |
 
 런타임에 쓰는 `meta` 키: `symbols`, `lm.{ko,en}.{order,lpCodebook,bowCodebook,count,keyType}`,
 `lexicon.{ko,en}.codebook`, `suffix.full` / `suffix.prefix`(`[String: Int]`, 키는 `kno`
