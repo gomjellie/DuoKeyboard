@@ -24,8 +24,17 @@ public enum DuoIDs {
         public static let flipped = Notification.Name("com.inkyuoh.Duo.event.flipped")
         /// Host → IME: open nothing, just report liveness via `pong` (used by Settings ▸ status).
         public static let ping = Notification.Name("com.inkyuoh.Duo.ping")
+        /// IME → host. `userInfo`: `"version"`, `"modelLoaded"` (`"true"`/`"false"`) and
+        /// ``DuoIDs/pongAccessibilityKey``.
         public static let pong = Notification.Name("com.inkyuoh.Duo.pong")
+        /// Host → IME: ask macOS for the Accessibility permission of the input method (no payload).
+        /// The prompt must come from the IME process: the permission belongs to its binary.
+        public static let requestAccessibility = Notification.Name("com.inkyuoh.Duo.accessibility.request")
     }
+
+    /// `pong` key: `"true"` when the IME may read the client's focused element (Accessibility),
+    /// which places the HUD in xterm.js terminals (`ClientProfile.compositionAtFocusedElement`).
+    public static let pongAccessibilityKey = "accessibilityTrusted"
 
     /// Bundle ids the IME has seen as clients (for Settings ▸ Apps). `[String]`, most recent first, ≤ 200.
     public static let seenAppsDefaultsKey = "seenApps.v1"

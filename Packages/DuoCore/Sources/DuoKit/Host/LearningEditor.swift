@@ -191,6 +191,12 @@ public struct LearningCommandChannel: Sendable {
 public enum InputMethodPing {
     /// Posts `ping` and waits for the next `pong`; `false` when none arrives within `timeout`.
     public static func roundTrip(timeout: Duration) async -> Bool {
+        await reply(timeout: timeout) != nil
+    }
+
+    /// Posts `ping` and returns the next `pong`'s string values (`DuoIDs.Notifications.pong`), or
+    /// `nil` when none arrives within `timeout` (the IME is not running).
+    public static func reply(timeout: Duration) async -> [String: String]? {
         let waiter = PongWaiter()
         return await withCheckedContinuation { continuation in
             waiter.start(continuation, timeout: timeout)
@@ -200,30 +206,33 @@ public enum InputMethodPing {
 
 @MainActor
 private final class PongWaiter {
-    private var continuation: CheckedContinuation<Bool, Never>?
+    private var continuation: CheckedContinuation<[String: String]?, Never>?
     private var observer: (any NSObjectProtocol)?
     private var timeout: Task<Void, Never>?
 
-    func start(_ continuation: CheckedContinuation<Bool, Never>, timeout: Duration) {
+    func start(_ continuation: CheckedContinuation<[String: String]?, Never>, timeout: Duration) {
         self.continuation = continuation
         let center = DistributedNotificationCenter.default()
-        observer = center.addObserver(forName: DuoIDs.Notifications.pong, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.finish(true) }
+        observer = center.addObserver(forName: DuoIDs.Notifications.pong, object: nil, queue: .main) { [weak self] note in
+            let values = (note.userInfo ?? [:]).reduce(into: [String: String]()) { out, pair in
+                if let key = pair.key as? String, let value = pair.value as? String { out[key] = value }
+            }
+            MainActor.assumeIsolated { self?.finish(values) }
         }
         self.timeout = Task { [weak self] in
             try? await Task.sleep(for: timeout)
-            self?.finish(false)
+            self?.finish(nil)
         }
         center.postNotificationName(DuoIDs.Notifications.ping, object: nil, userInfo: nil, deliverImmediately: true)
     }
 
-    private func finish(_ answered: Bool) {
+    private func finish(_ answer: [String: String]?) {
         guard let continuation else { return }
         self.continuation = nil
         timeout?.cancel()
         timeout = nil
         if let observer { DistributedNotificationCenter.default().removeObserver(observer) }
         observer = nil
-        continuation.resume(returning: answered)
+        continuation.resume(returning: answer)
     }
 }
