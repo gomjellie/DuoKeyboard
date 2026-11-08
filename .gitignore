@@ -24,3 +24,6 @@ Tools/ModelBuilder/__pycache__/
 # Model outputs are copied into the app/test resources; keep only those copies
 Tools/ModelBuilder/out/duo-model.bin
 Tools/ModelBuilder/out/test_vectors.json
+
+# Chat exports people hand over for evaluation (real conversations): never commit
+KakaoTalk_Chat_*.csv
