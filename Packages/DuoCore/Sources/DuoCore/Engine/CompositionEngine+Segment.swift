@@ -39,9 +39,10 @@ extension CompositionEngine {
     /// Words with at least this many keys get the readings of their end on every key, so the bar can
     /// offer one by itself. Shorter words get them once the flip key or the bar is used.
     static let segmentAutoKeys = 10
-    /// A reading of the end of the word goes first on the bar when it beats the other script's
-    /// reading by this much; it brings the bar up by itself (a word of ``segmentAutoKeys`` keys or
-    /// more) and the last word's bar after a commit when it beats the shown reading by this much.
+    /// A reading of the end of the word goes first on the bar when it beats the shown reading and
+    /// the other script's reading by this much; it brings the bar up by itself (a word of
+    /// ``segmentAutoKeys`` keys or more) and the last word's bar after a commit when it beats the
+    /// shown reading by this much.
     static let segmentMargin = 6_000
     /// Most readings of the end of a word on the bar.
     static let maxSegmentRows = 2
@@ -175,18 +176,21 @@ extension CompositionEngine {
         }
     }
 
-    /// The best reading of the end of the word that beats `alternative` (the other script's whole
-    /// reading) by ``segmentMargin`` on the final-mode scale, if any: what a flip offers first
-    /// instead of the other script. A short word whose other reading is a word of its own keeps it
-    /// (chat stays first over 초at), while 30 keys of gibberish lose to their English end.
-    func segmentBeating(_ alternative: Hypothesis?, in segments: [Segment], final: HypothesisScores,
-                        prefix: HypothesisScores? = nil) -> Segment? {
+    /// The best reading of the end of the word that a flip offers instead of `alternative` (the
+    /// other script's whole reading), if any. On the final-mode scale it must beat both `shown`
+    /// (the word's original reading, or the reading it was committed in) and `alternative` by
+    /// ``segmentMargin``. A word that reads well keeps its flip to the other script (그러면 →
+    /// rmfjaus, not 그럼us), a short word whose other reading is a word of its own keeps it (chat
+    /// stays first over 초at), while 30 keys of gibberish lose to their English end.
+    func segmentBeating(_ alternative: Hypothesis?, shown: Hypothesis, in segments: [Segment],
+                        final: HypothesisScores, prefix: HypothesisScores? = nil) -> Segment? {
         guard let top = segments.first(where: \.mayLead) else { return nil }
-        guard let alternative else { return top }
-        let score = final[alternative]
-            ?? prefix.flatMap { p in p[alternative].map { $0 - (p.best?.score ?? 0) + (final.best?.score ?? 0) } }
-        guard let score else { return top }
-        return top.score - score >= Self.segmentMargin ? top : nil
+        func score(_ h: Hypothesis) -> Int? {
+            final[h] ?? prefix.flatMap { p in p[h].map { $0 - (p.best?.score ?? 0) + (final.best?.score ?? 0) } }
+        }
+        if let s = score(shown), top.score - s < Self.segmentMargin { return nil }
+        guard let alternative, let s = score(alternative) else { return top }
+        return top.score - s >= Self.segmentMargin ? top : nil
     }
 
     // MARK: Choosing a split

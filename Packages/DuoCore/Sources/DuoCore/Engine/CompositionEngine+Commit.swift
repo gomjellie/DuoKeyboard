@@ -67,7 +67,7 @@ extension CompositionEngine {
         var segmentLikely = false
         let looksNow = !t.isLocked && !t.segmentTail && keepsCommit
             && (t.count >= Self.segmentAutoKeys || (offersBar && (surprising || uncertain)))
-        if looksNow, let final, let found = segmentBeating(alternative, in: segments(
+        if looksNow, let final, let found = segmentBeating(alternative, shown: h, in: segments(
             raw: t.raw, context: t.context, committed: t.committed, scored: [final]), final: final) {
             lastAlternative = found.reading
             lastAlternativeText = found.text
@@ -153,15 +153,14 @@ extension CompositionEngine {
     /// `lc` with a reading of the end of the word as its alternative when one scores higher than
     /// the alternative chosen at the commit, which did not look for one (SPEC.md 4.11절).
     func checkSegments(_ lc: LastCommit) -> LastCommit {
-        guard !lc.segmentsChecked, case .whole = lc.hypothesis, case .whole(let other) = lc.alternative else {
-            return lc
-        }
+        guard !lc.segmentsChecked, case .whole(let shown) = lc.hypothesis, case .whole(let other) = lc.alternative
+        else { return lc }
         var checked = lc
         checked.segmentsChecked = true
         let final = detector.choiceScores(raw: lc.raw, context: lc.context, user: userCounts(lc.raw, lc.context),
                                           biasKO: biasKO)
-        let found = segmentBeating(other, in: segments(raw: lc.raw, context: lc.context, committed: 0,
-                                                       scored: [final]), final: final)
+        let found = segmentBeating(other, shown: shown, in: segments(raw: lc.raw, context: lc.context, committed: 0,
+                                                                     scored: [final]), final: final)
         if let found, found.reading != lc.hypothesis, found.text != lc.text {
             checked.alternative = found.reading
             checked.alternativeText = found.text

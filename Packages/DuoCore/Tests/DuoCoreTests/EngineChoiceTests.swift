@@ -643,6 +643,20 @@ struct EngineChoiceTests {
         #expect(h.marked == "chat")
     }
 
+    @Test func aWordThatReadsWellKeepsTheOtherScriptFirst() {
+        // 그럼 + us (−8) beats rmfjaus (−27) by 19 nats but 그러면 (−10) only by 2: an end goes first
+        // when it beats both by segmentMargin.
+        let h = EngineHarness()
+        h.detector.korean("rmfjaus")
+        h.detector.scores["rmfjaus"] = [.korean: -10_000, .english: -27_000]
+        h.detector.scores["us"] = [.english: -3000, .korean: -12_000]
+        h.type("rmfjaus")
+        h.modifier(down: true)
+        #expect(Self.readings(h) == ["그러면", "rmfjaus", "그럼us"], "the end is listed after the other script")
+        h.modifier(down: false)
+        #expect(h.marked == "rmfjaus")
+    }
+
     @Test func endsAreOnlyComputedWhenTheyCanMatter() {
         let h = EngineHarness()
         h.detector.korean("ch")

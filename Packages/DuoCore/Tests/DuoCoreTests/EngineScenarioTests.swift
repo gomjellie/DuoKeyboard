@@ -477,6 +477,29 @@ struct EngineScenarioTests {
         #expect(h.text == "안녕 " + flipped)
     }
 
+    @Test(arguments: ["com.apple.TextEdit", "com.kakao.KakaoTalkMac"], ["rmfjaus", "gkaus", "dlfma", "wnsql", "rmfla"])
+    func aWordThatReadsWellFlipsToTheOtherScriptNotToItsEnd(_ app: String, _ keys: String) {
+        // 그러면, 하면, 이름, 준비, 그림: an English end (그럼us, 일ma) reads worse than the word itself.
+        let h = EngineHarness(bundleIdentifier: app, scorer: RealModel.detector)
+        h.type("dkssud ")
+        h.type(keys)
+        h.flip()
+        #expect(h.text == "안녕 " + keys)
+        h.flip()
+        h.type(" ")
+        h.flip()
+        #expect(h.text == "안녕 " + keys + " ", "flip (b) of the committed word too")
+    }
+
+    @Test(arguments: ["dkssud", "rkatkgkqslek", "dhsmf", "ghldml", "dkdlvhs"])
+    func aCorrectWordFlippedAfterItsCommitTurnsWhole(_ keys: String) {
+        // 안녕, 감사합니다, 오늘, 회의, 아이폰: not 안sud or 가atk합니다.
+        let h = Self.harness()
+        h.type(keys + " ")
+        h.flip()
+        #expect(h.text == keys + " ")
+    }
+
     @Test func cmdChosenAsEnglishThenRoReadsCmdRo() {
         let h = Self.harness()
         h.type("cmd")

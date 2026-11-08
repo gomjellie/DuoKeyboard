@@ -436,16 +436,27 @@ struct EngineFlipTests {
         h.detector.korean("tkwls")
         h.detector.scores["tkwlsj"] = [.korean: -6000, .english: -26_000]
         h.detector.scores["tkwlsjp"] = [.korean: -8000, .english: -27_000]
-        h.detector.scores["tkwlsjpg"] = [.korean: -14_000, .english: -30_000]
+        h.detector.scores["tkwlsjpg"] = [.korean: -16_000, .english: -30_000]
         h.detector.scores["jpg"] = [.english: -4000, .korean: -16_000]
         h.type("tkwlsjpg ")
         #expect(h.text == "사지너ㅔㅎ ")
-        #expect(h.hud == nil, "K wins by 16 nats: a certain commit")
+        #expect(h.hud == nil, "K wins by 14 nats: a certain commit")
         #expect(!h.detector.choiceCalls.contains("jpg"), "and its end was not looked for")
         h.flip()
-        #expect(h.text == "사진jpg ", "사진 (−5) + jpg (−4) beats tkwlsjpg (−30) by 21 nats")
+        #expect(h.text == "사진jpg ", "사진 (−5) + jpg (−4) beats 사지너ㅔㅎ (−16) by 7 nats and tkwlsjpg (−30) by 21")
         h.flip()
         #expect(h.text == "사지너ㅔㅎ ")
+    }
+
+    @Test func aFlipOfAWordThatReadsWellGoesToTheOtherScript() {
+        // 그럼 + us beats rmfjaus by 19 nats, but not 그러면 itself.
+        let h = EngineHarness()
+        h.detector.korean("rmfjaus")
+        h.detector.scores["us"] = [.english: -3000, .korean: -12_000]
+        h.type("rmfjaus ")
+        #expect(h.text == "그러면 ")
+        h.flip()
+        #expect(h.text == "rmfjaus ")
     }
 
     @Test func theLastWordsEndIsNotOfferedWhereCommittedTextCannotChange() {

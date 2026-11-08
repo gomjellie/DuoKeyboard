@@ -79,7 +79,8 @@ extension CompositionEngine {
                 if segments.count == Self.maxSegmentRows { break }
             }
         }
-        let first = segmentBeating(firstWhole, in: segments, final: final, prefix: prefix)?.reading
+        let first = segmentBeating(firstWhole, shown: t.lockedOriginal ?? t.shown, in: segments, final: final,
+                                   prefix: prefix)?.reading
             ?? firstWhole.map(ChoiceReading.whole)
 
         var kept: [ChoiceReading] = [original]
