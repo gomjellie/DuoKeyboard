@@ -455,8 +455,9 @@ contenteditable, Terminal(zsh 줄 편집기), VS Code였어요. 호스트 앱 �
     빌드를 다시 설치하고 허용 목록을 되돌렸음.
 - **docs/research/ui-design.md 4.4절은 아직 템플릿 메뉴 아이콘을 적음.** 지금 아이콘은 템플릿이 아님
   (`TISIconIsTemplate` = false, SPEC 5절 C.5).
-- **연구 문서는 아직 입력 소스 아이콘 글자를 "가A"로 적음** (critique.md, imk-platform.md, ui-design.md).
-  지금 입력 소스 아이콘과 `TISIconLabels`는 "한A"임. HUD와 호스트 앱의 언어 배지는 여전히 "가"/"A"임.
+- **연구 문서는 아직 입력 소스 아이콘 글자를 "가A"로, 언어 배지를 "가"/"A"로 적음** (critique.md,
+  imk-platform.md, ui-design.md). 지금 입력 소스 아이콘과 `TISIconLabels`는 "한A"임. HUD와 호스트 앱의
+  언어 배지는 "한"/"A"를 텍스트로 그림.
 - **Orca 말고 다른 xterm.js 터미널은 확인하지 않았음.** 그래서 `xtermTerminals`에는 Orca만 있음.
 - **재설치 뒤 다시 연결.** `make install`이나 `install-ime.sh` 뒤에는, Duo를 쓰던 앱이 평범한 ABC로 입력함.
   - 그 앱이 맨 앞에 있을 때 Duo를 다시 고르거나(⌃Space 두 번, 또는 메뉴 막대), 포커스가 다른 앱으로 갔다가
