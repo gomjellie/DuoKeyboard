@@ -28,7 +28,11 @@ struct GeneralPane: View {
             } header: {
                 Text("바꾸기 키")
             } footer: {
-                Text("단어가 잘못 나오면 이 키로 한국어와 English를 바꿔요. 바꾼 단어는 Duo가 기억해요.")
+                if [.rightCommand, .rightOption].contains(settings.value.flipKey) {
+                    Text("단어가 잘못 나오면 이 키로 한국어와 English를 바꿔요. 누르고 있는 동안 숫자를 누르면 후보에서 골라요. 바꾼 단어는 Duo가 기억해요.")
+                } else {
+                    Text("단어가 잘못 나오면 이 키로 한국어와 English를 바꿔요. 바꾼 단어는 Duo가 기억해요.")
+                }
             }
 
             Section("입력") {
@@ -36,6 +40,11 @@ struct GeneralPane: View {
                     Text("입력 중 힌트 보기")
                     Text("애매한 단어를 쓰는 동안, 바꾸면 어떻게 되는지 커서 아래에 보여 줘요.")
                 }
+                Toggle(isOn: settings.binding(\.alwaysShowChoices)) {
+                    Text("후보 늘 보기")
+                    Text("애매하지 않은 단어도 쓰는 동안 모든 읽기를 보여 줘요. 꺼 두어도 바꾸기 키를 누르면 보여요.")
+                }
+                .disabled(!settings.value.showHints)
                 Toggle(isOn: settings.binding(\.offerUndoAfterCommit)) {
                     Text("확정 후 바꾸기 제안")
                     Text("Duo가 확신하지 못한 단어를 확정하면 잠깐 ‘↺ 바꾸기’를 띄워요.")

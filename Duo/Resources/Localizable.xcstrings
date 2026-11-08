@@ -753,6 +753,16 @@
         }
       }
     },
+    "단어가 잘못 나오면 이 키로 한국어와 English를 바꿔요. 누르고 있는 동안 숫자를 누르면 후보에서 골라요. 바꾼 단어는 Duo가 기억해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If a word comes out wrong, this key flips it between Korean and English. Hold it and press a number to pick a choice. Duo remembers the fix."
+          }
+        }
+      }
+    },
     "단어가 잘못 나오면 이 키로 한국어와 English를 바꿔요. 바꾼 단어는 Duo가 기억해요." : {
       "localizations" : {
         "en" : {
@@ -1249,6 +1259,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Leans to Korean when unsure. Good for messaging."
+          }
+        }
+      }
+    },
+    "애매하지 않은 단어도 쓰는 동안 모든 읽기를 보여 줘요. 꺼 두어도 바꾸기 키를 누르면 보여요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows every reading of each word while you type, not only of ambiguous ones. When off, press the flip key to see them."
           }
         }
       }
@@ -2069,6 +2089,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Offer to flip after commit"
+          }
+        }
+      }
+    },
+    "후보 늘 보기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always show choices"
           }
         }
       }
