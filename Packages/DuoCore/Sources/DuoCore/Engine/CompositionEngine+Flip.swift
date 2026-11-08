@@ -34,7 +34,7 @@ extension CompositionEngine {
             if checked, markedRange == nil {
                 dropToken()
             } else {
-                // Every flip key flips to what the right ⌘ press reveals (SPEC.md 4.11절 14).
+                // Every flip key flips to what the right ⌘ press reveals (SPEC.md 4.7절 a).
                 t.choicesRevealed = true
                 flipToken(t, markedRange: markedRange, checked: checked, client: client)
                 return

@@ -149,10 +149,10 @@ extension CompositionEngine {
     /// The reading the flip key switches `t` to: the next one on the bar (SPEC.md 4.11절), so a
     /// first flip goes to the other script (or to a likelier reading of the end of the word) and
     /// further flips walk the other readings, stepping over readings of the end, and come back to
-    /// the original. It is the bar the user
-    /// sees (the right ⌘ press reveals it with the readings of the end of the word). Without a bar
-    /// (one reading the client can choose), the R11 alternative, so the flip can still say why it
-    /// cannot change the word.
+    /// the original. It is the bar the right ⌘ press reveals, with the readings of the end of the
+    /// word; the other flip keys reveal it as they flip (`flip(client:at:)`). Without a bar (one
+    /// reading the client can choose), the R11 alternative, so the flip can still say why it cannot
+    /// change the word.
     func flipTarget(_ t: Token, _ scores: HypothesisScores) -> ChoiceReading? {
         if let bar = choiceList(t, scores) { return bar.readings[bar.choice.alternate] }
         return alternative(of: t.lockedOriginal ?? t.shown, raw: t.raw, in: scores).map(ChoiceReading.whole)
