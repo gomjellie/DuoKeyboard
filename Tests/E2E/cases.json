@@ -56,5 +56,7 @@
   {"name": "chord-rcmd-c-then-tap-still-flips", "keys": "hello to{space}{press:rcmd}c{release:rcmd}{rcmd}", "expect": "hello 새 ", "expectMarked": ""},
   {"name": "chord-rcmd-c-while-composing-commits", "keys": "dkssud{press:rcmd}c{release:rcmd}{space}", "expect": "안녕 ", "expectMarked": ""},
   {"name": "chord-rcmd-shift-is-not-a-flip", "keys": "hello me{space}{press:rcmd}{lshift}{release:rcmd}", "expect": "hello me ", "expectMarked": ""},
-  {"name": "flip-rcmd-eager-english-and-back", "keys": "dkssud hello{rcmd}{rcmd}{space}", "expect": "안녕 hello ", "expectMarked": ""}
+  {"name": "flip-rcmd-eager-english-and-back", "keys": "dkssud hello{rcmd}{rcmd}{space}", "expect": "안녕 hello ", "expectMarked": ""},
+  {"name": "chat-jamo-runs-and-slang", "keys": "zzzzsks rne wrkxek{space}", "expect": "ㅋㅋㅋㅋ난 굳 ㅈ같다 ", "expectMarked": ""},
+  {"name": "chat-good-after-english", "keys": "good rne eh{space}", "expect": "good 굳 도 ", "expectMarked": ""}
 ]
