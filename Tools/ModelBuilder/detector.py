@@ -236,24 +236,43 @@ class Feats:
 
 KEY_IS_CONSONANT = set("qwertasdfgzxcvQWERT")
 
+# Jamo that chat repeats for laughter and feelings (ㅋㅋㅋ, ㅎㅎ, ㅠㅠ, ㅜㅜ, ㅡㅡ, ㄷㄷ, ㅉㅉ). A run of two or
+# more of the same one is not charged as orphans, alone or next to syllables (ㅋㅋㅋ난, 흥해라ㅡㅡ).
+EMOTIVE_JAMO = set("ㅋㅎㅠㅜㅡㄷㅉ")
+
+
+def emotive_runs(text: str) -> tuple[int, bool]:
+    """(jamo in runs of >= 2 identical emotive jamo, whether the last character is in one)."""
+    exempt, i, last = 0, 0, False
+    while i < len(text):
+        j = i
+        while j < len(text) and text[j] == text[i]:
+            j += 1
+        if text[i] in EMOTIVE_JAMO and j - i >= 2:
+            exempt += j - i
+            last = j == len(text)
+        i = j
+    return exempt, last
+
 
 def features(m: DetectorModel, raw: str, p: Params, final: bool = True) -> Feats:
     kno = korean_normalize(raw)
     low = raw.lower()
-    _, orph, lone = keys_to_hangul(kno)
+    txt, orph, lone = keys_to_hangul(kno)
+    runs, run_at_end = emotive_runs(txt)
     nr, ns = shift_counts(raw)
     if final:
         ko_lm = m.lm_ko.score(kno, True)
         ko_lex = m.lex_ko.get(kno)
         en_lm = m.lm_en.score(low, True)
         en_lex = m.lex_en.get(low)
-        ko_orph = orph
+        ko_orph = orph - runs
     else:
         ko_lm = m.lm_ko.score(kno, False)
         ko_lex = None
         en_lm = m.lm_en.score(low, False)
         en_lex = None
-        ko_orph = orph - (1 if lone else 0)
+        ko_orph = orph - runs - (1 if lone and not run_at_end else 0)
     en_case = case_pattern(raw, m.case_lex)
     mix = []
     if len(raw) >= 2 and "'" not in raw:

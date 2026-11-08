@@ -266,7 +266,10 @@ def make_vectors(model: D.DetectorModel, p: D.Params, meta: dict, seed: int = 20
                 "km", "GB", "fps", "st", "nd", "rd", "ro", "aud", "tl", "qns", "R", "ATlsms", "Kfldrm", "Rksms",
                 # one Latin letter + a table suffix: MIX_INITIAL (uppercase), table-only Mix (lowercase)
                 "ATl", "Adid", "ADid", "Arns", "Ark", "Hwh", "Csms", "Srk", "Sdp", "Ask", "Ago",
-                "aTl", "adid", "arns", "mdp", "mfh", "hdml", "ask"])
+                "aTl", "adid", "arns", "mdp", "mfh", "hdml", "ask",
+                # emotive jamo runs (no orphan charge) and chat words
+                "zzzzzzzzzz", "zzzzsks", "gmdgofkmm", "bbbqnfjqek", "rkxspzzzz", "gggg", "eee", "see",
+                "zz'zz", "mmm", "WW", "ws", "tq", "wrkxek", "rne"])
     with open(os.path.join(md.DATA, "mixed_sentences.txt"), encoding="utf-8") as fh:
         for line in fh:
             if line.startswith("#"):
