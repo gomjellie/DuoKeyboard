@@ -259,13 +259,61 @@ struct EngineBoundaryTests {
         #expect(h.text == "참고: 내용 ")
     }
 
-    @Test(arguments: ["node.js ", "github.com/foo ", "e.g. "])
-    func letterAfterDotOfEnglishTokenIsLiteral(_ input: String) {
+    @Test(arguments: ["node.js ", "github.com/foo ", "e.g. ", "snu.ac.kr ", "example.com:8080/x ", "a.b,c "])
+    func aWordAfterTheDotOfAnEnglishWordStaysLatin(_ input: String) {
+        // Korean would win every piece here: K needs a flip after `.`, and after a boundary other
+        // than `.` the rest is literal.
         let h = EngineHarness()
-        for word in ["node", "github", "e"] { h.detector.english(word) }
+        for word in ["node", "github", "e", "snu", "example", "a"] { h.detector.english(word) }
         h.detector.fallback = { raw in [.korean: 0, .english: -9000 - raw.count] }
         h.type(input)
         #expect(h.text == input)
+    }
+
+    @Test func aWordAfterTheDotOfAnEnglishWordComposes() {
+        let h = EngineHarness()
+        h.detector.english("node")
+        h.detector.fallback = { raw in [.korean: 0, .english: -9000 - raw.count] }
+        h.type("node.j")
+        #expect(!h.engine.literal)
+        #expect(h.marked == "j", "K needs a flip")
+        #expect(h.engine.token?.context == .english)
+    }
+
+    @Test func aWordAfterTheDotOfAnEnglishWordTakesAKoreanEnding() {
+        // notes.txt라는, setup.exe가: Latin plus a Korean ending is allowed.
+        let h = EngineHarness()
+        h.detector.english("node")
+        h.detector.english("js")
+        h.detector.scores["jsf"] = [.korean: 0, .english: -6000, .mixed(latin: 2): -5000]
+        h.detector.scores["jsfh"] = [.korean: 0, .english: -9000, .mixed(latin: 2): -3000]
+        h.type("node.jsfh ")
+        #expect(h.text == "node.js로 ")
+        #expect(!h.engine.literal)
+    }
+
+    @Test func aWordThatReadsKoreanByFarAfterTheDotComposesAsKorean() {
+        // ok.알겠어: the `.` ended a sentence.
+        let h = EngineHarness()
+        h.detector.english("ok")
+        h.detector.korean("dkfrpTdj")
+        h.type("ok.dkfrpTdj ")
+        #expect(h.text == "ok.알겠어 ")
+    }
+
+    @Test func aKoreanWordAfterTheDotOfAnEnglishWordIsOneFlipAway() {
+        // A.I.가: Korean leads by less than `latinSplitMargin`, so the word stays Latin; it is
+        // composed, so the flip key reaches it (L passed it raw).
+        let h = EngineHarness()
+        h.detector.english("A")
+        h.detector.english("I")
+        h.detector.fallback = { raw in [.korean: 0, .english: -9000 - raw.count] }
+        h.type("A.I.rk")
+        #expect(h.marked == "rk")
+        h.flip()
+        #expect(h.marked == "가")
+        h.press(.space)
+        #expect(h.text == "A.I.가 ")
     }
 
     @Test func dotAfterKoreanIsSentencePunctuation() {
@@ -394,13 +442,15 @@ struct EngineBoundaryTests {
         #expect(h.text == "kim")
     }
 
-    @Test func letterAfterTheDotOfAnEnglishWordCountsAsTheFirstLiteralUnit() {
+    @Test func theBoundaryAfterADottedWordIsTheFirstLiteralUnit() {
         let h = EngineHarness()
-        h.detector.english("node")
-        h.type("node.j")
+        h.detector.english("github")
+        h.detector.english("com")
+        h.type("github.com/")
         #expect(h.engine.literal)
         h.press(.backspace)
         #expect(!h.engine.literal)
+        #expect(h.text == "github.com")
     }
 
     @Test func selectAllThenDeleteEndsLiteral() {

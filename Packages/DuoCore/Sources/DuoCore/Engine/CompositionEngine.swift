@@ -182,11 +182,7 @@ public final class CompositionEngine {
                 return passRaw(event, terminator: .space, boundaryLength: 0, client: client)
             }
             if literal { return passLetterOrRaw(event, terminator: .space, client: client) }
-            if dotAfterEnglish, token == nil {
-                beginLiteral()
-                return passLetterOrRaw(event, terminator: .space, client: client)
-            }
-            return handleLetter(k, event: event, client: client)
+            return handleLetter(k, event: event, dotted: dotAfterEnglish && token == nil, client: client)
 
         case .character(let ch):
             if mods.contains(.option) {

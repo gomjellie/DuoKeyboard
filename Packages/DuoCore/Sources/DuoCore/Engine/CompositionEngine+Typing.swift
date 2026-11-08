@@ -21,7 +21,8 @@ extension CompositionEngine {
 
     // MARK: Letters (§4.3)
 
-    func handleLetter(_ key: Keystroke, event: KeyEvent, client: any TextClient) -> Bool {
+    /// - Parameter dotted: the key follows the `.` that ended an English word (``Token/dotted``).
+    func handleLetter(_ key: Keystroke, event: KeyEvent, dotted: Bool = false, client: any TextClient) -> Bool {
         if let t = token, t.count >= Self.maxTokenLength,
            startsLatinWord(key, after: t) || !carryLastSyllable(of: t, before: key, at: event.timestamp, client: client) {
             commitToken(terminator: .space, boundaryLength: 0, client: client)
@@ -38,7 +39,10 @@ extension CompositionEngine {
             token?.latinStart = true
             if clientProfile.canReplaceCommittedText { token?.splitHead = head }
         }
-        if token == nil { startToken(at: event.timestamp) }
+        if token == nil {
+            startToken(at: event.timestamp)
+            token?.dotted = dotted
+        }
         // A new letter ends flip case (b) for the previous word.
         lastCommit = nil
         guard var t = token else { return false }
@@ -74,6 +78,12 @@ extension CompositionEngine {
         }
 
         t.scores = prefixScores(t.raw, t.context)
+        if t.dotted, let scores = t.scores, let k = scores[.korean],
+           let other = scores.best(where: { $0 != .korean }), k - other.score >= Self.latinSplitMargin {
+            // The `.` ended a sentence: the word reads Korean by as much as a word a capital may
+            // end (ok.알겠어). Extensions and domains stay below 7 nats (gg, ac, qq).
+            t.dotted = false
+        }
         if t.latinStart, t.count >= 2, let scores = t.scores, let k = scores[.korean],
            let best = scores.best(where: t.isAllowed), k - best.score >= Self.latinMergeMargin,
            let merged = reopenSplitHead(of: t, appending: t.raw, client: client) {
@@ -342,10 +352,17 @@ extension CompositionEngine {
             break
         }
         let terminator: Terminator = ch.isASCII && ch.isNumber ? .digit : ch == "-" ? .hyphen : .punctuation
+        let dotted = token?.dotted == true
         let committed = commitToken(terminator: terminator, boundaryLength: String(ch).utf16.count, client: client)
         context.notePassed(event.key)
         if committed == .english {
-            if ch == "." { context.dotAfterEnglishToken = true }
+            if ch == "." {
+                context.dotAfterEnglishToken = true
+            } else if dotted {
+                // github.com/foo, example.com:8080, node.js?: the rest is a URL or a path.
+                beginLiteral()
+                return false
+            }
             if ch == ":" { context.colonAfterEnglishToken = true }
         }
         return false

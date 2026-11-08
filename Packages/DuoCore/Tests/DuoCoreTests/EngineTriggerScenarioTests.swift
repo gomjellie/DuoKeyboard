@@ -120,6 +120,42 @@ struct EngineTriggerScenarioTests {
         all(.start, "ls ~/.ssh ", "ls ~/.ssh "),
     ].flatMap { $0 }
 
+    /// A word after the `.` of an English word composes without K (extensions, domains, initials).
+    nonisolated static let dotted: [Row] = [
+        // A Korean ending after an extension or a domain
+        all(.korean, "notes.txtfksms ", "notes.txt라는 "),
+        all(.korean, "setup.exerk ", "setup.exe가 "),
+        all(.korean, "Figma.appTmaus ", "Figma.app쓰면 "),
+        all(.korean, "news.example.comdlsp ", "news.example.com이네 "),
+        all(.start, "package.jsondp ", "package.json에 "),
+        all(.korean, "node.jsfh ", "node.js로 "),
+        all(.korean, "L.Adml ", "L.A의 "),
+        // ... Korean itself when it leads by far (the `.` ended a sentence), else through the flip key
+        all(.korean, "ok.dkfrpTdj ", "ok.알겠어 "),
+        all(.korean, "good.whgdk ", "good.좋아 "),
+        all(.korean, "A.I.rk ", "A.I.rk "),
+        all(.korean, "A.I.rk⌘ ", "A.I.가 "),
+        // URLs, paths, file names and code stay Latin
+        all(.start, "node.js ", "node.js "),
+        all(.korean, "snu.ac.kr ", "snu.ac.kr "),
+        all(.korean, "google.co.kr ", "google.co.kr "),
+        all(.korean, "op.gg ", "op.gg "),
+        all(.korean, "gmarket.co.kr ", "gmarket.co.kr "),
+        all(.korean, "cafe.example.com/xyz ", "cafe.example.com/xyz "),
+        all(.start, "github.com/rkskek ", "github.com/rkskek "),
+        all(.korean, "example.com:8080/path ", "example.com:8080/path "),
+        all(.korean, "bit.ly/3xYzAb ", "bit.ly/3xYzAb "),
+        all(.korean, "kim.cs@example.com ", "kim.cs@example.com "),
+        all(.korean, "run.sh ", "run.sh "),
+        all(.korean, "README.md ", "README.md "),
+        all(.korean, "archive.tar.gz ", "archive.tar.gz "),
+        all(.korean, "com.apple.TextEdit ", "com.apple.TextEdit "),
+        all(.korean, "console.log(x) ", "console.log(x) "),
+        all(.korean, "process.env.NODE_ENV ", "process.env.NODE_ENV "),
+        all(.korean, "e.g. ", "e.g. "),
+        all(.korean, "U.S. ", "U.S. "),
+    ].flatMap { $0 }
+
     static func run(_ row: Row) -> (EngineHarness, String) {
         let h = EngineHarness(bundleIdentifier: row.app.rawValue, scorer: RealModel.detector)
         h.type(row.prime.rawValue)
@@ -155,6 +191,13 @@ struct EngineTriggerScenarioTests {
 
     @Test(arguments: tilde)
     func tildeRow(_ row: Row) {
+        let (h, produced) = Self.run(row)
+        #expect(produced == row.expected)
+        #expect(!h.engine.literal)
+    }
+
+    @Test(arguments: dotted)
+    func dottedRow(_ row: Row) {
         let (h, produced) = Self.run(row)
         #expect(produced == row.expected)
         #expect(!h.engine.literal)

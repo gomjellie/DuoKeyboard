@@ -36,6 +36,12 @@ struct Token {
     var latinStart = false
     /// The Korean word that capital ended, kept to re-open it (only where committed text can be replaced).
     var splitHead: SplitHead?
+    /// The word starts right after the `.` that ended an English word (SPEC.md 4.6절): an extension,
+    /// a domain or an initial (node.js, notes.txt라는, L.A의). K is not allowed without a flip, so
+    /// `ac` in snu.ac.kr stays Latin and only a Korean ending may follow, until K leads every other
+    /// reading by `latinSplitMargin` (ok.알겠어): then the flag is cleared. Committed as English
+    /// at a boundary other than `.`, the rest up to whitespace is a URL or a path: L.
+    var dotted = false
     /// Prefix-mode scores of `raw`, computed once per key and reused for display, eager commit, the
     /// HUD and flips (SPEC.md §5 B.6). `nil` while stale (keys passed raw in the eager-E state).
     var scores: HypothesisScores?
@@ -75,7 +81,8 @@ struct Token {
 
     /// Readings the engine may show or commit without a flip.
     func isAllowed(_ h: Hypothesis) -> Bool {
-        isConsistent(h) && (languageLock == nil || h.language == languageLock) && !(latinStart && h == .korean)
+        isConsistent(h) && (languageLock == nil || h.language == languageLock)
+            && !((latinStart || dotted) && h == .korean)
             && !isChoiceOnly(h)
     }
 
