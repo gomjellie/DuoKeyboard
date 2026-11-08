@@ -65,7 +65,7 @@ struct CompositionHUDView: View {
         .padding(.leading, leadingPadding(presentation))
         .padding(.trailing, trailingPadding(presentation))
         .frame(minWidth: Self.height, minHeight: Self.height, maxHeight: Self.height)
-        .duoGlass(pulsing ? .regular.tint(Color.accentColor.opacity(0.25)) : .regular, in: Capsule())
+        .duoGlass(tint: pulsing ? Color.accentColor.opacity(0.25) : nil, in: Capsule())
         .overlay {
             if contrast == .increased {
                 Capsule().strokeBorder(Color.primary.opacity(0.55), lineWidth: 1)
@@ -232,7 +232,7 @@ private struct Keycaps: View {
     }
 }
 
-// MARK: - Glass with an offscreen-snapshot stand-in (ui-design §2.7)
+// MARK: - Glass with an offscreen-snapshot stand-in (ui-design §2.7) and a pre-macOS 26 material
 
 extension EnvironmentValues {
     /// `true` only when rendering offscreen for visual checks: glass does not rasterize there, so an
@@ -241,7 +241,7 @@ extension EnvironmentValues {
 }
 
 private struct DuoGlassModifier<S: InsettableShape>: ViewModifier {
-    let glass: Glass
+    let tint: Color?
     let shape: S
     @Environment(\.duoSnapshotMode) private var snapshot
 
@@ -251,15 +251,23 @@ private struct DuoGlassModifier<S: InsettableShape>: ViewModifier {
                 .background(shape.fill(.background.secondary))
                 .overlay(shape.strokeBorder(.separator, lineWidth: 0.5))
                 .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+        } else if #available(macOS 26.0, *) {
+            content.glassEffect(tint.map { Glass.regular.tint($0) } ?? .regular, in: shape)
         } else {
-            content.glassEffect(glass, in: shape)
+            // The panel has no window shadow (it would be rectangular), so the capsule draws one.
+            content
+                .background(shape.fill(.regularMaterial))
+                .background(shape.fill(tint ?? .clear))
+                .overlay(shape.strokeBorder(.separator, lineWidth: 0.5))
+                .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
         }
     }
 }
 
 extension View {
-    /// `.glassEffect(glass, in: shape)`, or the snapshot stand-in under ``EnvironmentValues/duoSnapshotMode``.
-    func duoGlass<S: InsettableShape>(_ glass: Glass = .regular, in shape: S) -> some View {
-        modifier(DuoGlassModifier(glass: glass, shape: shape))
+    /// `.glassEffect(.regular, in: shape)` tinted with `tint`; a material capsule before macOS 26, and
+    /// the snapshot stand-in under ``EnvironmentValues/duoSnapshotMode``.
+    func duoGlass<S: InsettableShape>(tint: Color? = nil, in shape: S) -> some View {
+        modifier(DuoGlassModifier(tint: tint, shape: shape))
     }
 }
