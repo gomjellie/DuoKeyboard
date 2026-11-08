@@ -10,6 +10,10 @@ import DuoKit
 // 3. Compares the resulting text with the expectation and prints a JSON report.
 //
 // Usage: DuoHarness [--keep-source] [--snapshot <dir>] (<cases-file> | -e "keys" ["keys"...])
+//        DuoHarness --reconnect
+//   --reconnect: no window. If Duo is the selected input source, launches the installed input method
+//   and selects another source and Duo again, so the frontmost app binds to the running server
+//   (e2e.sh stops the server to restore the learning file; apps stay bound to the stopped one).
 //   cases file (JSON): [{"name": "...", "keys": "dkssud{space}", "expect": "안녕 ", "expectMarked": ""}]
 //   Key DSL: see DuoKit.KeyScript (`{click}` injects a mouse-down, `{rcmd}` a right-⌘ tap with device bits).
 //   Exit status: 0 all passed, 1 a case failed or the IME never answered, 2 bad arguments.
@@ -195,6 +199,23 @@ func usage(_ message: String) -> Never {
 
         """.utf8))
     exit(2)
+}
+
+if CommandLine.arguments.dropFirst().contains("--reconnect") {
+    NSApplication.shared.setActivationPolicy(.prohibited)
+    guard InputSourceManager.isSelected else {
+        FileHandle.standardError.write(Data("[harness] reconnect: Duo is not selected\n".utf8))
+        exit(0)
+    }
+    let open = Process()
+    open.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+    open.arguments = ["-g", "-j", InputSourceManager.installedBundleURL.path]
+    try? open.run()
+    open.waitUntilExit()
+    Thread.sleep(forTimeInterval: 1)
+    let status = InputSourceManager.reselect()
+    FileHandle.standardError.write(Data("[harness] reconnect: reselect=\(status)\n".utf8))
+    exit(0)
 }
 
 let harness = Harness()

@@ -12,8 +12,9 @@
 # Needs the Debug input method installed (`make install`) and DuoHarness built in Debug. The harness
 # selects Duo and takes focus while it runs: don't run it while someone is typing.
 # Learning is isolated: the cases run against an empty store (flips in them record votes), and the
-# user's learning.json is put back afterwards. Stopping the IME for this is harmless; it relaunches
-# on the next key.
+# user's learning.json is put back afterwards. The IME is stopped for this; afterwards the script
+# relaunches it and selects Duo again (`DuoHarness --reconnect`), or the frontmost app would stay
+# bound to the stopped server and type nothing.
 # Exit status: 0 all passed, 1 a case failed or the IME never answered, 2 usage error.
 set -uo pipefail
 
@@ -67,6 +68,7 @@ stop_ime() {
 restore_learning() {
   stop_ime
   if [[ -f "$LEARNING_BACKUP" ]]; then mv -f "$LEARNING_BACKUP" "$LEARNING"; else rm -f "$LEARNING"; fi
+  open -g -W -n "$APP" --args --reconnect 2>/dev/null || true
 }
 stop_ime
 if [[ -f "$LEARNING_BACKUP" ]]; then
