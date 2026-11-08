@@ -228,7 +228,7 @@ struct PlaygroundHUDChip: View {
         .padding(.leading, isChoice ? 3 : 4)
         .padding(.trailing, 6)
         .frame(height: 28)
-        .duoGlass(.regular, in: Capsule())
+        .duoGlass(in: Capsule())
         .onHover { inside in
             hovering = inside
             onPointer(inside)

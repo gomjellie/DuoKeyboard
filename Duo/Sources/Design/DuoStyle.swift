@@ -32,7 +32,6 @@ extension EnvironmentValues {
 }
 
 private struct DuoGlassModifier<S: InsettableShape>: ViewModifier {
-    let glass: Glass
     let shape: S
     @Environment(\.duoSnapshotMode) private var snapshot
 
@@ -42,16 +41,22 @@ private struct DuoGlassModifier<S: InsettableShape>: ViewModifier {
                 .background(shape.fill(.background.secondary))
                 .overlay(shape.strokeBorder(.separator, lineWidth: 0.5))
                 .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+        } else if #available(macOS 26.0, *) {
+            content.glassEffect(.regular, in: shape)
         } else {
-            content.glassEffect(glass, in: shape)
+            content
+                .background(shape.fill(.regularMaterial))
+                .overlay(shape.strokeBorder(.separator, lineWidth: 0.5))
+                .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
         }
     }
 }
 
 extension View {
-    /// `.glassEffect(_:in:)`, with an opaque stand-in in snapshot mode.
-    func duoGlass<S: InsettableShape>(_ glass: Glass = .regular, in shape: S) -> some View {
-        modifier(DuoGlassModifier(glass: glass, shape: shape))
+    /// `.glassEffect(.regular, in:)`; a material surface before macOS 26 and an opaque stand-in in
+    /// snapshot mode.
+    func duoGlass<S: InsettableShape>(in shape: S) -> some View {
+        modifier(DuoGlassModifier(shape: shape))
     }
 
     /// A rounded card on the secondary background, as used for the playground and checklists.
@@ -69,12 +74,14 @@ private struct DuoGlassButtonModifier: ViewModifier {
     @Environment(\.duoSnapshotMode) private var snapshot
 
     func body(content: Content) -> some View {
-        switch (snapshot, prominent) {
-        case (false, false): content.buttonStyle(.glass)
-        case (false, true): content.buttonStyle(.glassProminent)
-        // `cacheDisplay` draws glass buttons without their glass; bordered styles keep the geometry.
-        case (true, false): content.buttonStyle(.bordered)
-        case (true, true): content.buttonStyle(.borderedProminent)
+        // `cacheDisplay` draws glass buttons without their glass, and macOS 15 has none; bordered
+        // styles keep the geometry.
+        if !snapshot, #available(macOS 26.0, *) {
+            if prominent { content.buttonStyle(.glassProminent) } else { content.buttonStyle(.glass) }
+        } else if prominent {
+            content.buttonStyle(.borderedProminent)
+        } else {
+            content.buttonStyle(.bordered)
         }
     }
 }

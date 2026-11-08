@@ -33,7 +33,7 @@ struct HeroMorph: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 132)
-        .duoGlass(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .duoGlass(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("dkssud를 치면 안녕, hello를 치면 hello가 돼요."))
     }

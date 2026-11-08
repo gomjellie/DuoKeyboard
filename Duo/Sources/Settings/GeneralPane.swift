@@ -104,19 +104,35 @@ private struct LanguageBiasSlider: View {
     @Binding var bias: Int
 
     var body: some View {
-        Slider(value: Binding(get: { Double(bias) }, set: { bias = Int(($0 / 100).rounded()) * 100 }),
-               in: -1000...1000, neutralValue: 0) {
-            Text("자주 쓰는 언어")
-        } minimumValueLabel: {
-            Text(verbatim: "English")
-        } maximumValueLabel: {
-            Text("한국어")
-        } ticks: {
-            SliderTick(-1000.0)
-            SliderTick(0.0)
-            SliderTick(1000.0)
+        Group {
+            if #available(macOS 26.0, *) {
+                Slider(value: value, in: -1000...1000, neutralValue: 0) {
+                    Text("자주 쓰는 언어")
+                } minimumValueLabel: {
+                    Text(verbatim: "English")
+                } maximumValueLabel: {
+                    Text("한국어")
+                } ticks: {
+                    SliderTick(-1000.0)
+                    SliderTick(0.0)
+                    SliderTick(1000.0)
+                }
+            } else {
+                // No centre fill or ticks before macOS 26; 21 stops still land on 0.
+                Slider(value: value, in: -1000...1000, step: 100) {
+                    Text("자주 쓰는 언어")
+                } minimumValueLabel: {
+                    Text(verbatim: "English")
+                } maximumValueLabel: {
+                    Text("한국어")
+                }
+            }
         }
         .accessibilityValue(accessibilityValue)
+    }
+
+    private var value: Binding<Double> {
+        Binding(get: { Double(bias) }, set: { bias = Int(($0 / 100).rounded()) * 100 })
     }
 
     private var accessibilityValue: Text {
