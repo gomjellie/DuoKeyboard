@@ -12,7 +12,7 @@
 
 | 주제 | 결정 |
 |---|---|
-| 배포 대상(deployment target) | 두 타깃 모두 **macOS 26.0**. SDK가 27.2라서 macOS 27 API도 들어 있지만, 사용자는 26.6.2를 씀. **`macOS 27` API는 호출하지 않음**(`NSGlassEffectView.effectIsInteractive`, `NSViewCornerConfiguration`, `NSMenuItem.preferredImageVisibility`, …). 26.1 API는 `#available(macOS 26.1, *)` 검사로 감쌈. 해당 API는 `GlassButtonStyle.init(_:)`을 쓰는 `.buttonStyle(.glass(.clear))`와 `NSScrollEdgeEffectStyle`임. |
+| 배포 대상(deployment target) | 두 타깃 모두 **macOS 15.0**(2026-11-09부터. 처음에는 26.0). macOS 26 API(`.glassEffect`, `.buttonStyle(.glass)`, `SliderTick`)는 `#available(macOS 26.0, *)`로 감싸고, 그 아래에서는 `.regularMaterial` 표면, `.bordered` 버튼, 눈금 없는 슬라이더를 씀. SDK가 27.2라서 macOS 27 API도 들어 있지만, 사용자는 26.6.2를 씀. **`macOS 27` API는 호출하지 않음**(`NSGlassEffectView.effectIsInteractive`, `NSViewCornerConfiguration`, `NSMenuItem.preferredImageVisibility`, …). 26.1 API는 `#available(macOS 26.1, *)` 검사로 감쌈. 해당 API는 `GlassButtonStyle.init(_:)`을 쓰는 `.buttonStyle(.glass(.clear))`와 `NSScrollEdgeEffectStyle`임. |
 | HUD 유리 | **투명하고 테두리 없으며 활성화되지 않는 `NSPanel`** 안에서 SwiftUI `.glassEffect(.regular, in: .capsule)`을 씀. 캡처로 확인함: 라이트와 다크 모두에서 유리가 *패널 뒤에 있는 다른 창*의 내용을 비춤. 패널의 `contentView`로 `NSGlassEffectView`를 써도 동작함. 이것이 AppKit 대안임. |
 | HUD 창 | `[.borderless, .nonactivatingPanel]`, 레벨 `CGShieldingWindowLevel()`(2147483628. 레벨 101인 메뉴와 Spotlight보다 위. rime/Squirrel과 같음), `[.canJoinAllSpaces, .fullScreenAuxiliary, .transient, .ignoresCycle]`, `ignoresMouseEvents = true`, `hidesOnDeactivate = false`, `canBecomeKey/Main = false`. `orderFrontRegardless()`로 띄움. 입력기 앱은 **절대** 활성화하지 않음. |
 | HUD 배치 | 순수 함수(`HUDGeometry.place`, Swift Testing 단위 테스트 7/7 통과). IMK 캐럿 사각형에 맞춰 정렬함. 화면 아래쪽 가장자리 근처에서는 캐럿 위로 올림. `visibleFrame` 안으로 제한함. 캐럿이 있는 디스플레이를 고름. 백킹 배율(backing scale)에 맞춰 스냅함. 엉터리 사각형이 오면 숨김. |

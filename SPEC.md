@@ -1,6 +1,6 @@
 # Duo v1 — 구현 명세
 
-Duo는 macOS 26 InputMethodKit 입력기예요. 키보드 하나로 한국어(두벌식)와 영어를 전환 없이 쳐요. 치는 동안 단어마다 두 언어의 읽기에 점수를 매기고, 사용자가 뜻한 언어로 확정해요. 드물게 틀리면 바꾸기 키나 후보 막대로 고치고, Duo는 그 선택을 학습해요.
+Duo는 macOS 15 이상의 InputMethodKit 입력기예요. 키보드 하나로 한국어(두벌식)와 영어를 전환 없이 쳐요. 치는 동안 단어마다 두 언어의 읽기에 점수를 매기고, 사용자가 뜻한 언어로 확정해요. 드물게 틀리면 바꾸기 키나 후보 막대로 고치고, Duo는 그 선택을 학습해요.
 
 이 문서는 엔진, 입력기, 호스트 앱이 지킬 규칙을 적은 구현 명세예요. 규칙이 바뀌면 코드와 함께 이 문서를 고쳐요. 코드 주석이 가리키는 `SPEC.md`의 절 번호(4.7절, 4.11절, 5절 B.6, 5절 C.1 등)는 이 문서의 절 번호예요. 그래서 1절부터 7절까지의 번호는 바꾸지 않아요.
 
@@ -22,7 +22,7 @@ Duo는 macOS 26 InputMethodKit 입력기예요. 키보드 하나로 한국어(�
 ├─ docs/
 │  ├─ STATUS.md              # v1 진행 상황, 테스트 수치, 실제 앱 QA, 알려진 문제
 │  └─ research/              # critique, detection, ux-spec, imk-platform, ui-design
-├─ Packages/DuoCore/         # SwiftPM 패키지 (macOS 26, Swift 6 언어 모드)
+├─ Packages/DuoCore/         # SwiftPM 패키지 (macOS 15, Swift 6 언어 모드)
 │  ├─ Sources/DuoCore/       # 순수 엔진 (Foundation만): Hangul/, Contracts/, Detection/, Engine/
 │  ├─ Sources/DuoKit/        # 입력기와 호스트 앱이 함께 쓰는 AppKit/Carbon 통합: HUD/, Host/, …
 │  └─ Tests/DuoCoreTests/    # Swift Testing: 감지, 엔진, HUD 규칙, 저장, 설치. Resources/test_vectors.json
@@ -47,7 +47,9 @@ Duo는 macOS 26 InputMethodKit 입력기예요. 키보드 하나로 한국어(�
 
 - 도구: macOS 26.6.2, Xcode 27.2, Swift 6.4.2, XcodeGen 2.46.0, Python 3(표준 라이브러리만).
 - 언어 설정: Swift 6 언어 모드, 엄격한 동시성 검사(`SWIFT_STRICT_CONCURRENCY: complete`). 패키지는 `swift-tools-version: 6.2`.
-- 배포 대상: macOS 26.0. 버전은 `MARKETING_VERSION` 1.0.0.
+- 배포 대상: macOS 15.0. 버전은 `MARKETING_VERSION` 1.0.0.
+  - macOS 26 전용 API(Liquid Glass `.glassEffect`, `.buttonStyle(.glass)`, `SliderTick`)는 `#available(macOS 26.0, *)` 안에서만 씀. 그 아래에서는 `.regularMaterial` 표면(테두리와 그림자), `.bordered` 버튼, 눈금 없는 100 단위 슬라이더를 씀.
+  - macOS 15에서는 실행해 보지 않았음(확인한 환경은 26.6.2).
 - 서명: ad-hoc(`CODE_SIGN_IDENTITY: "-"`)과 hardened runtime. 따로 서명한 디버그 dylib를 거부하므로 `ENABLE_DEBUG_DYLIB: NO`(R20, V5).
 - 개발 언어: `ko`. 문자열은 String Catalog(`Localizable.xcstrings`)에 둠.
 
@@ -104,7 +106,7 @@ Duo는 macOS 26 InputMethodKit 입력기예요. 키보드 하나로 한국어(�
 ## 2. 아키텍처
 
 ```
-Packages/DuoCore (SwiftPM, macOS 26, Swift 6 언어 모드)
+Packages/DuoCore (SwiftPM, macOS 15, Swift 6 언어 모드)
   DuoCore  (순수, Foundation만)
     Hangul/      두벌식 오토마톤, Keystroke, 자판 표                         [A]
     Contracts/   공유 타입. 리드만 고침                                      [lead]

@@ -1,6 +1,6 @@
 # Duo
 
-Duo는 macOS 26용 입력기예요. 키보드 하나로 한국어(두벌식)와 영어를 한/영 전환 없이 써요. 단어를 치는 동안 두 언어의 읽기를 함께 점수 매기고, 단어가 끝나면 뜻한 언어로 확정해요. `dkssudgktpdy hello`를 치면 `안녕하세요 hello`가 되고, `PRdmf`는 `PR을`이 돼요. 드물게 틀리면 바꾸기 키(기본 오른쪽 ⌘ 톡)를 한 번 눌러 고쳐요. 고친 단어는 이 Mac 안에서 학습해요. 읽기가 애매한 단어에는 후보 막대가 뜨고, 바꾸기 키를 누른 채 숫자를 누르면(⌘3) 그 읽기를 골라요. 호스트 앱은 설치와 켜기, 설정, 연습장을 맡아요. 목표는 전환 키 없이 두 언어를 Apple 입력기 수준으로 쓰는 거예요. 한국어 단어는 치는 중에 깜빡이지 않고, 키 하나의 점수 계산은 300 µs 안에 끝나고, Backspace는 지우기만 해요.
+Duo는 macOS 15 이상에서 쓰는 입력기예요. 키보드 하나로 한국어(두벌식)와 영어를 한/영 전환 없이 써요. 단어를 치는 동안 두 언어의 읽기를 함께 점수 매기고, 단어가 끝나면 뜻한 언어로 확정해요. `dkssudgktpdy hello`를 치면 `안녕하세요 hello`가 되고, `PRdmf`는 `PR을`이 돼요. 드물게 틀리면 바꾸기 키(기본 오른쪽 ⌘ 톡)를 한 번 눌러 고쳐요. 고친 단어는 이 Mac 안에서 학습해요. 읽기가 애매한 단어에는 후보 막대가 뜨고, 바꾸기 키를 누른 채 숫자를 누르면(⌘3) 그 읽기를 골라요. 호스트 앱은 설치와 켜기, 설정, 연습장을 맡아요. 목표는 전환 키 없이 두 언어를 Apple 입력기 수준으로 쓰는 거예요. 한국어 단어는 치는 중에 깜빡이지 않고, 키 하나의 점수 계산은 300 µs 안에 끝나고, Backspace는 지우기만 해요.
 
 - 구현 명세: [`SPEC.md`](./SPEC.md)
 - 진행 상황과 알려진 문제: [`docs/STATUS.md`](./docs/STATUS.md)
@@ -243,7 +243,7 @@ Duo는 고친 단어를 이 Mac 안에서 기억해요. 문장은 저장하지 �
 
 ## 빠른 시작
 
-필요한 것: **macOS 26**(배포 대상 26.0, 확인한 환경 26.6.2), **Xcode 27.2**, **XcodeGen 2.46.0**. 언어 모델을 다시 만들 때만 **Python 3**이 필요해요(표준 라이브러리만 써요).
+필요한 것: **macOS 26**에서 빌드(확인한 환경 26.6.2), **Xcode 27.2**, **XcodeGen 2.46.0**. 언어 모델을 다시 만들 때만 **Python 3**이 필요해요(표준 라이브러리만 써요).
 
 ```sh
 make project      # project.yml로 Duo.xcodeproj를 만들어요(XcodeGen)
@@ -345,7 +345,7 @@ make app          # Release 호스트 앱을 build/Release/Duo.app에 만들어�
 zlqhem/
 ├─ Makefile                     # make help, project, test, build, build-release, install, e2e, app, model, clean
 ├─ project.yml                  # XcodeGen: DuoInputMethod, Duo, DuoTests, DuoHarness
-├─ Packages/DuoCore/            # SwiftPM 패키지(macOS 26, Swift 6 언어 모드)
+├─ Packages/DuoCore/            # SwiftPM 패키지(macOS 15, Swift 6 언어 모드)
 │  ├─ Sources/DuoCore/          # 순수 엔진(Foundation만 씀)
 │  │  ├─ Hangul/                # 두벌식 오토마톤, 키 입력, 자판
 │  │  ├─ Detection/             # DuoModel(mmap, DUOM v1), 문자 LM, 어휘 사전, DuoDetector, 히스테리시스
@@ -399,7 +399,7 @@ zlqhem/
 
 | 영역 | 사용 기술(버전) |
 |---|---|
-| 플랫폼 | macOS 26(배포 대상 26.0), 확인한 환경 macOS 26.6.2 |
+| 플랫폼 | macOS 15 이상(배포 대상 15.0), 확인한 환경 macOS 26.6.2. macOS 15에서는 아직 실행해 보지 않음 |
 | 빌드 | Xcode 27.2(macOS 27.2 SDK), XcodeGen 2.46.0, make |
 | 언어 | Swift 6.4.2, Swift 6 언어 모드, 엄격한 동시성 검사(`complete`), SwiftPM tools 6.2 |
 | 입력기 | InputMethodKit, Carbon HIToolbox(TIS 입력 소스 API), AppKit(`NSPanel`), SwiftUI(HUD 그리기) |
@@ -529,6 +529,9 @@ Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/
 
 ## 알려진 제한
 
+- **macOS 15에서는 실행해 보지 않음.** 배포 대상은 15.0이고 빌드와 테스트는 통과하지만, 확인한 환경은 macOS 26.6.2뿐임
+  - macOS 26 전용 화면 API는 macOS 26에서만 씀. 그 아래에서는 후보 막대와 앱의 유리 대신 반투명 머티리얼을, 유리 버튼 대신 `.bordered` 버튼을, "자주 쓰는 언어" 눈금 슬라이더 대신 눈금 없는 슬라이더를 씀
+  - 입력 메뉴의 템플릿 아이콘, 캐럿 옆 입력 소스 표시, 켜기 허용 창, Orca 입력 칸 위치 읽기가 macOS 15에서 같은지는 모름
 - **아이콘이 바뀐 뒤 캐럿 옆 표시가 예전 모습으로 보일 수 있음.** macOS 26은 입력 소스를 바꿀 때 캐럿 옆에 알약을 띄움. Duo는 초록 알약 안에 흰 "한A" 타일로 보임. 메뉴 막대와 입력 메뉴에는 애플 입력 소스와 같은 크기의 템플릿 알약(`TISIconIsTemplate = true`)이 보여서 밝은 모드와 다크 모드를 따라 색이 바뀜. ⌘Space 목록에는 이름 "Duo"가 보임
   - 이 알약을 그리는 `CursorUIViewService`는 로그인 동안 예전 모습을 들고 있음. 아이콘이 바뀐 빌드를 설치한 뒤 예전 아이콘이나 빈 알약이 보이면 `killall -KILL CursorUIViewService`를 실행하거나 로그아웃함. 강제 종료한 뒤 알약이 뜨지 않으면 앱 하나를 새로 실행함. 화면 잠금으로는 고쳐지지 않음
 - **다시 설치한 뒤 다시 연결해야 함.** `make install`이나 `install-ime.sh` 뒤에는 Duo를 쓰던 앱이 ABC로 입력됨. 그 앱이 앞에 있을 때 Duo를 다시 골라야 함(⌃Space 두 번). 호스트 앱의 설치, 업데이트, 다시 시작은 맨 앞 앱에 이 재선택을 직접 함. 뒤에 있던 앱은 앞으로 와도 저절로 다시 붙지 않았음(2026-11-08, TextEdit에서 확인함). `e2e.sh`도 끝날 때 입력기를 멈추므로 같은 일이 생김
