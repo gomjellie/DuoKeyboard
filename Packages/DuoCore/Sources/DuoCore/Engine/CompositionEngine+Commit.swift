@@ -72,8 +72,7 @@ extension CompositionEngine {
             prefix: t.scores) {
             lastAlternative = found.reading
             lastAlternativeText = found.text
-            segmentLikely = t.count >= Self.segmentAutoKeys && found.mayLead
-                && final[h].map { found.score - $0 >= Self.segmentMargin } ?? false
+            segmentLikely = t.count >= Self.segmentAutoKeys && Self.hasJamoBeforeItsEnd(render(t.raw, .korean))
         }
 
         // 4. Learning (critique R7).
@@ -132,7 +131,9 @@ extension CompositionEngine {
         }
 
         // 3. "Never silently different" (critique R2): chip after a surprising or uncertain commit,
-        // or after a long word whose end reads much better in another script.
+        // or after a long word whose end reads much better in another script and whose Korean
+        // reading is broken inside (a lone jamo before its end; final mode charges ㅠ or ㅎㅎ at the
+        // end of correct chat as orphans).
         if offersBar, let end, let lc = lastCommit, surprising || uncertain || segmentLikely {
             hud = lastWordChoiceHUD(lc, start: end - lc.length)
         }

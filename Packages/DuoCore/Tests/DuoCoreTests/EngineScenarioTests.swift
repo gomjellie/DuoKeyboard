@@ -454,6 +454,15 @@ struct EngineScenarioTests {
         #expect(h.text == "길어졌을때중간에english ")
     }
 
+    @Test func aLongWordThatEndsInTearsGetsNoBarFromItsEnd() {
+        // 이거정말재밌는데ㅠ: final mode charges the ㅠ, so 이거정말재밌는 + epb reads better, but the
+        // Korean is only broken at its end.
+        let h = Self.harness()
+        h.type("dlrjwjdakfwoalTsmsepb ")
+        #expect(h.text == "이거정말재밌는데ㅠ ")
+        #expect(h.hud?.isLastWordChoice != true)
+    }
+
     @Test(arguments: ["dhsmfdmsghldmlrkdlTdjdy", "rmfjsepdywmadpsmsdlfdlaksgdktjgkfwlahfmrpTdjdy",
                       "tkfkdgksmsakdmadmfhdnflrkcmfrjqrptkfdkdi", "rkatkgkqslekwhdmsgkfnwlsotpdy"])
     func aLongKoreanWordGetsNoBarFromItsEnd(_ keys: String) {

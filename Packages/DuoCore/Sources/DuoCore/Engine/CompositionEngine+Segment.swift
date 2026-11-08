@@ -186,6 +186,16 @@ extension CompositionEngine {
         prefixMemo.scores[t.raw] = scores
     }
 
+    /// `text` has a lone jamo before the run of jamo it ends with: as Korean it is broken inside
+    /// (중간에두히ㅑ노), not only at its end (재밌는데ㅠ, 고마워요ㅎㅎ).
+    static func hasJamoBeforeItsEnd(_ text: String) -> Bool {
+        let scalars = Array(text.unicodeScalars)
+        let isJamo = { (u: Unicode.Scalar) in (0x3131...0x3163).contains(u.value) }
+        var end = scalars.count
+        while end > 0, isJamo(scalars[end - 1]) { end -= 1 }
+        return scalars[..<end].contains(where: isJamo)
+    }
+
     /// The text of `reading` for `raw`.
     func render(_ raw: String, _ reading: ChoiceReading) -> String {
         switch reading {
