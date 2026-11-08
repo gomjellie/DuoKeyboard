@@ -202,6 +202,12 @@ final class CompositionHUDController {
     private func fadeIn() {
         fadeGeneration &+= 1
         if !isOrderedIn {
+            // A hidden application's windows stay off screen, even after orderFrontRegardless
+            // (`open -j` launches the input method hidden).
+            if NSApp.isHidden {
+                Log.hud.info("input method app was hidden; unhiding")
+                NSApp.unhideWithoutActivation()
+            }
             panel.alphaValue = 0
             panel.orderFrontRegardless()
             isOrderedIn = true
