@@ -19,7 +19,7 @@ DATA = os.path.join(HERE, "data")
 CACHE = os.path.join(RAW, "_cache")
 
 EN_WORD = re.compile(r"^[a-z]+(?:'[a-z]+)*$")
-TIER_PER_MILLION = {1: 50.0, 2: 10.0, 3: 2.0}
+TIER_PER_MILLION = {0: 500.0, 1: 50.0, 2: 10.0, 3: 2.0}
 
 
 def _read_tsv(path):

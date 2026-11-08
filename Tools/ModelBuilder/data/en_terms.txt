@@ -1,5 +1,5 @@
 # Canonical-case English/tech terms that Korean users type in Latin script.
-# Format: term<TAB>tier   (tier 1 = very common ... 3 = occasional)
+# Format: term<TAB>tier   (tier 0 = everyday in Korean chat, 1 = very common ... 3 = occasional)
 # Exact-case matches get CASE_EXACT instead of the pattern cost; the lowercased
 # form is added to the English lexicon with pseudo-frequency by tier.
 API	1
@@ -12,7 +12,7 @@ CD	2
 QA	1
 UI	1
 UX	1
-AI	1
+AI	0
 ML	2
 LLM	2
 GPT	1
