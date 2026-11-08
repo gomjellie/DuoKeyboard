@@ -84,8 +84,9 @@ CC-BY-SA 4.0"). 이 의무는 앱 코드의 라이선스에는 영향을 **주�
 ### 학습 데이터 혼합 (`model_data.py` 참고)
 
 * **한국어**: 순수 한글 어절에 대해 `count(w) = 2 × OpenSubtitles(w) + kowiki(w)`로 셈. 키→한글 왕복
-  변환을 통과하고 완성된 음절로만 된 어절만 씀(`ㄲ`, `ㄷ`처럼 자모만 있는 말뭉치 단어는 말더듬 잡음이라 버림) — 1 104 134 종류, 26.3 M 의사 단어(pseudo-token), 자막 48 % / 위키백과 52 %. 여기에 채팅 자모 단어 32개를 더함
-  (`ㅋㅋ`, `ㅎㅎ`, `ㅠㅠ`, `ㅇㅋ`, `ㄱㄱ` …, `data/ko_chat.txt`, 백만 단어당 비율로 줌).
+  변환을 통과하고 완성된 음절로만 된 어절만 씀(`ㄲ`, `ㄷ`처럼 자모만 있는 말뭉치 단어는 말더듬 잡음이라 버림) — 1 104 134 종류, 26.3 M 의사 단어(pseudo-token), 자막 48 % / 위키백과 52 %. 여기에 채팅 단어 83개를 더함
+  (`ㅋㅋ`, `ㅎㅎ`, `ㅠㅠ`, `ㅇㅋ`, `ㄱㄱ`, `ㅈㄴ`, `ㅎㄷㄷ`, `걍`, `굳`, `ㅈ같다`, `도` …, `data/ko_chat.txt`,
+  백만 단어당 비율로 줌. 2026-11-08에 커뮤니티 글 평가에서 자주 틀린 말 51개를 더했음).
 * **영어**: OpenSubtitles(횟수 ≥ 3) + 같은 총량으로 맞춘 wordfreq(509 482 종류). 여기에 기술/사무
   용어 260개(`data/en_terms.txt`: API, PR, iOS, macOS, GitHub, Slack, Figma, LGTM …)를 등급별로 백만 단어당
   50 / 10 / 2로 더함. 정식 대소문자 형태(iOS, GitHub, API)가 **대소문자 어휘 사전**이 됨.
@@ -148,6 +149,11 @@ Shift: Q ㅃ  W ㅉ  E ㄸ  R ㄲ  T ㅆ  O ㅒ  P ㅖ ; every other shifted let
 감지에 쓰는 출력: `text`, `orphans` = 내보낸 외톨이 수 + (남은 상태가 cho만 있거나 jung만 있으면 1),
 `trailingLoneConsonant` = 남은 상태에 cho만 있음. 남은 블록을 그릴 때는 flush하지 않아요(표시는
 조합 중인 음절을 보여 줘요).
+
+**감정 자모 반복**(2026-11-08): `runs` = 같은 감정 자모(ㅋㅎㅠㅜㅡㄷㅉ, `EMOTIVE_JAMO`)가 2개 이상 이어진 외톨이의 수,
+`runAtEnd` = 마지막 블록이 그런 반복에 들어 있음. K 점수는 이 외톨이에 벌점을 매기지 않아요. 단어 전체가
+반복이어도(ㅋㅋㅋㅋㅋ), 음절 옆에 있어도(ㅋㅋㅋ난, 흥해라ㅡㅡ) 같아요. 음절이나 기호가 반복을 끊어요
+(Python `emotive_runs`, Swift `DubeolsikMachine.orphanRunStats`).
 
 예시(모두 테스트 벡터에 있어요): `ekfrrhrl` 닭고기, `rkqtdl` 값이, `rkqtl` 갑시, `sjrtl` 넉시,
 `dlTdj` 있어, `goTtmqslek` 했습니다, `rkE` 가ㄸ, `rkk` 가ㅏ, `zzz` ㅋㅋㅋ, `rt` ㄱㅅ, `hk` ㅘ, `Ehrqo` 똑배.
@@ -255,7 +261,7 @@ numUnitsEn             : 56 lowercase tokens that follow digits (th st nd rd km 
 **최종 모드**
 
 ```
-S_K = word(scoreKO(kno, eos) + ORPHAN·orph, lexKO[kno], NG_KO, LEX_KO)
+S_K = word(scoreKO(kno, eos) + ORPHAN·(orph − runs), lexKO[kno], NG_KO, LEX_KO)
       + ROLLOVER·nr + STRAY·ns + PRIOR[ctx].KO
 S_E = word(scoreEN(low, eos), lexEN[low], NG_EN, LEX_EN)
       + CASE[casePattern(raw)] + (term == D ? TERM_DIGIT_EN : term == H ? TERM_HYPHEN_EN : 0)
@@ -296,8 +302,22 @@ for b in 1 ..< len(raw), only if raw contains no apostrophe:
 
 +8000은 E를 더 잃었어요(ko_news E 99.534 % → 99.496 %). 값은 테스트 세트로 골랐어요. dev 세트로 다시 고르는 일이 남았어요.
 
+**감정 자모 반복과 채팅 단어 평가** (2026-11-08, 해시 `5200eb46b6370ef1`, `out/eval/ship_chat_runs.json`, 테스트 세트):
+
+| | 이전 | 반복 + 채팅 단어 |
+|---|---|---|
+| ko_news K / E / M (문맥 없음) | 99.481 / 99.444 / 90.74 % | 99.480 / 99.431 / 90.84 % |
+| ko_wiki E / M (문맥 없음) | 98.83 / 87.01 % | 98.80 / 86.90 % |
+| en_news E (문맥 없음) | 99.887 % | 99.884 % |
+| ko_news 문장 (viterbi) | 98.638 % | 98.688 % |
+| 홀드아웃 K / E, mixed | 같음 | 같음 |
+| 커뮤니티 글 5만 6천 문장(엔진으로 침) | 92.15 % 문장, 0.997 % 단어 오류 | 94.79 % 문장, 0.654 % 단어 오류 |
+
+새로 틀리는 영어: `rid` → 걍과 `cc` → ㅊㅊ(문장 시작에서만. 영어 문맥에서는 E가 이김), `WW` → ㅉㅉ,
+위키의 `mm까지` → ㅡㅡ까지(3건). 같은 영어 글자가 두 번 이어지는 단어(see, mmm)는 영어로 남아요.
+
 **접두 모드**(표시): 다음만 빼고 같아요.
-`S_K = scoreKO(kno, no eos) + ORPHAN·(orph − (lone ? 1 : 0)) + ROLLOVER·nr + STRAY·ns + PRIOR[ctx].KO`
+`S_K = scoreKO(kno, no eos) + ORPHAN·(orph − runs − (lone && !runAtEnd ? 1 : 0)) + ROLLOVER·nr + STRAY·ns + PRIOR[ctx].KO`
 (어휘 사전 없음, NG/LEX 오프셋 없음), `S_E = scoreEN(low, no eos) + CASE[…] + PRIOR[ctx].EN`
 (`NUM_UNIT_EN`은 최종 모드처럼 더함. 어휘 사전/오프셋/종결 키는 없음). `M(b)`에서는 표가 `suffixPrefix`예요
 (`ks`로 시작하는 모든 접미사의 확률을 더한 값의 ln). 그리고 `gen`은 `scoreKO(ks, no eos)`를 쓰고,
