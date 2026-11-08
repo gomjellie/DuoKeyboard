@@ -36,7 +36,7 @@ Duo는 macOS 15 이상의 InputMethodKit 입력기예요. 키보드 하나로 �
 │  ├─ Tests/                 # 호스트 앱 모델 테스트 (DuoTests 타깃)
 │  └─ Tools/                 # check-strings.py (문자열 카탈로그 검사), MakeAppIcon.swift (앱 아이콘 생성)
 ├─ DuoHarness/               # E2E 하네스 앱 (com.inkyuoh.Duo.Harness)
-├─ Tests/E2E/cases.json      # 실제 IMK 경로로 도는 E2E 사례 51개
+├─ Tests/E2E/cases.json      # 실제 IMK 경로로 도는 E2E 사례 70개
 ├─ Tools/
 │  ├─ ModelBuilder/          # 언어 모델 빌더 (Python 3 표준 라이브러리). detector.py, hangul.py가 기준 구현
 │  ├─ IconGen/               # 입력 소스 아이콘 생성기 (make_menu_icon.swift)
@@ -854,7 +854,7 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
 |---|---|---|
 | DuoCore·DuoKit 단위 테스트 | `make test` (`swift test`, debug) | 50개 묶음의 테스트 600개 통과, 알려진 문제 2개 |
 | 호스트 앱 테스트 | `xcodebuild test -project Duo.xcodeproj -scheme Duo -destination 'platform=macOS' -derivedDataPath build/dd` | 11개 묶음의 테스트 50개 통과 |
-| live E2E | `make e2e` | 51/51 |
+| live E2E | `make e2e` | 70/70 |
 | 문자열 카탈로그 | `Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/Duo.build` | 206/206개 키 |
 | DET 골든 벡터 | `make test` | 비트 단위로 같음, 모델 해시 `ce5bb10c9a6c025b` |
 | 점수 계산 시간 | `swift test -c release` (벤치마크, release에서만 300 µs 예산을 검사함) | 2차 수정 때 접두 p99 15.6 µs, 최종 p99 17.1 µs. 최신 작업 뒤에는 다시 재지 않음 |
