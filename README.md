@@ -479,7 +479,7 @@ Duo의 언어 판별(DET)은 단어의 키 입력을 ABC 자판이 만들었을 
 
 모델 파일은 CC BY-SA 4.0 데이터를 변형한 저작물이라 같은 라이선스로, 저작자 표시와 함께 배포해요. 고지문은 `DuoInputMethod/Resources/duo-model.LICENSE.txt`에 있고 설정 ▸ 정보에도 보여요. Duo 앱 코드는 이 라이선스와 상관없어요.
 
-모델을 다시 만들려면 말뭉치(약 200 MB)를 `Tools/data/raw/`에 내려받고 `make model`을 돌려요. 결과는 `Tools/ModelBuilder/out/`에 생기고, `duo-model.bin`은 `DuoInputMethod/Resources/`로, `test_vectors.json`은 `Packages/DuoCore/Tests/DuoCoreTests/Resources/`로 복사해서 써요. 내려받을 주소와 평가 명령은 detection.md 11절에 있어요.
+모델을 다시 만들려면 말뭉치(약 200 MB)를 `Tools/data/raw/`에 내려받고 `make model`을 돌려요. 결과는 `Tools/ModelBuilder/out/`에 생기고, `duo-model.bin`은 `DuoInputMethod/Resources/`로, `test_vectors.json`은 `Packages/DuoCore/Tests/DuoCoreTests/Resources/`로 복사해서 써요. 내려받을 주소와 평가 명령은 detection.md 11절에 있어요. 커뮤니티 글을 엔진으로 쳐 보는 평가는 `Tools/scripts/corpus-typing.sh`로 돌려요(같은 절).
 
 ---
 

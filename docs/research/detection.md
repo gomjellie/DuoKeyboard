@@ -740,3 +740,17 @@ msgpack 리더도 들어 있음), `evaluate.py`, `build_model.py`, `bench.py`, `
 `https://downloads.wortschatz-leipzig.de/corpora/{kor_news_2022_100K,kor_wikipedia_2021_100K,eng_news_2023_100K}.tar.gz`.
 kowiki 조각은 `corpora.kowiki_counts`가 처리해서 `Tools/data/raw/kowiki/kowiki_counts.tsv`와
 `kowiki_mix.tsv`로 만들어요(git 기록에 있는 한 줄 명령 / 2절 참고).
+
+**커뮤니티 글 평가** (2026-11-08): 엔진 전체(표시, 즉시 확정, 32키 상한, 바꾸기 없이)로 실제 댓글을 쳐 봐요.
+
+```bash
+# Tools/data/raw/community/: nsmc_test.txt (https://github.com/e9t/nsmc, CC0 1.0),
+#   khs_train.tsv, khs_dev.tsv (https://github.com/kocohub/korean-hate-speech, CC BY-SA 4.0),
+#   *_comments.tsv (site comments collected for evaluation only; sources.md in the same folder)
+python3 -I Tools/scripts/community_corpus.py prep             # -> sentences.tsv, sites.tsv
+Tools/scripts/corpus-typing.sh Tools/data/raw/community/sites.tsv build/corpus/sites.tsv \
+    [--base build/corpus/sites-before.tsv]                     # report, and changes against an earlier run
+```
+
+`CorpusTypingTests`가 문장마다 새 엔진으로 치고, `community_corpus.py report`가 문장 정확도, 단어 오류율, 틀린
+단어의 갈래를 보여 줘요. 원본 데이터와 결과는 커밋하지 않아요.
