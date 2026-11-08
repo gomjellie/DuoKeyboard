@@ -165,6 +165,11 @@ struct EngineTriggerScenarioTests {
         all(.korean, "process.env.NODE_ENV ", "process.env.NODE_ENV "),
         all(.korean, "e.g. ", "e.g. "),
         all(.korean, "U.S. ", "U.S. "),
+        // Right after the boundary that started L, the flip key still changes the dotted word
+        only(.textEdit, .korean, "op.gg/⌘ ", "op.ㅎㅎ/ "),
+        only(.kakao, .korean, "op.gg/⌘ ", "op.ㅎㅎ/ "),
+        only(.orca, .korean, "op.gg/⌘ ", "op.gg/ "),
+        all(.korean, "op.gg/x⌘ ", "op.gg/x "),
     ].flatMap { $0 }
 
     static func run(_ row: Row) -> (EngineHarness, String) {

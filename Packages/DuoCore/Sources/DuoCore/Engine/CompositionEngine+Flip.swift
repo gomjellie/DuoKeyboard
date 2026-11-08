@@ -16,7 +16,13 @@ extension CompositionEngine {
     ///   re-checks that the client still has our marked text.
     func flip(client: any TextClient, at time: TimeInterval?) {
         hud = nil
-        guard !literal else { return }
+        if literal {
+            // Only the word whose boundary started L can change (op.gg/), and a change ends L.
+            guard lastWordChangesInLiteral, let lc = lastCommit, isFresh(lc),
+                  flipLastCommit(lc, client: client) else { return }
+            if lastCommit?.hypothesis != lc.hypothesis { endLiteral() }
+            return
+        }
 
         if let t = token {
             var markedRange: NSRange?
@@ -48,7 +54,7 @@ extension CompositionEngine {
     /// - Returns: whether a word changed.
     @discardableResult
     public func chooseOtherReading(on shown: HUDRequest, client: any TextClient) -> Bool {
-        guard !literal, let request = hud, request == shown else { return false }
+        guard let request = hud, request == shown, barCanAct(request) else { return false }
         switch request.content {
         case .alternative:
             hud = nil
@@ -71,6 +77,7 @@ extension CompositionEngine {
             guard let flipped = lastCommit, flipped.hypothesis != lc.hypothesis, let end = flipped.endLocation else {
                 return false
             }
+            endLiteral()
             // Keep the bar up with the selection moved, so the user sees the change and can undo it.
             hud = lastWordChoiceHUD(flipped, start: end - flipped.length)
             return true

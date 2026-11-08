@@ -376,7 +376,7 @@ extension CompositionEngine {
                 context.dotAfterEnglishToken = true
             } else if dotted {
                 // github.com/foo, example.com:8080, node.js?: the rest is a URL or a path.
-                beginLiteral()
+                beginLiteral(afterCommit: true)
                 return false
             } else if ch == "_" {
                 context.underscoreAfterEnglishToken = true

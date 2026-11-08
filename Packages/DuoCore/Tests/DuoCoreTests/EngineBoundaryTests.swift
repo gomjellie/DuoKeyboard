@@ -525,6 +525,68 @@ struct EngineBoundaryTests {
         #expect(h.text == "github.com")
     }
 
+    /// `com` reads Korean by a little: a dotted word commits it as English, with the chip.
+    private static func dottedWordHarness(_ bundleIdentifier: String = "com.apple.TextEdit") -> EngineHarness {
+        let h = EngineHarness(bundleIdentifier: bundleIdentifier)
+        h.detector.english("github")
+        for i in 1...3 { h.detector.scores[String("com".prefix(i))] = [.korean: -1000 * i, .english: -1000 * i - 500] }
+        h.type("github.com/")
+        return h
+    }
+
+    @Test func theFlipRightAfterTheBoundaryOfADottedWordChangesItAndEndsLiteral() {
+        let h = Self.dottedWordHarness()
+        #expect(h.engine.literal)
+        #expect(h.hud?.isLastWordChoice == true)
+        h.flip()
+        #expect(h.text == "github.채ㅡ/")
+        #expect(!h.engine.literal)
+        h.flip()
+        #expect(h.text == "github.com/", "a second flip turns it back")
+    }
+
+    @Test func theChipRightAfterTheBoundaryOfADottedWordChangesItAndEndsLiteral() throws {
+        let h = Self.dottedWordHarness()
+        let chip = try #require(h.hud)
+        guard case .flipLastWord(let choice) = chip.content,
+              let korean = choice.readings.firstIndex(where: { $0.text == "채ㅡ" }) else {
+            Issue.record("the chip offers the Korean reading")
+            return
+        }
+        #expect(h.engine.selectReading(at: korean, on: chip, client: h.client) == .chosen)
+        #expect(h.text == "github.채ㅡ/")
+        #expect(!h.engine.literal)
+    }
+
+    @Test func afterAKeyInLiteralTheDottedWordNoLongerChanges() {
+        let h = Self.dottedWordHarness()
+        h.type("x")
+        h.flip()
+        #expect(h.text == "github.com/x")
+        #expect(h.engine.literal)
+    }
+
+    @Test func whereCommittedTextCannotChangeTheFlipAfterADottedWordSaysSo() {
+        let h = Self.dottedWordHarness("com.microsoft.VSCode")
+        h.flip()
+        #expect(h.text == "github.com/")
+        #expect(h.hud?.content == .cannotChange)
+        #expect(h.engine.literal)
+    }
+
+    @Test func theFlipAfterAWordStartTriggerChangesNothing() {
+        // `/` at a word start started L: the word before it ended at the space.
+        let h = EngineHarness()
+        h.detector.scores["d"] = [.korean: -3000, .english: -3200]
+        h.detector.scores["do"] = [.korean: -5000, .english: -5300]
+        h.type("do /")
+        #expect(h.engine.lastCommit != nil)
+        h.flip()
+        #expect(h.text == "애 /")
+        #expect(h.engine.literal)
+        #expect(h.hud == nil)
+    }
+
     @Test func selectAllThenDeleteEndsLiteral() {
         let h = EngineHarness()
         h.detector.korean("dkssud")

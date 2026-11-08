@@ -131,7 +131,7 @@ extension CompositionEngine {
     public func selectReading(at index: Int, on shown: HUDRequest, client: any TextClient) -> ReadingChoice {
         // A digit or a click between two flip-key presses makes them a chord, not a tap.
         tap.noteKeyDown()
-        guard !literal, let request = hud, request == shown else { return .notOnBar }
+        guard let request = hud, request == shown, barCanAct(request) else { return .notOnBar }
         switch request.content {
         case .alternative(let choice, _):
             guard choice.readings.indices.contains(index), let t = token, let scores = t.scores,

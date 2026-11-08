@@ -51,6 +51,9 @@ public final class CompositionEngine {
     /// UTF-16 units typed since L began, its trigger included. Backspacing over all of them (the
     /// trigger is gone, so the next word is not part of a path or address) ends L.
     var literalLength = 0
+    /// L began at the boundary that ended `lastCommit`'s word (a dotted word, op.gg/). While that
+    /// boundary is all L has typed, the flip key and the chip may still change the word, which ends L.
+    var literalAfterCommit = false
     /// The key after a dead key passes raw (é, ü, ñ).
     var passNextRaw = false
     var capsLockOn = false
@@ -250,14 +253,27 @@ public final class CompositionEngine {
     // MARK: - Literal phase bookkeeping (SPEC.md §4.6)
 
     /// Enter L; the trigger key (or the first raw letter after `.`) is the first unit typed.
-    func beginLiteral() {
+    func beginLiteral(afterCommit: Bool = false) {
         literal = true
         literalLength = 1
+        literalAfterCommit = afterCommit
     }
 
     func endLiteral() {
         literal = false
         literalLength = 0
+        literalAfterCommit = false
+    }
+
+    /// Whether the last word can still change in L (``literalAfterCommit``).
+    var lastWordChangesInLiteral: Bool { literalAfterCommit && literalLength == 1 }
+
+    /// Whether a choice on `request` may act now: in L only the last word's bar, and only while
+    /// ``lastWordChangesInLiteral``.
+    func barCanAct(_ request: HUDRequest) -> Bool {
+        guard literal else { return true }
+        if case .flipLastWord = request.content { return lastWordChangesInLiteral }
+        return false
     }
 
     /// UTF-16 units a key typed while in L (what a later Backspace has to delete).
