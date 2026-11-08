@@ -45,14 +45,14 @@ struct KeyCaps: View {
     }
 }
 
-/// A 가 / A language badge. Drawn as text: the SF Symbol `character` is localized and shows 가 in
-/// a Korean locale.
+/// A 한 / A language badge. Drawn as text: there is no SF Symbol for 한, and `character` is localized
+/// (가 in a Korean locale).
 struct LanguageBadge: View {
     let language: ScriptLanguage
     var size: CGFloat = 18
 
     var body: some View {
-        Text(verbatim: language == .korean ? "가" : "A")
+        Text(verbatim: language == .korean ? "한" : "A")
             .font(.system(size: size * (language == .korean ? 0.5 : 0.56), weight: .bold, design: .rounded))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
