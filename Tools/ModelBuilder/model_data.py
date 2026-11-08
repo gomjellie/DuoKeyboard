@@ -106,7 +106,18 @@ def english_terms():
 
 def english_counts() -> Counter:
     """lowercase word -> pseudo-count (OpenSubtitles en [>=3] + wordfreq large_en scaled to same total + terms)."""
-    path = os.path.join(CACHE, "en_counts.tsv")
+    c = english_corpus_counts()
+    total = sum(c.values())
+    for t, tier in english_terms():
+        lw = t.lower()
+        if EN_WORD.match(lw):
+            c[lw] += max(1, round(TIER_PER_MILLION[tier] * total / 1e6))
+    return c
+
+
+def english_corpus_counts() -> Counter:
+    """The corpus part of `english_counts`, cached: `data/en_terms.txt` is added on every call."""
+    path = os.path.join(CACHE, "en_corpus_counts.tsv")
     if os.path.exists(path):
         return _read_tsv(path)
     fw = corpora.load_fw(os.path.join(RAW, "fw_en_full.txt"), min_count=3)
@@ -118,11 +129,6 @@ def english_counts() -> Counter:
         w = w.replace("’", "'")
         if EN_WORD.match(w):
             c[w] += n
-    total = sum(c.values())
-    for t, tier in english_terms():
-        lw = t.lower()
-        if EN_WORD.match(lw):
-            c[lw] += max(1, round(TIER_PER_MILLION[tier] * total / 1e6))
     _write_tsv(path, c)
     return c
 
