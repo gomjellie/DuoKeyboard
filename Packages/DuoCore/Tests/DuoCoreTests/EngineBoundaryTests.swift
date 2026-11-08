@@ -111,7 +111,7 @@ struct EngineBoundaryTests {
 
     // MARK: Literal phase (§4.6)
 
-    @Test(arguments: ["/help ", "~/Library ", "\\\\server ", ":smile: ", "@minsu ", "./run.sh ", "../up "])
+    @Test(arguments: ["/help ", "~/Library ", "\\\\server ", ":smile: ", "./run.sh ", "../up "])
     func wordStartTriggersPassEverythingRaw(_ input: String) {
         let h = EngineHarness()
         h.detector.fallback = { raw in [.korean: 0, .english: -9000 - raw.count] }   // would read Korean
@@ -154,6 +154,28 @@ struct EngineBoundaryTests {
         #expect(h.text == "dkssud@example.com")
         #expect(h.store.count == 0, "literal tokens are never learned")
         #expect(h.engine.lastCommit == nil, "no flip of a literal commit")
+    }
+
+    @Test func atAtAWordStartIsAMentionAndTheNameComposes() {
+        // @홍길동 (KakaoTalk, Slack): `@` passes and the name after it is an ordinary word.
+        let h = EngineHarness()
+        h.detector.korean("ghdrlfehd")
+        let at = h.press(.character("@"), .shift)
+        #expect(!at.consumed)
+        #expect(at.calls.isEmpty)
+        #expect(!h.engine.literal)
+        h.type("ghdrlfehd")
+        #expect(h.marked == "홍길동")
+        h.press(.space)
+        #expect(h.text == "@홍길동 ")
+        #expect(h.engine.lastCommit?.alternativeText == "ghdrlfehd", "the flip can still change the name")
+    }
+
+    @Test func anEnglishHandleAfterAtStaysEnglish() {
+        let h = EngineHarness()
+        h.detector.english("param")
+        h.type("@param ")
+        #expect(h.text == "@param ")
     }
 
     @Test func userAtExampleCom() {
@@ -290,9 +312,9 @@ struct EngineBoundaryTests {
 
     // MARK: Where L ends besides whitespace
 
-    @Test(arguments: ["@", "/", "~", ":"])
+    @Test(arguments: ["/", "~", ":"])
     func backspacingOverTheTriggerEndsLiteral(_ trigger: String) {
-        // Slack `/` or `@` menus: the trigger is typed, deleted, and Korean follows.
+        // Slack `/` menu: the trigger is typed, deleted, and Korean follows.
         let h = EngineHarness()
         h.detector.korean("dkssud")
         h.type(trigger)

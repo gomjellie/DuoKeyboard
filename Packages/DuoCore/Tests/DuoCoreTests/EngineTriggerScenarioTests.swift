@@ -82,6 +82,29 @@ struct EngineTriggerScenarioTests {
     ].flatMap { $0 }
 
     /// Types the prime, then the keys; returns the harness and the text the keys produced.
+    /// `@` at a word start passes and the name after it composes; `@` in a word is an e-mail address.
+    nonisolated static let at: [Row] = [
+        // Korean names (KakaoTalk, Slack mentions), with a particle too
+        all(.start, "@ghdrlfehd ", "@홍길동 "),
+        all(.korean, "@ghdrlfehd ", "@홍길동 "),
+        all(.english, "@ghdrlfehd ", "@홍길동 "),
+        all(.start, "@rlacjftn tkfkd ", "@김철수 사랑 "),
+        all(.korean, "@ghdrlfehdsla ", "@홍길동님 "),
+        all(.korean, "@rlacjftnrk ", "@김철수가 "),
+        all(.korean, "@dudgml ", "@영희 "),
+        // Code and handles
+        all(.start, "@Override ", "@Override "),
+        all(.korean, "@param ", "@param "),
+        all(.start, "@types/node ", "@types/node "),
+        all(.korean, "@MainActor ", "@MainActor "),
+        all(.korean, "@user123 ", "@user123 "),
+        all(.korean, "@here ", "@here "),
+        all(.start, "@minsu ", "@minsu "),
+        // E-mail addresses keep the literal rule
+        all(.korean, "user@example.com ", "user@example.com "),
+        all(.korean, "dkssud@example.com ", "dkssud@example.com "),
+    ].flatMap { $0 }
+
     static func run(_ row: Row) -> (EngineHarness, String) {
         let h = EngineHarness(bundleIdentifier: row.app.rawValue, scorer: RealModel.detector)
         h.type(row.prime.rawValue)
@@ -103,6 +126,13 @@ struct EngineTriggerScenarioTests {
 
     @Test(arguments: underscore)
     func underscoreRow(_ row: Row) {
+        let (h, produced) = Self.run(row)
+        #expect(produced == row.expected)
+        #expect(!h.engine.literal)
+    }
+
+    @Test(arguments: at)
+    func atRow(_ row: Row) {
         let (h, produced) = Self.run(row)
         #expect(produced == row.expected)
         #expect(!h.engine.literal)

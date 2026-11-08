@@ -302,17 +302,14 @@ extension CompositionEngine {
             context.notePassed(event.key)
             return true
         case "@":
-            if let t = token {
-                // A reading chosen with the flip key (or a one-shot) wins over the literal rule:
-                // ㅠ@ㅠ needs `b`, flip, `@`. The generic commit below keeps it.
-                if !t.koreanChosen {
-                    commitLiteral(client: client)
-                    context.notePassed(event.key)
-                    beginLiteral()
-                    return false
-                }
-            } else if ch == "@", context.atWordStart {
+            // In a word, `@` is an e-mail address. A reading chosen with the flip key (or a
+            // one-shot) wins over the literal rule: ㅠ@ㅠ needs `b`, flip, `@`. The generic commit
+            // below keeps it. At a word start `@` is a mention and the name after it composes.
+            if let t = token, !t.koreanChosen {
+                commitLiteral(client: client)
+                context.notePassed(event.key)
                 beginLiteral()
+                return false
             }
         case "/", "~", "\\", ":":
             if token == nil,
