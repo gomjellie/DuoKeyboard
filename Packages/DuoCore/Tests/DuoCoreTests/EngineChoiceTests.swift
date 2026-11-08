@@ -643,6 +643,20 @@ struct EngineChoiceTests {
         #expect(h.marked == "chat")
     }
 
+    @Test func anEndOfTearsNeverGoesFirst() {
+        // 안녕 + bb: Latin bb beats ㅠㅠ as a word of its own, but ㅠㅠ is Korean chat.
+        let h = EngineHarness()
+        h.detector.korean("dkssud")
+        h.detector.scores["dkssudb"] = [.korean: -20_000, .english: -50_000]
+        h.detector.scores["dkssudbb"] = [.korean: -30_000, .english: -60_000]
+        h.detector.scores["bb"] = [.english: -2000, .korean: -15_000]
+        h.type("dkssudbb")
+        h.modifier(down: true)
+        #expect(Self.readings(h) == ["안녀유ㅠ", "dkssudbb", "안녕bb"], "listed, not first")
+        h.modifier(down: false)
+        #expect(h.marked == "dkssudbb")
+    }
+
     @Test func aWordThatReadsWellKeepsTheOtherScriptFirst() {
         // 그럼 + us (−8) beats rmfjaus (−27) by 19 nats but 그러면 (−10) only by 2: an end goes first
         // when it beats both by segmentMargin.

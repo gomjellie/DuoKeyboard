@@ -53,9 +53,10 @@ extension CompositionEngine {
         var reading: ChoiceReading
         var text: String
         var score: Int
-        /// The end does not read in Korean as consonants only. Laughter and initials (ㅋㅋ, ㅇㅋ,
-        /// ㄱㄱ) are Korean chat that the whole-word score charges as orphans, so such a reading is
-        /// listed but never goes first or brings a bar up.
+        /// The end does not read in Korean as consonants only or as ㅜ, ㅠ and ㅡ only. Laughter,
+        /// initials and tears (ㅋㅋ, ㅇㅋ, ㄱㄱ, ㅠㅠ, ㅜ, ㅡㅡ) are Korean chat that the whole-word score
+        /// charges as orphans, so such a reading is listed but never goes first or brings a bar up.
+        /// Other vowel-only ends are English (ok as ㅐㅏ, ui as ㅕㅑ).
         var mayLead: Bool
         /// Keys in the head, the head's prefix-mode score, and how the end is read and scored.
         var split: Int
@@ -117,7 +118,10 @@ extension CompositionEngine {
                 let scores = detector.choiceScores(raw: tail, context: .korean, user: userCounts(tail, .korean),
                                                    biasKO: biasKO)
                 guard let korean = scores[.korean] else { continue }
-                let mayLead = render(tail, .korean).unicodeScalars.contains { !(0x3131...0x314E).contains($0.value) }
+                // ㅜ, ㅠ, ㅡ
+                let tailText = render(tail, .korean).unicodeScalars
+                let mayLead = !tailText.allSatisfy { (0x3131...0x314E).contains($0.value) }
+                    && !tailText.allSatisfy { [0x315C, 0x3160, 0x3161].contains($0.value) }
                 for e in scores.entries where e.hypothesis != .korean && e.score > korean {
                     found.append(Segment(reading: .split(head: s, tail: e.hypothesis),
                                          text: headText + render(tail, e.hypothesis),
