@@ -6,11 +6,21 @@ import ApplicationServices
 /// (`ClientProfile.compositionAtFocusedElement`). The rects IMK gets from such a client come from
 /// that field's own text layout and land up to 100 pt off.
 ///
-/// Needs the Accessibility permission for the input method. Without it, or when the client is
-/// slow or its focus is not xterm.js's field, every answer is `nil` and the HUD uses IMK's rects.
-/// Only the field's class list, position and size are read, never its text.
+/// Needs the Accessibility permission for the input method. Only the field's class list, position
+/// and size are read, never its text.
 @MainActor
 enum FocusedElementLocator {
+    /// What one read found.
+    enum Answer: Sendable, Equatable {
+        /// The focused element is xterm.js's input field; its frame, top-left origin.
+        case frame(CGRect)
+        /// The focus is elsewhere (another text field of the app), or the permission is missing:
+        /// IMK's rects are the ones to use.
+        case notXtermField
+        /// The client did not answer in time: what was read before still holds.
+        case noAnswer
+    }
+
     /// DOM class of xterm.js's hidden input field (Chromium reports it as `AXDOMClassList`).
     nonisolated static let xtermFieldClass = "xterm-helper-textarea"
     /// Seconds the client may take to answer one attribute.
@@ -20,6 +30,8 @@ enum FocusedElementLocator {
     /// main thread, which waits for the input method while IMK delivers a key, so a read made
     /// inside an IMK callback stalls until the timeout and fails.
     private static let queue = DispatchQueue(label: "com.inkyuoh.Duo.focused-element", qos: .userInteractive)
+    /// Apps asked to build their web accessibility tree (`AXManualAccessibility`). Only touched on `queue`.
+    nonisolated(unsafe) private static var manualAccessibilityPIDs = Set<pid_t>()
 
     private static var trust: (value: Bool, checkedAt: TimeInterval)?
 
@@ -33,14 +45,16 @@ enum FocusedElementLocator {
         return value
     }
 
-    /// Reads the frame of xterm.js's input field in the app `pid` (top-left origin) off the main
-    /// thread and calls `completion` on the main thread: `nil` without the permission, when the
-    /// focused element is not that field, or when the client does not answer in time.
-    static func readXtermFieldFrame(pid: pid_t, completion: @escaping @MainActor @Sendable (CGRect?) -> Void) {
-        guard isTrusted else { return completion(nil) }
+    /// Reads the focused element of the app `pid` off the main thread and calls `completion` on
+    /// the main thread, always later than this call returns.
+    static func read(pid: pid_t, completion: @escaping @MainActor @Sendable (Answer) -> Void) {
+        guard isTrusted else {
+            DispatchQueue.main.async { MainActor.assumeIsolated { completion(.notXtermField) } }
+            return
+        }
         queue.async {
-            let frame = xtermFieldFrame(pid: pid)
-            DispatchQueue.main.async { MainActor.assumeIsolated { completion(frame) } }
+            let answer = answer(pid: pid)
+            DispatchQueue.main.async { MainActor.assumeIsolated { completion(answer) } }
         }
     }
 
@@ -52,21 +66,38 @@ enum FocusedElementLocator {
         _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
     }
 
-    nonisolated private static func xtermFieldFrame(pid: pid_t) -> CGRect? {
+    nonisolated private static func answer(pid: pid_t) -> Answer {
         let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, messagingTimeout)
-        guard let focused = value(of: app, kAXFocusedUIElementAttribute),
-              CFGetTypeID(focused) == AXUIElementGetTypeID() else { return nil }
+        if !manualAccessibilityPIDs.contains(pid) {
+            // Electron builds its web accessibility tree only for assistive apps that ask; without
+            // it the focused element is the web view, not xterm.js's field. Apps that are not
+            // Electron reject the attribute, which changes nothing.
+            manualAccessibilityPIDs.insert(pid)
+            AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+        }
+        var focused: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &focused)
+        if result == .noValue { return .notXtermField }
+        guard result == .success, let focused, CFGetTypeID(focused) == AXUIElementGetTypeID() else { return .noAnswer }
         let field = focused as! AXUIElement
         AXUIElementSetMessagingTimeout(field, messagingTimeout)
-        guard let classes = value(of: field, "AXDOMClassList") as? [String], classes.contains(xtermFieldClass),
-              let position = value(of: field, kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID(),
-              let size = value(of: field, kAXSizeAttribute), CFGetTypeID(size) == AXValueGetTypeID() else { return nil }
+        var classes: CFTypeRef?
+        switch AXUIElementCopyAttributeValue(field, "AXDOMClassList" as CFString, &classes) {
+        case .success:
+            guard let names = classes as? [String], names.contains(xtermFieldClass) else { return .notXtermField }
+        case .attributeUnsupported, .noValue:
+            return .notXtermField
+        default:
+            return .noAnswer
+        }
+        guard let position = value(of: field, kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID(),
+              let size = value(of: field, kAXSizeAttribute), CFGetTypeID(size) == AXValueGetTypeID() else { return .noAnswer }
         var origin = CGPoint.zero
         var extent = CGSize.zero
         guard AXValueGetValue(position as! AXValue, .cgPoint, &origin),
-              AXValueGetValue(size as! AXValue, .cgSize, &extent) else { return nil }
-        return CGRect(origin: origin, size: extent)
+              AXValueGetValue(size as! AXValue, .cgSize, &extent) else { return .noAnswer }
+        return .frame(CGRect(origin: origin, size: extent))
     }
 
     nonisolated private static func value(of element: AXUIElement, _ attribute: String) -> CFTypeRef? {

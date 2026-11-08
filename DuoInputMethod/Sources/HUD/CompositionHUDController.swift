@@ -14,6 +14,10 @@ protocol HUDAnchorProvider: AnyObject {
     func hudClientWindowLevel() -> Int
     /// The reading at `index` on the choice bar for `shown`, the request on screen, was clicked.
     func hudChooseReading(at index: Int, on shown: HUDRequest)
+    /// The anchor of the word being typed is being read and will arrive with
+    /// `CompositionHUDController.refreshPlacement(from:)`: until then the HUD shows nothing rather
+    /// than the previous word's place.
+    var hudPlacementIsPending: Bool { get }
 }
 
 /// The single, reused composition HUD (one panel per process: azooKey #348 leaked dozens).
@@ -33,6 +37,8 @@ final class CompositionHUDController {
 
     /// Transparent space around the chip inside the panel, for the glass shadow and pulse overshoot.
     static let panelMargin: CGFloat = 14
+    /// Longest wait for a pending anchor (`hudPlacementIsPending`) before the HUD shows anyway.
+    static let placementWait: Duration = .milliseconds(150)
 
     private let model = CompositionHUDModel()
     private let panel = CompositionHUDPanel()
@@ -51,6 +57,9 @@ final class CompositionHUDController {
     private var chipFrame: CGRect?
     /// Mouse-moved monitors, installed only while a choice bar is on screen.
     private var pointerMonitors: [Any] = []
+    /// The visible request waits for the provider's anchor: not ordered in yet, or held at alpha 0.
+    private var waitingForPlacement = false
+    private var placementTimer: Task<Void, Never>?
 
     init(flipKey: FlipKey) {
         self.flipKey = flipKey
@@ -65,6 +74,7 @@ final class CompositionHUDController {
         if self.provider !== provider {
             self.provider = provider
             lastCaret = nil
+            cancelPlacementWait()
         }
         apply(timeline.receive(request, at: Self.now, trigger: trigger))
         rescheduleTimer()
@@ -73,8 +83,13 @@ final class CompositionHUDController {
     /// The provider's caret changed without a new request (an anchor read in the background
     /// arrived): move the panel on screen, if it shows this provider's request.
     func refreshPlacement(from provider: any HUDAnchorProvider) {
-        guard self.provider === provider, isOrderedIn, let request = timeline.visibleRequest else { return }
-        reposition(for: request, stabilize: true)
+        guard self.provider === provider else { return }
+        if waitingForPlacement {
+            if !provider.hudPlacementIsPending { endPlacementWait() }
+            return
+        }
+        guard isOrderedIn, let request = timeline.visibleRequest, reposition(for: request, stabilize: true) else { return }
+        updatePointer()
     }
 
     /// Drops the HUD at once, without a fade (deactivate, secure input, screen sleep, source change).
@@ -133,7 +148,7 @@ final class CompositionHUDController {
     /// Whether the pointer is over the visible choice bar: the panel takes clicks, the chip's
     /// lifetime is held and the reading a click would choose is highlighted.
     private func updatePointer() {
-        let over = isOrderedIn && model.presentation.isClickable
+        let over = isOrderedIn && !waitingForPlacement && model.presentation.isClickable
             && (chipFrame?.contains(NSEvent.mouseLocation) ?? false)
         if panel.ignoresMouseEvents == over { panel.ignoresMouseEvents = !over }
         guard over != model.pointerInside else { return }
@@ -155,23 +170,78 @@ final class CompositionHUDController {
         case .show(let request):
             setPresentation(HUDPresentation(request.content, flipKey: flipKey))
             lastCaret = nil
-            guard reposition(for: request, stabilize: false) else { return }
-            if let provider {
-                panel.level = NSWindow.Level(rawValue: HUDGeometry.windowLevel(
-                    clientLevel: provider.hudClientWindowLevel(),
-                    popUpMenuLevel: NSWindow.Level.popUpMenu.rawValue,
-                    shieldingLevel: Int(CGShieldingWindowLevel())))
+            if provider?.hudPlacementIsPending == true {
+                waitForPlacement()
+                return
             }
-            fadeIn()
-            updatePointerTracking()
+            show(request)
         case .update(let request, let pulse):
             setPresentation(HUDPresentation(request.content, flipKey: flipKey))
             if pulse { model.pulseCount &+= 1 }
+            // The latest content goes up with endPlacementWait.
+            if waitingForPlacement { return }
+            if provider?.hudPlacementIsPending == true, isOrderedIn {
+                // A new word: never at the previous word's place, even for a moment.
+                fadeGeneration &+= 1
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0
+                    panel.animator().alphaValue = 0
+                }
+                orderedInAt = nil
+                waitForPlacement()
+                updatePointer()
+                return
+            }
             reposition(for: request, stabilize: true)
             updatePointerTracking()
         case .hide:
+            cancelPlacementWait()
             fadeOut()
         }
+    }
+
+    /// Places `request`, raises the panel to the client's level and fades it in.
+    private func show(_ request: HUDRequest) {
+        guard reposition(for: request, stabilize: false) else { return }
+        if let provider {
+            panel.level = NSWindow.Level(rawValue: HUDGeometry.windowLevel(
+                clientLevel: provider.hudClientWindowLevel(),
+                popUpMenuLevel: NSWindow.Level.popUpMenu.rawValue,
+                shieldingLevel: Int(CGShieldingWindowLevel())))
+        }
+        fadeIn()
+        updatePointerTracking()
+    }
+
+    // MARK: Pending anchors
+
+    private func waitForPlacement() {
+        waitingForPlacement = true
+        placementTimer?.cancel()
+        placementTimer = Task { [weak self] in
+            do { try await Task.sleep(for: Self.placementWait) } catch { return }
+            self?.endPlacementWait()
+        }
+    }
+
+    /// The anchor arrived (or the wait ran out): show the timeline's visible request where it is now.
+    private func endPlacementWait() {
+        guard waitingForPlacement else { return }
+        cancelPlacementWait()
+        guard let request = timeline.visibleRequest else { return }
+        if isOrderedIn {
+            guard reposition(for: request, stabilize: false) else { return }
+            fadeIn()
+            updatePointerTracking()
+        } else {
+            show(request)
+        }
+    }
+
+    private func cancelPlacementWait() {
+        waitingForPlacement = false
+        placementTimer?.cancel()
+        placementTimer = nil
     }
 
     /// Measures the chip, asks for the caret and moves the panel. Returns `false` (and drops the
@@ -218,8 +288,9 @@ final class CompositionHUDController {
             panel.alphaValue = 0
             panel.orderFrontRegardless()
             isOrderedIn = true
-            orderedInAt = Self.now
         }
+        // Also after a hold at alpha 0 (a pending anchor): the bar is seen from now.
+        if orderedInAt == nil { orderedInAt = Self.now }
         let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         NSAnimationContext.runAnimationGroup { context in
             context.duration = reduceMotion ? timeline.timing.reducedMotionFadeIn : timeline.timing.fadeIn
@@ -244,6 +315,7 @@ final class CompositionHUDController {
     }
 
     private func orderOut() {
+        cancelPlacementWait()
         fadeGeneration &+= 1
         lastCaret = nil
         lastAnchor = nil

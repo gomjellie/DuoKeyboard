@@ -60,7 +60,9 @@ final class DuoRuntime {
         notifications.observe(DuoIDs.Notifications.learningCommand) { [weak self] info in
             self?.applyLearningCommand(info)
         }
-        notifications.observe(DuoIDs.Notifications.ping) { [weak self] _ in self?.answerPing() }
+        notifications.observe(DuoIDs.Notifications.ping) { [weak self] info in
+            self?.answerPing(token: info[DuoIDs.pingTokenKey])
+        }
         notifications.observe(DuoIDs.Notifications.requestAccessibility) { _ in
             Log.runtime.info("accessibility requested (trusted: \(FocusedElementLocator.isTrusted, privacy: .public))")
             FocusedElementLocator.requestPermission()
@@ -220,13 +222,14 @@ final class DuoRuntime {
 
     // MARK: Other notifications
 
-    private func answerPing() {
+    /// `token`: the ping's `DuoIDs.pingTokenKey`, copied so the waiter knows this answers its ping.
+    private func answerPing(token: String?) {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        var info = ["version": version, "modelLoaded": detector == nil ? "false" : "true",
+                    DuoIDs.pongAccessibilityKey: FocusedElementLocator.isTrusted ? "true" : "false"]
+        if let token { info[DuoIDs.pingTokenKey] = token }
         DistributedNotificationCenter.default().postNotificationName(
-            DuoIDs.Notifications.pong, object: nil,
-            userInfo: ["version": version, "modelLoaded": detector == nil ? "false" : "true",
-                       DuoIDs.pongAccessibilityKey: FocusedElementLocator.isTrusted ? "true" : "false"],
-            deliverImmediately: true)
+            DuoIDs.Notifications.pong, object: nil, userInfo: info, deliverImmediately: true)
     }
 
     /// macOS 26 does not call `deactivateServer` when another process selects a different source

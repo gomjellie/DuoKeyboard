@@ -25,9 +25,15 @@ final class DuoInputController: IMKInputController {
     /// follows their focused element (`ClientProfile.compositionAtFocusedElement`).
     private var focusedElementClientPID: pid_t?
     /// The last caret read from that client's focused element (Cocoa coordinates). Placements use
-    /// it and then read again; a changed answer moves the visible HUD (`refreshPlacement`).
+    /// it and then read again; a changed answer moves the visible HUD (`refreshPlacement`). `nil`
+    /// when the focus is not xterm.js's field: the HUD uses IMK's rects then.
     private var focusedElementCaretRect: CGRect?
+    /// A read started when the current word could begin has answered, so `focusedElementCaretRect`
+    /// is not the previous word's (`hudPlacementIsPending`).
+    private var focusedElementCaretIsCurrent = true
     private var focusedElementRead: FocusedElementRead = .idle
+    /// Bumped on every activation: answers to reads started before it are dropped.
+    private var focusedElementGeneration = 0
     private var settingsGeneration = -1
     private var wasSecure = false
     private var pendingFlipAnnouncement: ScriptLanguage?
@@ -122,10 +128,19 @@ final class DuoInputController: IMKInputController {
             syncSettings(engine)
             textClient.needsMarkBeforeInsert = engine.clientProfile.needsMarkBeforeInsert
         }
-        focusedElementClientPID = engine?.clientProfile.compositionAtFocusedElement == true
-            ? NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first?.processIdentifier
-            : nil
+        focusedElementGeneration &+= 1
         focusedElementCaretRect = nil
+        focusedElementCaretIsCurrent = true
+        focusedElementRead = .idle
+        focusedElementClientPID = nil
+        if engine?.clientProfile.compositionAtFocusedElement == true {
+            // The client is frontmost when it activates us; another instance with the same id is not.
+            let front = NSWorkspace.shared.frontmostApplication
+            focusedElementClientPID = front?.bundleIdentifier == bundleIdentifier
+                ? front?.processIdentifier
+                : NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first?.processIdentifier
+            startFocusedElementRead()
+        }
 
         if !bundleIdentifier.isEmpty, !bundleIdentifier.hasPrefix("com.inkyuoh.") {
             SettingsStore.recordSeenApp(bundleIdentifier)
@@ -217,6 +232,8 @@ final class DuoInputController: IMKInputController {
             trigger = .other
         case .keyDown:
             guard let key = KeyEventMapper.keyEvent(from: event) else { return false }
+            // A word may start with this key: read where it will be drawn, before the HUD asks.
+            if !engine.isComposing { startFocusedElementRead() }
             // ⌘3 with the flip key held chooses like a flip, so a refusal is spoken like one.
             if HUDAnnouncement.isFlipKey(key, flipKey: engine.settings.flipKey)
                 || engine.readingChordIndex(key) != nil {
@@ -384,19 +401,34 @@ extension DuoInputController: HUDAnchorProvider {
         return Int(proxy.windowLevel())
     }
 
+    /// A focused-element client is being read for a word that may just have started, with the
+    /// permission to read it: the HUD waits for the answer instead of showing the previous word's
+    /// place (`CompositionHUDController`).
+    var hudPlacementIsPending: Bool {
+        focusedElementClientPID != nil && !focusedElementCaretIsCurrent && FocusedElementLocator.isTrusted
+    }
+
     /// xterm.js terminals: the left edge of the hidden field xterm.js keeps at the composition, or
     /// at the cursor when nothing is marked (`FocusedElementLocator`), as last read. Every call
     /// reads it again in the background; `nil` until a read succeeds, without the Accessibility
-    /// permission, or for any other client.
+    /// permission, when the focus is another field, or for any other client.
     private func focusedElementCaret() -> CGRect? {
-        guard let pid = focusedElementClientPID else { return nil }
-        readFocusedElementCaret(pid: pid)
+        guard focusedElementClientPID != nil else { return nil }
+        readFocusedElementCaret()
         return focusedElementCaretRect
+    }
+
+    /// The next word's place is unknown until a read answers (activation, a key with no word).
+    private func startFocusedElementRead() {
+        guard focusedElementClientPID != nil else { return }
+        focusedElementCaretIsCurrent = false
+        readFocusedElementCaret()
     }
 
     /// One read in flight at a time; a request made meanwhile reads again once it returns, so the
     /// last answer is never older than the last placement.
-    private func readFocusedElementCaret(pid: pid_t) {
+    private func readFocusedElementCaret() {
+        guard let pid = focusedElementClientPID else { return }
         switch focusedElementRead {
         case .reading, .readingThenAgain:
             focusedElementRead = .readingThenAgain
@@ -404,21 +436,30 @@ extension DuoInputController: HUDAnchorProvider {
         case .idle:
             focusedElementRead = .reading
         }
-        FocusedElementLocator.readXtermFieldFrame(pid: pid) { [weak self] frame in
-            guard let self else { return }
+        let generation = focusedElementGeneration
+        FocusedElementLocator.read(pid: pid) { [weak self] answer in
+            guard let self, self.focusedElementGeneration == generation else { return }
+            // A request made while this read ran (a new word, a placement) gets a newer read; this
+            // answer still applies, but only the last one says the word's place is known.
             let again = self.focusedElementRead == .readingThenAgain
             self.focusedElementRead = .idle
-            guard self.focusedElementClientPID == pid else { return }
-            let caret = frame.flatMap { frame in
-                NSScreen.screens.first.flatMap {
+            let wasPending = !self.focusedElementCaretIsCurrent
+            if !again { self.focusedElementCaretIsCurrent = true }
+            var caret = self.focusedElementCaretRect
+            switch answer {
+            case .frame(let frame):
+                caret = NSScreen.screens.first.flatMap {
                     HUDGeometry.caretFromAccessibilityFrame(frame, primaryScreenHeight: $0.frame.height)
-                }
-            }.flatMap { self.usable($0) }
-            if let caret, caret != self.focusedElementCaretRect {
-                self.focusedElementCaretRect = caret
-                DuoRuntime.shared.hud.refreshPlacement(from: self)
+                }.flatMap { self.usable($0) }
+            case .notXtermField:
+                caret = nil
+            case .noAnswer:
+                break
             }
-            if again { self.readFocusedElementCaret(pid: pid) }
+            let moved = caret != self.focusedElementCaretRect
+            self.focusedElementCaretRect = caret
+            if moved || (wasPending && !again) { DuoRuntime.shared.hud.refreshPlacement(from: self) }
+            if again { self.readFocusedElementCaret() }
         }
     }
 
