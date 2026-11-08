@@ -419,6 +419,55 @@ struct EngineScenarioTests {
         #expect(h.text == mixed + " ")
     }
 
+    // MARK: Readings of the end of a word (SPEC.md 4.11절)
+
+    @Test(arguments: [
+        ("", "rlfdjwuTdmfEowndrksdpenglish", "길어졌을때중간에english"),
+        ("", "qhrhtjpdf", "보고서pdf"),
+        ("dkssud ", "tkwlsjpg", "안녕 사진jpg"),
+        ("dkssud ", "ghldmlzoom", "안녕 회의zoom"),
+        ("dkssud ", "webhookaksemfrl", "안녕 webhook만들기"),
+    ])
+    func theFirstFlipReadsOnlyTheEndInTheOtherScript(_ prime: String, _ keys: String, _ expected: String) {
+        let h = Self.harness()
+        h.type(prime + keys)
+        h.flip()
+        #expect(h.text == expected)
+    }
+
+    @Test func aParticleFollowsTheChosenEnglishEnd() {
+        let h = Self.harness()
+        h.type("rlfdjwuTdmfEowndrksdpenglish")
+        #expect(h.marked == "길어졌을때중간에두히ㅑ노")
+        #expect(h.hud?.isEligible == true, "the bar comes up by itself with the English end")
+        h.flip()
+        h.type("rk ")
+        #expect(h.text == "길어졌을때중간에english가 ")
+    }
+
+    @Test(arguments: ["dhsmfdmsghldmlrkdlTdjdy", "rmfjsepdywmadpsmsdlfdlaksgdktjgkfwlahfmrpTdjdy",
+                      "tkfkdgksmsakdmadmfhdnflrkcmfrjqrptkfdkdi", "rkatkgkqslekwhdmsgkfnwlsotpdy"])
+    func aLongKoreanWordGetsNoBarFromItsEnd(_ keys: String) {
+        // 오늘은회의가있어요, 그런데요즘에는일이많아서힘들지모르겠어요, …: invented long unspaced Korean.
+        let h = Self.harness()
+        for key in KeyEvent.typing(keys) {
+            h.press(key)
+            if case .alternative(_, let eligible)? = h.hud?.content, eligible {
+                Issue.record("the bar came up at \(h.engine.rawKeys)")
+                return
+            }
+        }
+    }
+
+    @Test(arguments: [("gksrmf", "gksrmf"), ("tkfkd", "tkfkd"), ("go", "go")])
+    func aShortWordStillFlipsToTheOtherScript(_ keys: String, _ flipped: String) {
+        let h = Self.harness()
+        h.type("dkssud ")
+        h.type(keys)
+        h.flip()
+        #expect(h.text == "안녕 " + flipped)
+    }
+
     @Test func cmdChosenAsEnglishThenRoReadsCmdRo() {
         let h = Self.harness()
         h.type("cmd")

@@ -47,6 +47,10 @@ struct Token {
     /// by `snakeKoreanMargin` (KakaoTalk_Chat_홍길동): then the flag is cleared. Unlike a dotted
     /// word, its boundary never starts L (is_ok?응).
     var snakePiece = false
+    /// The word holds the end of a longer word whose Korean start the user committed by choosing
+    /// a reading of this end on the choice bar (중간에 + english, SPEC.md 4.11절). The keys are not a
+    /// word the user typed on its own, so its commit and flips teach nothing.
+    var segmentTail = false
     /// Prefix-mode scores of `raw`, computed once per key and reused for display, eager commit, the
     /// HUD and flips (SPEC.md §5 B.6). `nil` while stale (keys passed raw in the eager-E state).
     var scores: HypothesisScores?
@@ -149,16 +153,23 @@ struct Token {
     var committedPrefix: Substring { raw.prefix(committed) }
 }
 
-/// A Korean word committed because a capital started a Latin word (SPEC.md 4.3절 8).
+/// A Korean word committed because a capital started a Latin word (SPEC.md 4.3절 8), or the Korean
+/// start of a word whose end the user chose to read on its own (4.11절).
 final class SplitHead {
     /// The word as it was before the commit.
     let token: Token
     /// What the commit inserted: `render(raw, shown)`.
     let text: String
+    /// For a chosen end: the whole word's shown and original readings before the split, which it
+    /// gets back when the end flips back to Korean.
+    let wholeShown: Hypothesis?
+    let wholeOriginal: Hypothesis?
 
-    init(token: Token, text: String) {
+    init(token: Token, text: String, wholeShown: Hypothesis? = nil, wholeOriginal: Hypothesis? = nil) {
         self.token = token
         self.text = text
+        self.wholeShown = wholeShown
+        self.wholeOriginal = wholeOriginal
     }
 }
 

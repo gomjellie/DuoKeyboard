@@ -449,6 +449,166 @@ struct EngineChoiceTests {
         #expect(h.text == before)
     }
 
+    // MARK: Readings of the end of a word (중간에 + english)
+
+    /// 중간에 then english typed as one word: the Korean start reads clearly, the English end reads
+    /// as English on its own, and the whole word reads as Korean (중간에두히ㅑ노).
+    static func scriptKoreanThenEnglish(_ d: FakeDetector) {
+        d.korean("wndrksdp")
+        d.scores["wndrksdpenglish"] = [.korean: -30_000, .english: -60_000]
+        d.scores["english"] = [.english: -9000, .korean: -40_000]
+    }
+
+    static func readings(_ h: EngineHarness) -> [String] {
+        guard case .alternative(let choice, _)? = h.hud?.content else { return [] }
+        return choice.readings.map(\.text)
+    }
+
+    @Test func aLongWordOffersItsEnglishEndFirst() throws {
+        let h = EngineHarness()
+        Self.scriptKoreanThenEnglish(h.detector)
+        h.type("wndrksdpenglish")
+        #expect(h.marked == "중간에두히ㅑ노", "typing is not changed")
+        guard case .alternative(let choice, let eligible)? = h.hud?.content else {
+            Issue.record("expected the choice bar")
+            return
+        }
+        #expect(eligible, "a long word whose end reads much better as English brings the bar up by itself")
+        #expect(choice.readings.map(\.text) == ["중간에두히ㅑ노", "중간에english", "wndrksdpenglish"],
+                "the end beats 30 keys of Latin gibberish, so it is the first flip; the other script stays")
+        #expect(choice.readings[1].language == .english)
+        #expect(choice.alternate == 1)
+    }
+
+    @Test func choosingTheEndCommitsTheStartAndKeepsTheEndComposing() {
+        let h = EngineHarness()
+        Self.scriptKoreanThenEnglish(h.detector)
+        h.type("wndrksdpenglish")
+        let calls = h.flip()
+        #expect(calls.filter(\.isMutation) == [.insert("중간에", nil), .mark("english", nil)],
+                "the start as shown, then the end marked: no replacement range (NSTextView ignores it while marked)")
+        #expect(h.text == "중간에english")
+        #expect(h.marked == "english")
+        #expect(h.engine.token?.locked == .english)
+        #expect(h.notifications.contains(.flipped(to: .english)))
+        #expect(Self.readings(h) == ["두히ㅑ노", "english"], "the end's own bar")
+        #expect(Self.isNumbered(h))
+    }
+
+    @Test func aKoreanEndingFollowsTheChosenEnglishAndNothingIsLearned() {
+        let h = EngineHarness()
+        Self.scriptKoreanThenEnglish(h.detector)
+        h.detector.scores["englishrk"] = [.korean: -40_000, .english: -25_000, .mixed(latin: 7): -12_000]
+        h.type("wndrksdpenglish")
+        h.flip()
+        h.type("rk")
+        #expect(h.marked == "english가", "English then a particle, as after any Latin choice")
+        h.press(.space)
+        #expect(h.text == "중간에english가 ")
+        #expect(h.store.count == 0, "neither the start nor the end is a word the user typed on its own")
+    }
+
+    @Test func flippingTheEndBackJoinsTheWordAgain() {
+        let h = EngineHarness()
+        Self.scriptKoreanThenEnglish(h.detector)
+        h.type("wndrksdpenglish")
+        h.flip()
+        let back = h.flip()
+        #expect(back.filter(\.isMutation) == [.insert("english", nil),
+                                              .mark("중간에두히ㅑ노", NSRange(location: 0, length: 10))],
+                "end the composition first, then mark the whole word over the start and the end")
+        #expect(h.text == "중간에두히ㅑ노")
+        #expect(h.marked == "중간에두히ㅑ노", "one word again")
+        #expect(h.engine.token?.raw == "wndrksdpenglish")
+        #expect(Self.readings(h) == ["중간에두히ㅑ노", "중간에english", "wndrksdpenglish"])
+        h.flip()
+        #expect(h.text == "중간에english", "the flip key walks the bar again")
+    }
+
+    @Test func backspaceOverTheWholeEndReopensTheStart() {
+        let h = EngineHarness()
+        Self.scriptKoreanThenEnglish(h.detector)
+        h.type("wndrksdpenglish")
+        h.flip()
+        for _ in 0..<7 { h.press(.backspace) }
+        #expect(h.text == "중간에")
+        #expect(h.marked == "중간에", "the start is composing again")
+        h.press(.backspace)
+        #expect(h.marked == "중간ㅇ")
+    }
+
+    @Test func whereCommittedTextCannotChangeTheEndStaysAWordOfItsOwn() {
+        let h = EngineHarness(bundleIdentifier: "com.microsoft.VSCode")
+        h.buffer.ignoresReplacementRanges = true
+        Self.scriptKoreanThenEnglish(h.detector)
+        h.type("wndrksdpenglish")
+        h.flip()
+        #expect(h.text == "중간에english", "a split never replaces committed text")
+        h.flip()
+        #expect(h.text == "중간에두히ㅑ노")
+        #expect(h.marked == "두히ㅑ노", "the start stays committed")
+        for _ in 0..<7 { h.press(.backspace) }
+        #expect(h.text == "중간에")
+        #expect(h.marked == nil, "the start is not re-opened: the app deletes from it")
+        #expect(!h.press(.backspace).consumed)
+    }
+
+    @Test func aShortWordKeepsTheOtherScriptFirst() {
+        // 초 + at reads better than 촘ㅅ, but chat is a word: an end only goes first when it beats the
+        // other script's reading by segmentMargin.
+        let h = EngineHarness()
+        h.detector.korean("ch")
+        h.detector.scores["cha"] = [.korean: -3000, .english: -6000]
+        h.detector.scores["chat"] = [.korean: -8000, .english: -9000]
+        h.detector.scores["at"] = [.english: -3000, .korean: -12_000]
+        h.type("chat")
+        #expect(h.marked == "촘ㅅ")
+        h.modifier(down: true)
+        #expect(Self.readings(h) == ["촘ㅅ", "chat", "초at"], "listed after the other script")
+        h.modifier(down: false)
+        #expect(h.marked == "chat")
+    }
+
+    @Test func endsAreOnlyComputedWhenTheyCanMatter() {
+        let h = EngineHarness()
+        h.detector.korean("ch")
+        h.detector.scores["cha"] = [.korean: -3000, .english: -6000]
+        h.detector.scores["chat"] = [.korean: -8000, .english: -9000]
+        h.detector.scores["at"] = [.english: -3000, .korean: -12_000]
+        h.type("chat")
+        #expect(!h.detector.choiceCalls.contains("at"), "a short word without the flip key: no ends")
+        h.modifier(down: true)
+        #expect(h.detector.choiceCalls.contains("at"), "the flip key brings them")
+    }
+
+    @Test func aLatinStartWithAKoreanEndTheDetectorDoesNotScoreIsOffered() {
+        // regex + 쓰면: the detector scores no M(5) (regex is no lexicon word and 쓰면 no suffix).
+        var settings = DuoSettings.default
+        settings.eagerEnglishCommit = false
+        let h = EngineHarness(settings: settings)
+        h.detector.english("regex")
+        h.detector.scores["regexTmaus"] = [.korean: -45_000, .english: -30_000]
+        h.detector.scores["Tmaus"] = [.korean: -6000, .english: -25_000]
+        h.type("regexTmaus")
+        #expect(h.marked == "regexTmaus")
+        #expect(Self.readings(h) == ["regexTmaus", "regex쓰면", FakeDetector.hangul("regexTmaus")],
+                "the end reading goes first; the Korean reading, 15 nats behind, stays as the other script")
+        h.flip()
+        #expect(h.marked == "regex쓰면")
+        #expect(h.engine.token?.locked == .mixed(latin: 5))
+    }
+
+    @Test func aChosenEndOnTheBarWithADigit() throws {
+        let h = EngineHarness()
+        Self.scriptKoreanThenEnglish(h.detector)
+        h.type("wndrksdpenglish")
+        h.modifier(down: true)
+        let step = h.press(.character("2"), .command)
+        #expect(step.consumed)
+        #expect(h.text == "중간에english")
+        #expect(h.marked == "english")
+    }
+
     // MARK: Nothing to choose
 
     @Test(arguments: [nil, HUDRequest(content: .oneShot(.english), anchor: .caret, immediate: true, lifetime: 0.9),

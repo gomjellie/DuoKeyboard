@@ -19,8 +19,11 @@ final class FakeDetector: LanguageDetector, @unchecked Sendable {
     var finals: [String: [Hypothesis: Int]] = [:]
     /// Final-mode overrides per raw and context.
     var finalsByContext: [String: [LanguageContext: [Hypothesis: Int]]] = [:]
-    /// Used for raws without a script: Korean wins by 9 nats.
-    var fallback: (String) -> [Hypothesis: Int] = { raw in [.korean: -1000 * raw.count, .english: -1000 * raw.count - 9000] }
+    /// Used for raws without a script: Korean wins by 9 nats. Both sit 30 nats below a scripted word,
+    /// so keys a test did not script never make a likely end of a longer word (SPEC.md 4.11절).
+    var fallback: (String) -> [Hypothesis: Int] = { raw in
+        [.korean: -1000 * raw.count - 30_000, .english: -1000 * raw.count - 39_000]
+    }
     /// Latin words for the M(b) re-open gate (`lexEN`).
     var latinWords: Set<String> = []
     /// Korean tails for the re-open gate (`suffixPrefix`), as raw keys.

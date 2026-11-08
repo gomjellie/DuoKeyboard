@@ -55,7 +55,7 @@ extension CompositionEngine {
         }
 
         // 4. Learning (critique R7).
-        let learnable = reason != .secureInput && t.count >= 2 && effectiveProfile != .direct
+        let learnable = reason != .secureInput && t.count >= 2 && effectiveProfile != .direct && !t.segmentTail
         var votes: [LearningVote] = []
         if learnable, canLearnNow {
             if let locked = t.locked {

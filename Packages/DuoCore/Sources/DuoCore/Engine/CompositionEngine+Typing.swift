@@ -80,6 +80,7 @@ extension CompositionEngine {
                 return false
             }
             t.scores = prefixScores(t.raw, t.context)
+            rememberPrefixScores(t)
             t.shown = .english
             continueAfterLatinChoice(&t)
             let changed = t.applyHysteresis(hysteresis)
@@ -100,6 +101,7 @@ extension CompositionEngine {
            let other = scores.best(where: { $0 != .korean }), k - other.score >= Self.snakeKoreanMargin {
             t.snakePiece = false
         }
+        rememberPrefixScores(t)
         if t.latinStart, t.count >= 2, let scores = t.scores, let k = scores[.korean],
            let best = scores.best(where: t.isAllowed), k - best.score >= Self.latinMergeMargin,
            let merged = reopenSplitHead(of: t, appending: t.raw, client: client) {
@@ -186,7 +188,11 @@ extension CompositionEngine {
     /// Re-opens the Korean word a capital split off (SPEC.md 4.3절 8) as one marked word: the
     /// committed word plus `raw` (the keys typed after it that belong to it, or none). Only where
     /// committed text can be replaced, and only if the word is still right before the marked text.
-    func reopenSplitHead(of tail: Token, appending raw: String, client: any TextClient) -> Token? {
+    ///
+    /// - Parameter reading: the reading the joined word shows (when it can render it); by default it
+    ///   keeps the committed word's reading if it still can.
+    func reopenSplitHead(of tail: Token, appending raw: String, reading: Hypothesis? = nil,
+                         client: any TextClient) -> Token? {
         guard let head = tail.splitHead, clientProfile.canReplaceCommittedText else { return nil }
         let marked = tail.marked.isEmpty ? nil : client.markedRange()
         let length = head.text.utf16.count
@@ -198,6 +204,7 @@ extension CompositionEngine {
         t.committed = 0
         t.lastKeyAt = tail.lastKeyAt
         t.scores = prefixScores(t.raw, t.context)
+        if let reading, t.isWellFormed(reading) { t.shown = reading }
         t.keepShownIfPossible()
         let text = display(t, t.shown)
         // NSTextView ignores a replacement range while text is marked, and TextEdit does not end a
@@ -211,6 +218,7 @@ extension CompositionEngine {
     }
 
     func startToken(at time: TimeInterval) {
+        prefixMemo = PrefixMemo()
         let ctx = context.contextForNewToken
         let lock = oneShot
         oneShot = nil
@@ -256,7 +264,8 @@ extension CompositionEngine {
     /// It earns the HUD on any key but an autorepeat when `alwaysShowChoices` is on, when the user
     /// chose the reading (a flip or the bar) or pressed the flip key, or when a listed reading is
     /// within ``Margins/hudCandidates`` of the shown one (P ≥ 5 %) and the token has at least two
-    /// keys (or is one of the 1-key collision words).
+    /// keys (or is one of the 1-key collision words). A reading of the end of a long word earns it
+    /// when it leads the shown reading by ``segmentMargin``.
     func alternativeHUD(_ t: Token, pulse: Bool, isRepeat: Bool) -> HUDRequest? {
         guard settings.showHints, !t.marked.isEmpty, let prefix = t.scores,
               let bar = choiceList(t, prefix) else { return nil }
@@ -265,13 +274,18 @@ extension CompositionEngine {
         // finished word (감ㅅ → rkat), so only M(b) may earn the bar on its final score.
         func closeness(_ scores: HypothesisScores, onlyMixed: Bool) -> Bool {
             let shownScore = scores[t.shown] ?? scores.best?.score ?? 0
-            return bar.hypotheses.enumerated().contains { i, h in
-                guard i != bar.selected, let s = scores[h] else { return false }
+            return bar.readings.enumerated().contains { i, r in
+                guard i != bar.selected, case .whole(let h) = r, let s = scores[h] else { return false }
                 if onlyMixed, case .mixed = h {} else if onlyMixed { return false }
                 return shownScore - s <= Margins.hudCandidates
             }
         }
-        let likely = (closeness(bar.prefix, onlyMixed: false) || closeness(bar.final, onlyMixed: true))
+        let shownFinal = bar.final[t.shown] ?? bar.final.best?.score ?? 0
+        let endLikely = t.count >= Self.segmentAutoKeys
+            && bar.segments.first(where: { $0.mayLead && $0.score - shownFinal >= Self.segmentMargin }).map {
+                segmentLeadsWhileTyping($0, raw: t.raw, shownScore: prefix[t.shown] ?? prefix.best?.score ?? 0)
+            } ?? false
+        let likely = endLikely || (closeness(bar.prefix, onlyMixed: false) || closeness(bar.final, onlyMixed: true))
             && (t.count >= 2 || Self.collisionKeys.contains(t.raw.lowercased()))
         let eligible = !isRepeat && (settings.alwaysShowChoices || t.locked != nil || t.choicesRevealed || likely)
         return HUDRequest(content: .alternative(bar.choice, eligible: eligible), anchor: .markedText, pulse: pulse)

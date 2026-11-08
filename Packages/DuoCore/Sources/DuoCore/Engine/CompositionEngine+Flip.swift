@@ -91,21 +91,20 @@ extension CompositionEngine {
     /// - Parameter explicitTarget: the reading chosen on the bar; `nil` for the flip key's target.
     /// - Returns: whether the token changed to another reading.
     @discardableResult
-    func flipToken(_ token: Token, to explicitTarget: Hypothesis? = nil, markedRange knownMarked: NSRange?,
+    func flipToken(_ token: Token, to explicitTarget: ChoiceReading? = nil, markedRange knownMarked: NSRange?,
                    checked: Bool, client: any TextClient) -> Bool {
         var t = token
         if t.scores == nil { t.scores = prefixScores(t.raw, t.context) }
-        guard let scores = t.scores else { return false }
-
+        guard let scores = t.scores, let reading = explicitTarget ?? flipTarget(t, scores) else { return false }
         let target: Hypothesis
-        if let explicitTarget {
-            target = explicitTarget
-            if t.lockedOriginal == nil { t.lockedOriginal = t.shown }
-        } else {
-            guard let next = flipTarget(t, scores) else { return false }
-            target = next
-            if t.lockedOriginal == nil { t.lockedOriginal = t.shown }
+        switch reading {
+        case .whole(let h):
+            target = h
+        case .split(let head, let tail):
+            return splitToken(t, head: head, tail: tail, client: client)
         }
+        if t.segmentTail, target == t.lockedOriginal, joinSegmentTail(t, client: client) { return true }
+        if t.lockedOriginal == nil { t.lockedOriginal = t.shown }
 
         if t.committed > 0, !t.isConsistent(target) {
             // The Latin committed by eager E must be re-opened: verify it, end the marked tail, then

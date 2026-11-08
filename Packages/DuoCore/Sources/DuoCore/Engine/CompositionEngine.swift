@@ -66,6 +66,9 @@ public final class CompositionEngine {
     var oneShot: ScriptLanguage?
     var lastCommit: LastCommit?
     var tap: FlipTapDetector
+    /// Prefix-mode scores of the word's earlier keys (`memoizedPrefixScores`). Learning changes
+    /// only at commits, so a new word starts it again.
+    var prefixMemo = PrefixMemo()
 
     /// - Parameters:
     ///   - detector: the shared scorer.
@@ -530,6 +533,14 @@ public final class CompositionEngine {
         case .korean: (0, 0)
         case .mixed(let latin): (1, latin)
         case .english: (2, 0)
+        }
+    }
+
+    /// `displayRank` of a reading; one that keeps a Korean start comes right after K.
+    static func displayRank(_ r: ChoiceReading) -> (Int, Int) {
+        switch r {
+        case .whole(let h): displayRank(h)
+        case .split: (0, 1)
         }
     }
 

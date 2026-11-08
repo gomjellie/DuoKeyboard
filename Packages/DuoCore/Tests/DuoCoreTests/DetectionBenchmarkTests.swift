@@ -92,4 +92,39 @@ struct DetectionBenchmarkTests {
         #expect(f.p99 <= 300, "final-mode p99 \(f.p99) µs exceeds the 300 µs budget")
         #endif
     }
+
+    /// The worst case of a key while the choice bar lists the readings of the word's end (SPEC.md
+    /// 4.11절): the flip key went down at the first key, so every key of the 32-key word scores the
+    /// word (prefix mode, then the bar's final mode) and each end of up to 16 keys as a word of its own.
+    @MainActor
+    @Test func perKeyCostWithTheEndsOfTheWordOnTheBar() throws {
+        let d = try DetectionFixtures.detector.get()
+        let rounds = 3
+        var keys: [Double] = []
+        for _ in 0..<rounds {
+            for t in Self.tokens {
+                let h = EngineHarness(scorer: d)
+                if t.context == .korean { h.type("dkssud ") } else if t.context == .english { h.type("hello ") }
+                let events = KeyEvent.typing(t.raw)
+                h.press(events[0])
+                h.modifier(down: true)
+                for event in events.dropFirst() {
+                    keys.append(Self.time { h.press(event) })
+                }
+            }
+        }
+        let k = Stats(samples: keys)
+        #if DEBUG
+        let build = "debug"
+        #else
+        let build = "release"
+        #endif
+        print("""
+            [DetectionBenchmark] \(build), \(Self.tokens.count) tokens × 31 keys × \(rounds) rounds, ends on the bar
+              key (engine, bar with ends)     \(k)
+            """)
+        #if !DEBUG
+        #expect(k.p99 <= 1000, "per-key p99 \(k.p99) µs exceeds the 1 ms budget")
+        #endif
+    }
 }

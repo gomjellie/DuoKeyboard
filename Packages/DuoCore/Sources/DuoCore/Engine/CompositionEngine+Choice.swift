@@ -24,92 +24,122 @@ extension CompositionEngine {
     /// The bar for `t`: its readings in display order, which one is shown, which one the flip key
     /// switches to, and the scores behind it. `nil` when there is nothing to choose.
     struct ChoiceList {
-        var hypotheses: [Hypothesis]
+        var readings: [ChoiceReading]
         var choice: HUDChoice
         /// Prefix-mode scores, with learned Latin words carried to their endings.
         var prefix: HypothesisScores
         /// Final-mode scores (what a boundary would commit), with the same carry.
         var final: HypothesisScores
+        /// The listed readings that change only the end of the word.
+        var segments: [Segment]
         var selected: Int { choice.selected }
     }
 
     /// The readings the bar lists for `t`, in the order the flip key walks them.
     ///
     /// - First the word's original reading (what it showed before any flip), then the reading a
-    ///   first flip switches to (R11: the other script), then the rest best first by prefix-mode
-    ///   score (unscored ones last). The order stays while the word does not change.
+    ///   first flip switches to (R11: the other script, or a reading of the end of the word that
+    ///   scores higher), then the rest best first by prefix-mode score (unscored ones last). The
+    ///   order stays while the word does not change.
     /// - K, E and every M(b) the detector scored, without two that render alike.
+    /// - With `segments` (default ``wantsSegments(_:)``), up to ``maxSegmentRows`` readings that change
+    ///   only the end of the word (`segments(raw:context:committed:scored:)`).
     /// - Readings inconsistent with eagerly committed Latin only where the client can re-open it.
-    /// - At most ``maxCandidates``; the original, the first flip's target, the shown reading and a
-    ///   chosen Latin-plus-ending always stay.
+    /// - At most ``maxCandidates``; the original, the first flip's target, the R11 alternative, the
+    ///   shown reading and a chosen Latin-plus-ending always stay.
     /// - The scores carry a Latin word's learned English to its endings (`userCounts` with
     ///   `carryLatinPrefixes`), so cmd로 rises on the bar; what is shown and committed does not.
-    func choiceList(_ t: Token, _ shownScores: HypothesisScores) -> ChoiceList? {
-        let original = t.lockedOriginal ?? t.shown
+    func choiceList(_ t: Token, _ shownScores: HypothesisScores, segments wanted: Bool? = nil) -> ChoiceList? {
+        let original = ChoiceReading.whole(t.lockedOriginal ?? t.shown)
+        let shown = ChoiceReading.whole(t.shown)
         let plain = userCounts(t.raw, t.context)
         let carried = userCounts(t.raw, t.context, carryLatinPrefixes: true)
         let prefix = carried == plain ? shownScores
             : detector.prefixScores(raw: t.raw, context: t.context, user: carried, biasKO: biasKO)
         let final = detector.choiceScores(raw: t.raw, context: t.context, user: carried, biasKO: biasKO)
-        let first = alternative(of: original, raw: t.raw, in: prefix)
-
-        var kept: [Hypothesis] = [original]
-        if let first { kept.append(first) }
-        kept.append(t.shown)
-        if let b = t.lockedLatin, b < t.count, !t.raw.contains("'") { kept.append(.mixed(latin: b)) }
-
+        let otherScript = alternative(of: t.lockedOriginal ?? t.shown, raw: t.raw, in: prefix)
         let bestPrefix = prefix.best?.score ?? 0
         let bestFinal = final.best?.score ?? 0
-        var rows: [(hypothesis: Hypothesis, score: Int?, text: String)] = []
-        func add(_ h: Hypothesis) {
-            guard canChoose(t, h) else { return }
-            let text = render(t.raw, h)
+
+        var segments: [Segment] = []
+        // The end of a split is not split again: its bar walks its own readings back to the original.
+        if !t.segmentTail, wanted ?? wantsSegments(t) {
+            var texts: Set<String> = []
+            for s in self.segments(raw: t.raw, context: t.context, committed: t.committed, scored: [prefix, final])
+            where s.score >= bestFinal - Self.candidateFloor && texts.insert(s.text).inserted {
+                segments.append(s)
+                if segments.count == Self.maxSegmentRows { break }
+            }
+        }
+        let first = segmentBeating(otherScript, in: segments, final: final, prefix: prefix)?.reading
+            ?? otherScript.map(ChoiceReading.whole)
+
+        var kept: [ChoiceReading] = [original]
+        if let first { kept.append(first) }
+        // When a reading of the end goes first, the other script's reading stays listed.
+        if let otherScript { kept.append(.whole(otherScript)) }
+        kept.append(shown)
+        if let b = t.lockedLatin, b < t.count, !t.raw.contains("'") { kept.append(.whole(.mixed(latin: b))) }
+
+        /// Prefix-mode scale for a reading of the end of the word (scored in final mode).
+        func score(_ r: ChoiceReading) -> Int? {
+            if case .whole(let h) = r, let s = prefix[h] { return s }
+            return segments.first { $0.reading == r }.map { $0.score - bestFinal + bestPrefix }
+        }
+        var rows: [(reading: ChoiceReading, score: Int?, text: String)] = []
+        func add(_ r: ChoiceReading) {
+            if case .whole(let h) = r, !canChoose(t, h) { return }
+            let text = segments.first { $0.reading == r }?.text ?? render(t.raw, r)
             if let i = rows.firstIndex(where: { $0.text == text }) {
                 // Two readings that look the same: keep the one the bar must show.
-                if kept.contains(h), !kept.contains(rows[i].hypothesis) { rows[i] = (h, prefix[h], text) }
+                if kept.contains(r), !kept.contains(rows[i].reading) { rows[i] = (r, score(r), text) }
                 return
             }
-            rows.append((h, prefix[h], text))
+            rows.append((r, score(r), text))
         }
-        for h in kept { add(h) }
+        for r in kept { add(r) }
         for entry in prefix.entries + final.entries {
             let close = prefix[entry.hypothesis].map { bestPrefix - $0 <= Self.candidateFloor } ?? false
                 || final[entry.hypothesis].map { bestFinal - $0 <= Self.candidateFloor } ?? false
-            if close { add(entry.hypothesis) }
+            if close { add(.whole(entry.hypothesis)) }
         }
+        for s in segments { add(s.reading) }
         // The original and the first flip's target lead; the rest by score.
-        let lead = rows.filter { $0.hypothesis == original || $0.hypothesis == first }
-            .sorted { a, _ in a.hypothesis == original }
-        var rest = rows.filter { $0.hypothesis != original && $0.hypothesis != first }
+        let lead = rows.filter { $0.reading == original || $0.reading == first }
+            .sorted { a, _ in a.reading == original }
+        var rest = rows.filter { $0.reading != original && $0.reading != first }
         rest.sort { a, b in
             switch (a.score, b.score) {
             case let (x?, y?) where x != y: return x > y
             case (_?, nil): return true
             case (nil, _?): return false
-            default: return Self.displayRank(a.hypothesis) < Self.displayRank(b.hypothesis)
+            default: return Self.displayRank(a.reading) < Self.displayRank(b.reading)
             }
         }
         rows = lead + rest
-        while rows.count > Self.maxCandidates, let i = rows.lastIndex(where: { !kept.contains($0.hypothesis) }) {
+        while rows.count > Self.maxCandidates, let i = rows.lastIndex(where: { !kept.contains($0.reading) }) {
             rows.remove(at: i)
         }
-        guard rows.count >= 2, let selected = rows.firstIndex(where: { $0.hypothesis == t.shown }) else { return nil }
+        guard rows.count >= 2, let selected = rows.firstIndex(where: { $0.reading == shown }) else { return nil }
         // The flip key walks the bar: the next reading, and from the last one back to the first.
         let alternate = (selected + 1) % rows.count
-        let readings = rows.map { HUDReading(text: $0.text, language: $0.hypothesis.language) }
-        return ChoiceList(hypotheses: rows.map(\.hypothesis),
+        let readings = rows.map { HUDReading(text: $0.text, language: $0.reading.language) }
+        return ChoiceList(readings: rows.map(\.reading),
                           choice: HUDChoice(readings: readings, selected: selected, alternate: alternate,
                                             numbered: t.locked != nil || t.choicesRevealed),
-                          prefix: prefix, final: final)
+                          prefix: prefix, final: final,
+                          segments: segments.filter { s in rows.contains { $0.reading == s.reading } })
     }
 
     /// The reading the flip key switches `t` to: the next one on the bar (SPEC.md 4.11절), so a
-    /// first flip goes to the other script and further flips walk the other readings and come back
-    /// to the original. Without a bar (one reading the client can choose), the R11 alternative, so
-    /// the flip can still say why it cannot change the word.
-    func flipTarget(_ t: Token, _ scores: HypothesisScores) -> Hypothesis? {
-        if let bar = choiceList(t, scores) { return bar.hypotheses[bar.choice.alternate] }
-        return alternative(of: t.lockedOriginal ?? t.shown, raw: t.raw, in: scores)
+    /// first flip goes to the other script (or to a likelier reading of the end of the word) and
+    /// further flips walk the other readings and come back to the original. It is the bar the user
+    /// sees (the right ⌘ press reveals it with the readings of the end of the word). Without a bar
+    /// (one reading the client can choose), the R11 alternative, so the flip can still say why it
+    /// cannot change the word.
+    func flipTarget(_ t: Token, _ scores: HypothesisScores) -> ChoiceReading? {
+        if let bar = choiceList(t, scores) { return bar.readings[bar.choice.alternate] }
+        return alternative(of: t.lockedOriginal ?? t.shown, raw: t.raw, in: scores).map(ChoiceReading.whole)
     }
 
     /// A reading the token can switch to: consistent with the Latin committed eagerly, or the
@@ -136,14 +166,14 @@ extension CompositionEngine {
         case .alternative(let choice, _):
             guard choice.readings.indices.contains(index), let t = token, let scores = t.scores,
                   let bar = choiceList(t, scores), bar.choice == choice else { return .notOnBar }
-            let target = bar.hypotheses[index]
+            let target = bar.readings[index]
             hud = nil
             let marked = t.marked.isEmpty ? nil : client.markedRange()
             guard t.marked.isEmpty || marked != nil else {
                 dropToken()
                 return .refused
             }
-            if target == t.shown {
+            if case .whole(let target) = target, target == t.shown {
                 var kept = t
                 if kept.locked == nil {
                     kept.locked = target
