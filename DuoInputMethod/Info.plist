@@ -41,7 +41,7 @@
 	<key>TISIntendedLanguage</key>
 	<string>ko</string>
 	<key>TISIconIsTemplate</key>
-	<false/>
+	<true/>
 	<key>TISIconLabels</key>
 	<dict>
 		<key>Primary</key>

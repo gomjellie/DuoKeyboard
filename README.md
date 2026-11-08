@@ -510,7 +510,7 @@ Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/
 
 ## 알려진 제한
 
-- **아이콘이 바뀐 뒤 캐럿 옆 표시가 예전 모습으로 보일 수 있음.** macOS 26은 입력 소스를 바꿀 때 캐럿 옆에 알약을 띄움. Duo는 초록 알약 안에 밝은 "한A" 타일로 보임. 메뉴 막대와 입력 메뉴에도 같은 타일 아이콘(`TISIconIsTemplate = false`)이 보이고, ⌘Space 목록에는 이름 "Duo"가 보임
+- **아이콘이 바뀐 뒤 캐럿 옆 표시가 예전 모습으로 보일 수 있음.** macOS 26은 입력 소스를 바꿀 때 캐럿 옆에 알약을 띄움. Duo는 초록 알약 안에 흰 "한A" 타일로 보임. 메뉴 막대와 입력 메뉴에는 애플 입력 소스와 같은 크기의 템플릿 알약(`TISIconIsTemplate = true`)이 보여서 밝은 모드와 다크 모드를 따라 색이 바뀜. ⌘Space 목록에는 이름 "Duo"가 보임
   - 이 알약을 그리는 `CursorUIViewService`는 로그인 동안 예전 모습을 들고 있음. 아이콘이 바뀐 빌드를 설치한 뒤 예전 아이콘이나 빈 알약이 보이면 `killall -KILL CursorUIViewService`를 실행하거나 로그아웃함. 강제 종료한 뒤 알약이 뜨지 않으면 앱 하나를 새로 실행함. 화면 잠금으로는 고쳐지지 않음
 - **다시 설치한 뒤 다시 연결해야 함.** `make install`이나 `install-ime.sh` 뒤에는 Duo를 쓰던 앱이 ABC로 입력됨. 그 앱이 앞에 있을 때 Duo를 다시 고르거나 다른 앱에 갔다 와야 함. 호스트 앱의 설치, 업데이트, 다시 시작은 이 재선택을 직접 함. 뒤에 있던 앱은 다음 포커스 변화 때 다시 붙음
 - **확정한 글자를 바꿀 수 없는 앱.** Monaco 편집기(VS Code와 그 갈래), iTerm2, Hyper, JetBrains IDE, Android Studio, Orca에서는 확정한 단어를 바꾸지 못함. "여기서는 바꿀 수 없어요"를 띄움
