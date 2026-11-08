@@ -134,7 +134,19 @@ def english_corpus_counts() -> Counter:
 
 
 def suffix_counts() -> Counter:
-    path = os.path.join(CACHE, "suffix_counts.tsv")
+    c = suffix_corpus_counts()
+    with open(os.path.join(DATA, "suffix_extra.txt"), encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("#") or not line.strip():
+                continue
+            s, n = line.rstrip("\n").split("\t")
+            c[s] += int(n)
+    return Counter({s: n for s, n in c.items() if n >= 5 and roundtrip_keys(s) is not None})
+
+
+def suffix_corpus_counts() -> Counter:
+    """The corpus part of `suffix_counts`, cached: `data/suffix_extra.txt` is added on every call."""
+    path = os.path.join(CACHE, "suffix_corpus_counts.tsv")
     if os.path.exists(path):
         return _read_tsv(path)
     R = re.compile(r"^([A-Za-z]+)([가-힣]+)$")
@@ -147,13 +159,6 @@ def suffix_counts() -> Counter:
         m = R.match(w)
         if m:
             c[m.group(2)] += 5 * n
-    with open(os.path.join(DATA, "suffix_extra.txt"), encoding="utf-8") as f:
-        for line in f:
-            if line.startswith("#") or not line.strip():
-                continue
-            s, n = line.rstrip("\n").split("\t")
-            c[s] += int(n)
-    c = Counter({s: n for s, n in c.items() if n >= 5 and roundtrip_keys(s) is not None})
     _write_tsv(path, c)
     return c
 
