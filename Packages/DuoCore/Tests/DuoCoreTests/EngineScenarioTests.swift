@@ -188,6 +188,9 @@ struct EngineScenarioTests {
         Row(.korean, "dnwntjsdksdptjwndfurdlgowpehlstkdxodptj ", "우주선안에서중력이해제된상태에서 "),
         Row(.korean, "snrnskruRdmftndlTsmstkfadpeogksaksgdmsdltbemfdmfdlftkdwjrdlaustj ",
             "누구나겪을수있는삶에대한많은이슈들을일상적이면서 "),
+        // The most frequent words keep their lexicon values (uniform codebook): 내 at a sentence start
+        Row(.start, "so ", "내 "),
+        Row(.english, "so ", "so "),
         // Chat words and emotive jamo runs (ko_chat.txt; a run of ㅋㅎㅠㅜㅡㄷㅉ is not an orphan)
         Row(.start, "rne ", "굳 "),
         Row(.english, "rne ", "굳 "),
