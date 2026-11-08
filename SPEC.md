@@ -194,6 +194,8 @@ project.yml, Package.swift, Makefile, Tools/scripts                          [le
 | `maxTokenLength` | 32 | 단어 하나의 최대 키 수 |
 | `eagerMinimumKeys` | 3 | 영어 즉시 확정에 필요한 최소 키 수 |
 | `collisionKeys` | `a e i o u x` | 키 하나로도 HUD 자격을 얻는 단어 (4.11절 4) |
+| `latinSplitMargin` | 11 000 (11 nats) | 대문자가 한국어 단어를 끝내려면 K가 다른 읽기보다 이만큼 높아야 함 (4.3절 8) |
+| `latinMergeMargin` | 6 000 (6 nats) | 대문자로 시작한 단어가 K로 이만큼 앞서면 앞 단어와 다시 합침 (4.3절 8) |
 | `maxCandidates` | 5 | 후보 막대의 최대 읽기 수 |
 | `candidateFloor` | 10 000 (10 nats) | 두 모드 모두에서 1등보다 이만큼 넘게 뒤진 읽기는 목록에서 뺌. 늘 넣는 읽기는 빼지 않음 (4.11절 2) |
 | `chipLifetime` | 4 s | 마지막 단어 후보 막대의 수명 |
@@ -214,6 +216,8 @@ project.yml, Package.swift, Makefile, Tools/scripts                          [le
   - `lockedReturn`: 원래 읽기에서 바꾸기 키가 돌아갈 읽기(cmd로 → 층로 → cmd로).
   - `keptByChoice`: 후보 막대에서 보이던 읽기를 그대로 고름.
   - `languageLock`: 다음 단어 언어(4.7절 c)로 정한 언어.
+  - `latinStart`: 한국어 단어를 끝낸 대문자로 시작한 단어(4.3절 8). K를 허용하지 않음.
+  - `splitHead`: 그 대문자가 끝낸 한국어 단어와 넣은 글. 다시 열 때 씀. 확정한 글을 바꿀 수 있는 앱에서만 둠.
   - `marked`: 엔진이 마지막으로 보낸 조합 문자열(`""` = 없음).
   - `lastKeyAt`: 마지막 키의 `KeyEvent.timestamp`.
 - `context` (`ContextTracker`):
@@ -289,6 +293,21 @@ project.yml, Package.swift, Makefile, Tools/scripts                          [le
      - M을 보이면 E.
    - 진짜 경쟁자인 M: 다른 순수 읽기보다 점수가 높거나 같고, 보이는 읽기와의 차가 `Margins.eagerCommit`(P ≥ 1 %) 이하임.
    - 그렇지 않은 2등 섞인 읽기는 잡음임(사랑 → `tk랑`, test → `tesㅅ`). 바꾸는 사용자는 "이 문자 계열이 아님"이라고 말한 것이라 다른 순수 읽기를 원함. 진짜 섞인 단어(PR을, git을)는 이미 보이거나 이 검사를 통과함.
+8. **쌍자음 없는 대문자**(한A, 삼성SDI). ⇧로 친 글자 키 중 두벌식에서 ⇧가 다른 자모를 만들지 않는 키(Q W E R T O P를 뺀 A–Z)는 라틴 대문자로 봄. 한국어를 칠 때는 이 키에 ⇧를 누를 일이 없음.
+   - 근거: K, E, M(b) 중 한글 뒤에 라틴이 오는 읽기는 없음(DET 1절). 그래서 한 단어로는 한ㅁ이나 gksA만 나옴.
+   - **나누기:** 아래가 모두 맞으면 진행 중인 단어를 확정하고 대문자로 새 단어를 시작함. 새 단어는 `latinStart`를 켬.
+     - 단어가 있고, 모두 라틴으로 확정한 상태가 아니고, 바로 앞 키가 대문자가 아님. ㅆ 같은 ⇧ 자모 뒤에 ⇧를 늦게 뗀 경우(했 + D)는 겹쳐 누름이라 그대로 조합함. 모두 대문자인 단어(SKT)도 이 조건으로 나뉘지 않음;
+     - 단어가 한국어로 읽힘: 사용자가 한국어를 골랐거나(`koreanChosen`), `shown == K`이고 접두 점수에서 K가 다른 모든 읽기보다 `latinSplitMargin`(11000) 이상 높음. 카멜 표기의 짧은 앞부분(to 새, do 애, did 양, db 유, z ㅋ)은 이보다 낮아서 한 단어로 남음(toString, doSomething). 한 키 단어(d, r, q)도 낮아서 ⇧를 일찍 누른 있어(`dLTdj`)가 그대로임;
+     - `locked`가 E가 아니고 `languageLock`이 영어가 아님;
+     - 대문자를 더한 `raw`의 접두 점수에서 허용되는 읽기 중 1위가 E가 아님. E이면 영어 단어 안의 대문자임(GitHub, iOS, McDonald).
+   - **앞 단어 확정:** 화면의 읽기를 그대로 넣음. 대문자는 단어의 끝이 아니라서 최종 모드로 다시 매기지 않고, 학습 표, 확정 직후 막대, 바꾸기 경우 (b)도 없음.
+   - **`latinStart`:** 허용되는 읽기에서 K를 뺌. E와 M(b)는 남아서 SDI, API를을 이어 침. 바꾸기 키는 K를 고를 수 있음(정말 한ㅁ을 칠 때).
+   - **다시 열기** (`splitHead`가 있을 때. 앞 단어가 아직 조합 문자열 바로 앞에 있는지 `string(in:)`으로 확인하고, 4.7절 (a)처럼 조합 문자열을 먼저 지운 뒤 앞 단어 범위를 `setMarkedText`로 바꿈):
+     - ⌫가 새 단어를 비우면 앞 단어가 다시 조합 중이 됨(`gksA` ⌫ `k` → 하나).
+     - 새 단어의 두 번째 키부터, K가 허용되는 읽기보다 `latinMergeMargin`(6000) 이상 높으면 대문자는 잘못 누른 ⇧였음. 앞 단어와 다시 한 단어가 됨(안녕하세요의 G). 라틴 단어(A를, SDI가, API를, B마트)는 K가 1.7냇 넘게 앞서지 않음.
+   - **나누지 않는 것과 한계:**
+     - Q W E R T O P 대문자(ㅃㅉㄸㄲㅆㅒㅖ)와 소문자로 시작하는 라틴(`카톡id`)은 나누지 않음. 한국어로도 그럴듯해서임.
+     - 두 키 이상인 단어에서 ⇧를 한 키 일찍 누르면 나뉨(`dhKTdj` → 오KT어). API, HR, IT처럼 Q W E R T O P가 이어지는 약어와 키로 구별할 수 없어서 약어를 택함. ⌫로 대문자를 지우면 다시 합쳐짐.
 
 ### 4.4 아포스트로피 `'` (DET 4절)
 
@@ -360,9 +379,9 @@ Forward Delete와 F-키는 L을 유지해요.
   - 잠기지 않았으면 R11 대안. 이때 `lockedOriginal = shown`.
 - 대상이 즉시 확정한 라틴과 맞지 않으면(c > 0이고 일관되지 않음) 확정한 라틴을 다시 열어야 함:
   - `!clientProfile.canReplaceCommittedText`(4.10절)이면 `.cannotChange`를 보여 주고 아무것도 바꾸지 않음;
-  - `R = (조합 시작 또는 캐럿) − c ..< 조합 끝`;
-  - `client.string(in: 확정한 부분) == raw[0..<c]`인지 확인함. 다르면 `.cannotChange`;
-  - 맞으면 `setMarkedText(render(target), replacementRange: R)`, c = 0.
+  - `R = (조합 시작 또는 캐럿) − c ..< (조합 시작 또는 캐럿)`: 확정한 c글자;
+  - `client.string(in: R) == raw[0..<c]`인지 확인함. 다르면 `.cannotChange`;
+  - 맞으면 조합 문자열이 있을 때 먼저 `setMarkedText("")`로 지우고, `setMarkedText(render(target), replacementRange: R)`, c = 0. NSTextView(TextEdit)는 조합 중에는 교체 범위를 무시하고 조합 문자열만 바꿈(실제로 확인함: thanks + 바꾸기가 thank소무ㅏㄴ이 되었음).
 - 그 밖에는 `setMarkedText(render(target).dropFirst(c))`.
 - 잠금: `locked = shown = target`, `lockedLatin` 갱신, `keptByChoice`와 `languageLock`을 지움. `.flipped`를 알리고 후보 막대를 다시 냄.
 

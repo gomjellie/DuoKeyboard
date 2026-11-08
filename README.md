@@ -34,6 +34,7 @@ Duo는 입력 소스 하나로 ABC와 2-Set Korean을 함께 대신해요. 단�
 | `hello` Space | hello | 영어(E). 치는 동안 바로 확정됨 |
 | `dkssud PRdmf` Space | 안녕 PR을 | 라틴 단어 + 붙은 조사(M(b)) |
 | `pushgoTdj` Space | push했어 | 라틴 단어 + 붙은 어미 |
+| `tkatjdSDIrk` Space | 삼성SDI가 | 한국어 단어 뒤의 대문자는 새 라틴 단어를 시작함(쌍자음 없는 키) |
 | `dhsmf PRdmf dhffuTsmsep CIrk RowuTspdy.` | 오늘 PR을 올렸는데 CI가 깨졌네요. | 한 문장에 세 읽기가 섞임 |
 | `3tl` Space | 3시 | 숫자 뒤 문맥 |
 | `macOS 26` Space | macOS 26 | 대소문자 어휘 사전 |
@@ -515,10 +516,14 @@ Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/
 - **다시 설치한 뒤 다시 연결해야 함.** `make install`이나 `install-ime.sh` 뒤에는 Duo를 쓰던 앱이 ABC로 입력됨. 그 앱이 앞에 있을 때 Duo를 다시 고르거나 다른 앱에 갔다 와야 함. 호스트 앱의 설치, 업데이트, 다시 시작은 이 재선택을 직접 함. 뒤에 있던 앱은 다음 포커스 변화 때 다시 붙음
 - **확정한 글자를 바꿀 수 없는 앱.** Monaco 편집기(VS Code와 그 갈래), iTerm2, Hyper, JetBrains IDE, Android Studio, Orca에서는 확정한 단어를 바꾸지 못함. "여기서는 바꿀 수 없어요"를 띄움
   - xterm.js 터미널 중에는 Orca만 목록(`ClientProfile.xtermTerminals`)에 있음. 다른 xterm.js 터미널은 확인하지 않았음
-- **DET가 UX 기대와 다른 경우(알려진 문제 4개).**
+- **DET가 UX 기대와 다른 경우(알려진 문제 3개).**
   - 영어 뒤의 `gg`, `rt`는 ㅎㅎ, ㄱㅅ이 됨
   - 문장 처음의 `eeee`는 라틴 글자로 남음
-  - `roffjrtlS24`는 갤럭신24가 됨. 한 단어 안에서 한글 뒤에 라틴 글자가 오는 형태(`카톡ID`)는 지원하지 않음
+- **한글 바로 뒤의 라틴은 쌍자음 없는 대문자로 시작할 때만 나뉨.** 한A, 삼성SDI, 갤럭시S24, 그런데API를은 됨
+  - 소문자나 Q W E R T O P 대문자로 시작하면 한 단어로 읽힘. `카톡id`(`zkxhrid`)는 카토걍, 카카오T(`zkzkdhT`)는 카카옸이 됨
+  - 대문자 한 글자 뒤의 조사는 판별기가 영어로 볼 때가 있음. `Srk`는 Srk, `Sdp`는 Sdp가 되고 `Xrk`는 X가, `Sdms`는 S은이 됨
+  - 앞 단어가 짧아서 한국어로 약하게 읽히면 나누지 않음. 새, 애, 해는 to, do, go와 키가 같음. 그래서 toString, doSomething은 그대로 남음
+  - 한국어 단어 안에서 ⇧를 잘못 누르면 단어가 나뉠 수 있음(`gksrMf` → 한ㄱMf). ⌫로 대문자를 지우면 다시 합쳐짐. 뒤 키가 한국어로 분명하면 저절로 합쳐짐(`dkssudGktpdy` → 안녕하세요)
 - **ㅠㅠ, ㅜㅜ(`bb`, `nn`)는 치는 동안 라틴 글자로 보임.** 확정은 맞고 마지막 단어의 후보 막대가 뜸
 - **IMK 콜백 밖의 답은 낡았을 수 있음.** 메뉴 동작, 입력 소스가 바뀔 때의 확정, 전역 모니터 경로, 후보 막대 클릭은 콜백 밖에서 돎. 이때 앱의 `selectedRange`와 `attributedSubstring`이 낡았을 수 있음. 선택한 텍스트 한↔A 변환 자체는 실제 앱에서 아직 확인하지 않음
 - **E2E는 주입 경로임.** 키가 실제 컨트롤러에 닿지만 TSM 키 라우팅은 거치지 않음. 창 서버의 동시 누름(chord) 검사, Chromium의 중복 `flagsChanged`, ⇧Space·Caps Lock 바꾸기 키, 직접 입력 프로필, 자동 반복은 단위 테스트로만 확인함
