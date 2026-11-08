@@ -6,6 +6,7 @@ import Testing
 /// (`Tools/scripts/corpus-typing.sh`). Runs only when `DUO_CORPUS_IN` names a corpus TSV
 /// (`source<TAB>id<TAB>text`); `DUO_CORPUS_OUT` receives
 /// `source<TAB>id<TAB>reachable<TAB>correct<TAB>expected<TAB>produced<TAB>keys` per sentence.
+/// `DUO_CORPUS_APP` types into that app's client profile (bundle identifier; TextEdit when unset).
 @MainActor
 @Suite("Corpus typing (real model)",
        .enabled(if: RealModel.isAvailable && ProcessInfo.processInfo.environment["DUO_CORPUS_IN"] != nil))
@@ -44,12 +45,13 @@ struct CorpusTypingTests {
         let env = ProcessInfo.processInfo.environment
         let lines = try String(contentsOfFile: env["DUO_CORPUS_IN"]!, encoding: .utf8).split(separator: "\n")
         let limit = Int(env["DUO_CORPUS_LIMIT"] ?? "") ?? lines.count
+        let app = env["DUO_CORPUS_APP"].flatMap { $0.isEmpty ? nil : $0 } ?? "com.apple.TextEdit"
         var out = ""
         for line in lines.prefix(limit) {
             let parts = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
             guard parts.count == 3, let keys = Self.keys(for: parts[2]) else { continue }
             // A fresh engine per sentence: no learning carries over from one sentence to the next.
-            let h = EngineHarness(scorer: RealModel.detector)
+            let h = EngineHarness(bundleIdentifier: app, scorer: RealModel.detector)
             h.type(keys + " ")
             let expected = parts[2] + " "
             out += [parts[0], parts[1], Self.reachable(parts[2]) ? "1" : "0", h.text == expected ? "1" : "0",
