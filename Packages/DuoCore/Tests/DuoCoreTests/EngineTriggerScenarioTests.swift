@@ -1,6 +1,7 @@
 // SPEC.md 4.6절: the symbols that used to start the literal phase, run with the REAL detector and the
-// shipped model in the three profiles that decide them differently: Automatic (TextEdit), English
-// first (Orca, an xterm.js terminal that cannot replace committed text) and Korean first (KakaoTalk).
+// shipped model in the profiles that decide them differently: Automatic (TextEdit), English first
+// where committed text cannot change (VS Code, Monaco) and Korean first (KakaoTalk). Orca, the
+// xterm.js terminal, cannot change committed text either; no row depends on its language profile.
 // `⌘` in the keys taps the flip key, `⌫` presses Backspace.
 
 import Foundation
@@ -12,8 +13,9 @@ import Testing
 struct EngineTriggerScenarioTests {
     enum App: String, Sendable, CaseIterable {
         case textEdit = "com.apple.TextEdit"
-        case orca = "com.stablyai.orca"
+        case vsCode = "com.microsoft.VSCode"
         case kakao = "com.kakao.KakaoTalkMac"
+        case orca = "com.stablyai.orca"
     }
 
     struct Row: Sendable, CustomTestStringConvertible {
@@ -78,7 +80,7 @@ struct EngineTriggerScenarioTests {
         all(.korean, "z_z ", "ㅋ_ㅋ "),
         only(.textEdit, .start, "b_b ", "ㅠ_ㅠ "),
         only(.kakao, .start, "b_b ", "ㅠ_ㅠ "),
-        only(.orca, .start, "b_b ", "ㅠ_ㅠ "),
+        only(.vsCode, .start, "b_b ", "b_b "),
         all(.english, "b_b ", "b_b "),
         all(.start, "b⌘_b⌘ ", "ㅠ_ㅠ "),
         all(.korean, "T_T ", "T_T "),
@@ -89,10 +91,10 @@ struct EngineTriggerScenarioTests {
         all(.korean, "go⌘_back ", "go_back "),
         only(.textEdit, .korean, "go_⌘back ", "go_back "),
         only(.kakao, .korean, "go_⌘back ", "go_back "),
+        only(.vsCode, .korean, "go_⌘back ", "해_back "),
         only(.orca, .korean, "go_⌘back ", "해_back "),
     ].flatMap { $0 }
 
-    /// Types the prime, then the keys; returns the harness and the text the keys produced.
     /// `@` at a word start passes and the name after it composes; `@` in a word is an e-mail address.
     nonisolated static let at: [Row] = [
         // Korean names (KakaoTalk, Slack mentions), with a particle too
@@ -170,10 +172,12 @@ struct EngineTriggerScenarioTests {
         // Right after the boundary that started L, the flip key still changes the dotted word
         only(.textEdit, .korean, "op.gg/⌘ ", "op.ㅎㅎ/ "),
         only(.kakao, .korean, "op.gg/⌘ ", "op.ㅎㅎ/ "),
+        only(.vsCode, .korean, "op.gg/⌘ ", "op.gg/ "),
         only(.orca, .korean, "op.gg/⌘ ", "op.gg/ "),
         all(.korean, "op.gg/x⌘ ", "op.gg/x "),
     ].flatMap { $0 }
 
+    /// Types the prime, then the keys; returns the harness and the text the keys produced.
     static func run(_ row: Row) -> (EngineHarness, String) {
         let h = EngineHarness(bundleIdentifier: row.app.rawValue, scorer: RealModel.detector)
         h.type(row.prime.rawValue)
