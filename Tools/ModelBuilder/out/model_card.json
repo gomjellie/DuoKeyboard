@@ -3,205 +3,205 @@
  "sections": {
   "meta": {
    "offset": 1616,
-   "bytes": 150076,
+   "bytes": 150124,
    "elemSize": 1,
-   "count": 150076
+   "count": 150124
   },
   "ko.1.key": {
-   "offset": 151696,
+   "offset": 151744,
    "bytes": 144,
    "elemSize": 4,
    "count": 36
   },
   "ko.1.lp": {
-   "offset": 151840,
+   "offset": 151888,
    "bytes": 36,
    "elemSize": 1,
    "count": 36
   },
   "ko.1.bow": {
-   "offset": 151880,
+   "offset": 151928,
    "bytes": 36,
    "elemSize": 1,
    "count": 36
   },
   "ko.2.key": {
-   "offset": 151920,
-   "bytes": 3440,
+   "offset": 151968,
+   "bytes": 3460,
    "elemSize": 4,
-   "count": 860
+   "count": 865
   },
   "ko.2.lp": {
-   "offset": 155360,
-   "bytes": 860,
+   "offset": 155432,
+   "bytes": 865,
    "elemSize": 1,
-   "count": 860
+   "count": 865
   },
   "ko.2.bow": {
-   "offset": 156224,
-   "bytes": 860,
+   "offset": 156304,
+   "bytes": 865,
    "elemSize": 1,
-   "count": 860
+   "count": 865
   },
   "ko.3.key": {
-   "offset": 157088,
-   "bytes": 45768,
+   "offset": 157176,
+   "bytes": 45928,
    "elemSize": 4,
-   "count": 11442
+   "count": 11482
   },
   "ko.3.lp": {
-   "offset": 202856,
-   "bytes": 11442,
+   "offset": 203104,
+   "bytes": 11482,
    "elemSize": 1,
-   "count": 11442
+   "count": 11482
   },
   "ko.3.bow": {
-   "offset": 214304,
-   "bytes": 11442,
+   "offset": 214592,
+   "bytes": 11482,
    "elemSize": 1,
-   "count": 11442
+   "count": 11482
   },
   "ko.4.key": {
-   "offset": 225752,
-   "bytes": 250220,
+   "offset": 226080,
+   "bytes": 250448,
    "elemSize": 4,
-   "count": 62555
+   "count": 62612
   },
   "ko.4.lp": {
-   "offset": 475976,
-   "bytes": 62555,
+   "offset": 476528,
+   "bytes": 62612,
    "elemSize": 1,
-   "count": 62555
+   "count": 62612
   },
   "ko.4.bow": {
-   "offset": 538536,
-   "bytes": 62555,
+   "offset": 539144,
+   "bytes": 62612,
    "elemSize": 1,
-   "count": 62555
+   "count": 62612
   },
   "ko.5.key": {
-   "offset": 601096,
-   "bytes": 790584,
+   "offset": 601760,
+   "bytes": 790744,
    "elemSize": 4,
-   "count": 197646
+   "count": 197686
   },
   "ko.5.lp": {
-   "offset": 1391680,
-   "bytes": 197646,
+   "offset": 1392504,
+   "bytes": 197686,
    "elemSize": 1,
-   "count": 197646
+   "count": 197686
   },
   "en.1.key": {
-   "offset": 1589328,
+   "offset": 1590192,
    "bytes": 144,
    "elemSize": 4,
    "count": 36
   },
   "en.1.lp": {
-   "offset": 1589472,
+   "offset": 1590336,
    "bytes": 36,
    "elemSize": 1,
    "count": 36
   },
   "en.1.bow": {
-   "offset": 1589512,
+   "offset": 1590376,
    "bytes": 36,
    "elemSize": 1,
    "count": 36
   },
   "en.2.key": {
-   "offset": 1589552,
+   "offset": 1590416,
    "bytes": 3116,
    "elemSize": 4,
    "count": 779
   },
   "en.2.lp": {
-   "offset": 1592672,
+   "offset": 1593536,
    "bytes": 779,
    "elemSize": 1,
    "count": 779
   },
   "en.2.bow": {
-   "offset": 1593456,
+   "offset": 1594320,
    "bytes": 779,
    "elemSize": 1,
    "count": 779
   },
   "en.3.key": {
-   "offset": 1594240,
+   "offset": 1595104,
    "bytes": 67656,
    "elemSize": 4,
    "count": 16914
   },
   "en.3.lp": {
-   "offset": 1661896,
+   "offset": 1662760,
    "bytes": 16914,
    "elemSize": 1,
    "count": 16914
   },
   "en.3.bow": {
-   "offset": 1678816,
+   "offset": 1679680,
    "bytes": 16914,
    "elemSize": 1,
    "count": 16914
   },
   "en.4.key": {
-   "offset": 1695736,
+   "offset": 1696600,
    "bytes": 473084,
    "elemSize": 4,
    "count": 118271
   },
   "en.4.lp": {
-   "offset": 2168824,
+   "offset": 2169688,
    "bytes": 118271,
    "elemSize": 1,
    "count": 118271
   },
   "en.4.bow": {
-   "offset": 2287096,
+   "offset": 2287960,
    "bytes": 118271,
    "elemSize": 1,
    "count": 118271
   },
   "en.5.key": {
-   "offset": 2405368,
+   "offset": 2406232,
    "bytes": 1430872,
    "elemSize": 4,
    "count": 357718
   },
   "en.5.lp": {
-   "offset": 3836240,
+   "offset": 3837104,
    "bytes": 357718,
    "elemSize": 1,
    "count": 357718
   },
   "lexko.key": {
-   "offset": 4193960,
+   "offset": 4194824,
    "bytes": 800000,
    "elemSize": 8,
    "count": 100000
   },
   "lexko.val": {
-   "offset": 4993960,
+   "offset": 4994824,
    "bytes": 100000,
    "elemSize": 1,
    "count": 100000
   },
   "lexen.key": {
-   "offset": 5093960,
+   "offset": 5094824,
    "bytes": 480000,
    "elemSize": 8,
    "count": 60000
   },
   "lexen.val": {
-   "offset": 5573960,
+   "offset": 5574824,
    "bytes": 60000,
    "elemSize": 1,
    "count": 60000
   }
  },
- "contentHash": "6610e67e1ca8e3e3",
- "fileBytes": 5633960,
+ "contentHash": "20dd934c2856173a",
+ "fileBytes": 5634824,
  "params": {
   "NG_KO": -3000,
   "LEX_KO": -300,
@@ -249,10 +249,10 @@
  "lmSizes": {
   "ko": [
    36,
-   860,
-   11442,
-   62555,
-   197646
+   865,
+   11482,
+   62612,
+   197686
   ],
   "en": [
    36,

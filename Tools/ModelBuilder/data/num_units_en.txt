@@ -56,3 +56,5 @@ gbps
 bit
 fa
 gen
+bn
+tn
