@@ -20,7 +20,8 @@ extension CompositionEngine {
     // MARK: Letters (§4.3)
 
     func handleLetter(_ key: Keystroke, event: KeyEvent, client: any TextClient) -> Bool {
-        if let t = token, t.count >= Self.maxTokenLength {
+        if let t = token, t.count >= Self.maxTokenLength,
+           startsLatinWord(key, after: t) || !carryLastSyllable(of: t, before: key, at: event.timestamp, client: client) {
             commitToken(terminator: .space, boundaryLength: 0, client: client)
         }
         if var t = token, startsLatinWord(key, after: t) {
@@ -91,6 +92,44 @@ extension CompositionEngine {
         setMarked(display(t, t.shown), in: &t, client: client)
         token = t
         hud = alternativeHUD(t, pulse: changed, isRepeat: event.isRepeat)
+        return true
+    }
+
+    /// SPEC.md 4.3절 2: when `key` would change the last syllable of a word at ``maxTokenLength`` keys
+    /// that reads Korean (K, or M(b) with Korean before that syllable), the word commits all but that
+    /// syllable as shown, and the syllable's keys start the next word (감서 + ㅇ → 감성, 영화 + ㅈ →
+    /// 영홪 + ㅣ → 영화지). Returns `false` and changes nothing otherwise: a key that starts a new
+    /// syllable leaves nothing to carry, and a carried syllable alone reads worse (같음 + ㅋ as dmaz).
+    func carryLastSyllable(of t: Token, before key: Keystroke, at time: TimeInterval, client: any TextClient) -> Bool {
+        let h = t.locked ?? t.shown
+        let koreanStart: Int
+        switch h {
+        case .english: return false
+        case .korean: koreanStart = 0
+        case .mixed(let b): koreanStart = b
+        }
+        guard t.committed == 0, let last = t.raw.last, last.isASCII, last.isLetter else { return false }
+        let korean = String(t.raw.dropFirst(koreanStart))
+        let blocks = HangulAutomaton.render(raw: korean).keyCounts
+        let next = HangulAutomaton.render(raw: korean + String(key.latin)).keyCounts
+        guard next.count != blocks.count + 1 || !next.starts(with: blocks),
+              let carry = blocks.last, t.count - carry > koreanStart else { return false }
+        // The head is committed as shown, like a word a capital ended (4.3절 8): no final-mode
+        // scoring, learning, chip or flip case (b) for a part of a word.
+        var head = t
+        head.raw = String(t.raw.prefix(t.count - carry))
+        head.count = t.count - carry
+        head.locked = h
+        head.lockedOriginal = nil
+        head.keptByChoice = false
+        head.scores = nil
+        token = head
+        commitToken(terminator: .space, boundaryLength: 0, client: client)
+        hud = nil
+        startToken(at: time)
+        token?.raw = String(t.raw.suffix(carry))
+        token?.count = carry
+        token?.languageLock = t.languageLock
         return true
     }
 

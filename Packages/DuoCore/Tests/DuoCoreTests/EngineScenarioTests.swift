@@ -183,6 +183,11 @@ struct EngineScenarioTests {
         Row(.korean, "YouTube ", "YouTube "),
         Row(.korean, "KakaoTalk ", "KakaoTalk "),
         Row(.korean, "LoL ", "LoL "),
+        // Unspaced Korean past the 32-key cap: the last syllable carries over (SPEC.md 4.3절 2)
+        Row(.start, "gksqjsqhswjrdmsdjqwlakswoaldlTdmfrjtrkxek ", "한번본적은업지만재미있을것같다 "),
+        Row(.korean, "dnwntjsdksdptjwndfurdlgowpehlstkdxodptj ", "우주선안에서중력이해제된상태에서 "),
+        Row(.korean, "snrnskruRdmftndlTsmstkfadpeogksaksgdmsdltbemfdmfdlftkdwjrdlaustj ",
+            "누구나겪을수있는삶에대한많은이슈들을일상적이면서 "),
         // Chat words and emotive jamo runs (ko_chat.txt; a run of ㅋㅎㅠㅜㅡㄷㅉ is not an orphan)
         Row(.start, "rne ", "굳 "),
         Row(.english, "rne ", "굳 "),

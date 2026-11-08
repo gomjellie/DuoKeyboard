@@ -292,24 +292,79 @@ struct EngineCompositionTests {
 
     // MARK: Cap (§4.3.2)
 
-    @Test func thirtyThirdKeyCommitsAndStartsANewToken() {
+    @Test func thirtyThirdKeyCarriesTheLastSyllableOfAKoreanWord() {
+        let h = EngineHarness()
+        h.detector.fallback = { raw in [.korean: -100 * raw.count, .english: -100 * raw.count - 9000] }
+        h.type(String(repeating: "rk", count: 16))
+        #expect(h.marked == String(repeating: "가", count: 16))
+        let step = h.press(.letter("d"))
+        #expect(step.calls == [.insert(String(repeating: "가", count: 15), nil), .mark("강", nil)],
+                "the last 가 can still take ㅇ: its keys start the next word")
+        #expect(h.detector.finalCalls.isEmpty, "the head commits as shown, without final-mode scoring")
+        #expect(h.engine.rawKeys == "rkd")
+        h.press(.letter("k"))
+        #expect(h.marked == "가아", "도깨비불 across the cap: ㅇ moves to the next syllable")
+        h.press(.space)
+        #expect(h.text == String(repeating: "가", count: 16) + "아 ")
+    }
+
+    @Test func thirtyThirdKeyCarriesALoneJamo() {
         let h = EngineHarness()
         h.detector.fallback = { raw in [.korean: -100 * raw.count, .english: -100 * raw.count - 9000] }
         for _ in 0..<32 { h.press(.letter("z")) }
         #expect(h.marked == String(repeating: "ㅋ", count: 32))
-        let step = h.press(.letter("z"))
-        #expect(step.calls == [.insert(String(repeating: "ㅋ", count: 32), nil), .selectedRange, .mark("ㅋ", nil)])
+        let step = h.press(.letter("k"))
+        #expect(step.calls == [.insert(String(repeating: "ㅋ", count: 31), nil), .mark("카", nil)])
+        #expect(h.text == String(repeating: "ㅋ", count: 31) + "카")
+        #expect(h.markedRange == NSRange(location: 31, length: 1))
+        #expect(h.engine.rawKeys == "zk")
+    }
+
+    @Test func thirtyThirdKeyThatStartsASyllableCommitsTheWholeWord() {
+        let h = EngineHarness()
+        h.detector.fallback = { raw in [.korean: -100 * raw.count, .english: -100 * raw.count - 9000] }
+        h.type(String(repeating: "rk", count: 16))
+        let step = h.press(.letter("E"))
+        #expect(step.calls == [.insert(String(repeating: "가", count: 16), nil), .selectedRange, .mark("ㄸ", nil)],
+                "ㄸ is never a final: 가 cannot change")
         #expect(h.detector.finalCalls.map(\.terminator) == [.space])
-        #expect(h.text == String(repeating: "ㅋ", count: 33))
-        #expect(h.markedRange == NSRange(location: 32, length: 1))
+        #expect(h.engine.rawKeys == "E")
+    }
+
+    @Test func thirtyThirdKeyCommitsAnEnglishWordWhole() {
+        let h = EngineHarness()
+        h.detector.fallback = { raw in [.korean: -100 * raw.count - 9000, .english: -100 * raw.count] }
+        h.engine.settings.eagerEnglishCommit = false
+        for _ in 0..<32 { h.press(.letter("z")) }
+        #expect(h.marked == String(repeating: "z", count: 32))
+        let step = h.press(.letter("z"))
+        #expect(step.calls == [.insert(String(repeating: "z", count: 32), nil), .selectedRange, .mark("z", nil)])
+        #expect(h.detector.finalCalls.map(\.terminator) == [.space])
         #expect(h.engine.rawKeys == "z")
+    }
+
+    @Test func thirtyThirdKeyKeepsALatinPrefixAndCarriesTheKoreanSyllable() {
+        let h = EngineHarness()
+        let keys = "PR" + String(repeating: "rk", count: 15)
+        h.detector.fallback = { raw in
+            guard raw.hasPrefix("PR"), raw.count > 2 else {
+                return [.korean: -100 * raw.count, .english: -100 * raw.count - 9000]
+            }
+            return [.korean: -100 * raw.count - 9000, .english: -100 * raw.count - 9000,
+                    .mixed(latin: 2): -100 * raw.count]
+        }
+        h.type(keys)
+        #expect(h.marked == "PR" + String(repeating: "가", count: 15))
+        h.press(.letter("d"))
+        #expect(h.text == "PR" + String(repeating: "가", count: 14) + "강")
+        #expect(h.engine.rawKeys == "rkd")
     }
 
     @Test func fortyKeysNeverMakeAGiantUnderline() {
         let h = EngineHarness()
         for _ in 0..<40 { h.press(.letter("a")) }
         #expect((h.markedRange?.length ?? 0) <= 32)
-        #expect(h.engine.rawKeys.count == 8)
+        #expect(h.engine.rawKeys.count == 8, "ㅁ + ㅁ: the 33rd key starts a new syllable, nothing to carry")
     }
 
     // MARK: Apostrophe (§4.4)
