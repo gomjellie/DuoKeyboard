@@ -23,10 +23,10 @@ struct DetectionVectorTests {
 
     @Test func modelContentHash() throws {
         let d = try detector
-        #expect(d.contentHash == "146a13d5799a994c")
+        #expect(d.contentHash == "ff05a9602f67b6f7")
         #expect(d.contentHash == DetectionFixtures.vectors.modelContentHash)
         // The header is truthful: FNV-1a-64 over every byte after the directory.
-        #expect(DuoDetector.hex(d.model.computeContentHash()) == "146a13d5799a994c")
+        #expect(DuoDetector.hex(d.model.computeContentHash()) == "ff05a9602f67b6f7")
     }
 
     @Test func parametersMatchVectors() throws {

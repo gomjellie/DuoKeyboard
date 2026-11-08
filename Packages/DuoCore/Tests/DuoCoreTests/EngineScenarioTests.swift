@@ -174,6 +174,8 @@ struct EngineScenarioTests {
         Row(.start, "Brmq ", "B급 "),
         Row(.korean, "roffjrtlSrk ", "갤럭시S가 "),
         Row(.english, "Arns ", "Arns "),
+        Row(.korean, "Arnsdms ", "A군은 "),
+        Row(.korean, "Brmqeh ", "B급도 "),
         // ... one lowercase letter + a suffix only through the flip key or the bar
         Row(.korean, "arns ", "arns "),
         Row(.korean, "ask ", "ask "),

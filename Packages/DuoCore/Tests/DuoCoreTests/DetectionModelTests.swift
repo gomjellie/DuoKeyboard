@@ -17,7 +17,7 @@ struct DetectionModelTests {
         #expect(m.english.order == 5)
         #expect(m.koreanLexicon.count == 100_000)
         #expect(m.englishLexicon.count == 60_000)
-        #expect(m.suffixFull.count == 1684)
+        #expect(m.suffixFull.count == 1694)
         #expect(m.caseLexicon.count == 250)
         #expect(m.numberUnits.count == 58)
         #expect(m.meta.userLog2Millibits == [0, 1000, 1585, 2000, 2322, 2585, 2807, 3000, 3170, 3322, 3459, 3585,
@@ -131,7 +131,7 @@ struct DetectionModelTests {
     @Test func intactCopyOpens() throws {
         try Self.withTemporaryModel(try Self.shippedBytes()) { url in
             let d = try DuoDetector(modelURL: url)
-            #expect(d.contentHash == "146a13d5799a994c")
+            #expect(d.contentHash == "ff05a9602f67b6f7")
         }
     }
 }
