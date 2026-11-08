@@ -449,7 +449,7 @@ Duo의 언어 판별(DET)은 단어의 키 입력을 ABC 자판이 만들었을 
 | 한국어 어휘 사전(100,000 어절) | 0.90 MB |
 | 영어 어휘 사전(60,000 단어) | 0.54 MB |
 | meta JSON(매개변수, 코드북, 접미사, 대소문자 어휘 사전, 단위 56개) | 0.15 MB |
-| **전체** | **5.63 MB**, 내용 해시 `6610e67e1ca8e3e3` |
+| **전체** | **5.63 MB**, 내용 해시 `20dd934c2856173a` |
 
 ### 정확도
 
@@ -462,7 +462,8 @@ Duo의 언어 판별(DET)은 단어의 키 입력을 ABC 자판이 만들었을 
 | 이어진 글: 한국어 위키백과 | 99.90 % |
 | 이어진 글: 영어 뉴스 | 99.98 % |
 | 이어진 글: 직접 쓴 혼합 개발자 채팅(417문장, 1,385단어) | 99.78 %(오류 3개: `so` 2개, `go`) |
-| 이어진 글: 커뮤니티 댓글(NSMC 영화 평, korean-hate-speech 뉴스 댓글, 5만 6천 문장을 엔진으로 침) | 99.56 %(문장 96.43 %) |
+| 이어진 글: 커뮤니티 댓글(NSMC 영화 평, korean-hate-speech 뉴스 댓글, 5만 6천 문장을 엔진으로 침) | 99.60 %(문장 96.79 %) |
+| 이어진 글: 사이트 댓글(인벤, 오늘의유머, 아카라이브, 82cook, 뽐뿌, 해연갤, 개드립, 1만 7천 문장) | 99.49 %(문장 95.09 %) |
 | 표시 깜빡임: 한국어 단어 / 영어 문맥 속 영어 | 0.000 / 0.012 바뀜/단어 |
 
 ### 데이터와 라이선스
@@ -486,15 +487,15 @@ Duo의 언어 판별(DET)은 단어의 키 입력을 ABC 자판이 만들었을 
 
 | 검사 | 명령 | 결과 |
 |---|---|---|
-| 패키지 단위 테스트(debug) | `make test` | 46개 묶음, 491개 테스트 통과. 알려진 문제 4개 |
+| 패키지 단위 테스트(debug) | `make test` | 47개 묶음, 513개 테스트 통과. 알려진 문제 2개 |
 | 호스트 앱 테스트 | `xcodebuild test -scheme Duo` | 11개 묶음, 50개 테스트 통과 |
 | 실제 IMK E2E | `make e2e` | 51/51 |
 | E2E 미러(`E2ECaseMirrorTests`) | `make test`에 들어 있음 | 51개 사례를 프로세스 안에서 실제 모델로 다시 돌림 |
-| DET 골든 벡터 | `make test`에 들어 있음 | Python 참조 구현과 비트 단위로 같음. 모델 해시 `6610e67e1ca8e3e3` |
+| DET 골든 벡터 | `make test`에 들어 있음 | Python 참조 구현과 비트 단위로 같음. 모델 해시 `20dd934c2856173a` |
 | 문자열 카탈로그 | `Duo/Tools/check-strings.py` | 206/206 키 |
 | 점수 계산 벤치마크(release, 단독 실행) | `swift test -c release` | p99 접두 15.6 µs, 최종 17.1 µs, 둘을 합쳐 32.7 µs. 예산 300 µs. 2차 수정 때 잰 값이고 최신 작업 뒤에는 다시 재지 않음(docs/STATUS.md) |
 
-알려진 문제 4개는 DET가 UX 기대와 다른 시나리오예요(`withKnownIssue`, [알려진 제한](#알려진-제한) 참고). 실제 앱 QA는 TextEdit, Safari, Chrome의 textarea와 contenteditable, Terminal(zsh), VS Code, 호스트 앱 온보딩에서 실제 키 입력으로 했어요(docs/STATUS.md).
+알려진 문제 2개는 DET가 UX 기대와 다른 시나리오예요(`withKnownIssue`, [알려진 제한](#알려진-제한) 참고). 실제 앱 QA는 TextEdit, Safari, Chrome의 textarea와 contenteditable, Terminal(zsh), VS Code, 호스트 앱 온보딩에서 실제 키 입력으로 했어요(docs/STATUS.md).
 
 ```sh
 make test                                                     # swift test(debug), build/spm
@@ -518,9 +519,9 @@ Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/
 - **다시 설치한 뒤 다시 연결해야 함.** `make install`이나 `install-ime.sh` 뒤에는 Duo를 쓰던 앱이 ABC로 입력됨. 그 앱이 앞에 있을 때 Duo를 다시 골라야 함(⌃Space 두 번). 호스트 앱의 설치, 업데이트, 다시 시작은 맨 앞 앱에 이 재선택을 직접 함. 뒤에 있던 앱은 앞으로 와도 저절로 다시 붙지 않았음(2026-11-08, TextEdit에서 확인함). `e2e.sh`도 끝날 때 입력기를 멈추므로 같은 일이 생김
 - **확정한 글자를 바꿀 수 없는 앱.** Monaco 편집기(VS Code와 그 갈래), iTerm2, Hyper, JetBrains IDE, Android Studio, Orca에서는 확정한 단어를 바꾸지 못함. "여기서는 바꿀 수 없어요"를 띄움
   - xterm.js 터미널 중에는 Orca만 목록(`ClientProfile.xtermTerminals`)에 있음. 다른 xterm.js 터미널은 확인하지 않았음
-- **DET가 UX 기대와 다른 경우(알려진 문제 3개).**
+- **DET가 UX 기대와 다른 경우(알려진 문제 2개).**
   - 영어 뒤의 `gg`, `rt`는 ㅎㅎ, ㄱㅅ이 됨
-  - 문장 처음의 `eeee`는 라틴 글자로 남음
+- **문장 처음의 소문자 `so`는 내가 됨.** 한국어 글에서 훨씬 흔해서임. 영어 단어 뒤에서는 so로 남음. 한 번 바꾸면 학습함
 - **한글 바로 뒤의 라틴은 쌍자음 없는 대문자로 시작할 때만 나뉨.** 한A, 삼성SDI, 갤럭시S24, 그런데API를은 됨
   - 소문자나 Q W E R T O P 대문자로 시작하면 한 단어로 읽힘. `카톡id`(`zkxhrid`)는 카토걍, 카카오T(`zkzkdhT`)는 카카옸이 됨
   - 라틴 대문자 한 글자 + 조사나 호칭(A씨, A양, A군, B급, S가)은 한국어 문장에서 맞게 나옴. 영어 문장 안에서는 영어 이름처럼 남음(`Arns`)
