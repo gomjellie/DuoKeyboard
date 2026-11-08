@@ -49,8 +49,11 @@ extension CompositionEngine {
         }
         if token == nil {
             startToken(at: event.timestamp)
-            token?.dotted = dotted
-            token?.snakePiece = snakePiece
+            // A one-shot Korean word (flip case c) is the user's choice: nothing holds K back.
+            if token?.languageLock != .korean {
+                token?.dotted = dotted
+                token?.snakePiece = snakePiece
+            }
         }
         // A new letter ends flip case (b) for the previous word.
         lastCommit = nil

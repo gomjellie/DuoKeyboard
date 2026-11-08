@@ -371,6 +371,23 @@ struct EngineBoundaryTests {
         #expect(h.text == "A.I.가 ")
     }
 
+    @Test(arguments: [".", "_"])
+    func aOneShotKoreanWordAfterAnEnglishWordIsNotHeldBack(_ boundary: String) {
+        // The flip with nothing to flip (case c) chose Korean for the next word: hello.가, my_가.
+        let h = EngineHarness()
+        h.detector.english("hello")
+        h.detector.scores["r"] = [.korean: -3000, .english: -2500]
+        h.detector.scores["rk"] = [.korean: -4000, .english: -4500]
+        h.type("hello" + boundary)
+        h.now += CompositionEngine.lastCommitLifetime + 1
+        h.flip()
+        #expect(h.hud?.content == .oneShot(.korean))
+        h.type("rk")
+        #expect(h.marked == "가")
+        h.press(.space)
+        #expect(h.text == "hello\(boundary)가 ")
+    }
+
     @Test func dotAfterKoreanIsSentencePunctuation() {
         let h = EngineHarness()
         h.detector.korean("ek")
