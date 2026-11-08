@@ -317,4 +317,26 @@ struct HUDFollowableTests {
             == CGRect(x: 400, y: 1500, width: 1, height: 17))
     }
 
+    // MARK: Accessibility frames (xterm.js terminals)
+
+    @Test func anXtermTextFieldFrameBecomesACaretAtItsLeftEdge() throws {
+        // Orca, 2026-11-08: the hidden field at 주세요 (top-left 1060, 951, 57 × 16) on a 1080 pt display.
+        let caret = try #require(HUDGeometry.caretFromAccessibilityFrame(CGRect(x: 1060, y: 951, width: 57, height: 16),
+                                                                         primaryScreenHeight: 1080))
+        #expect(caret == CGRect(x: 1060, y: 113, width: 1, height: 16))
+    }
+
+    @Test func anEmptyFieldStillGivesTheLine() {
+        #expect(HUDGeometry.caretFromAccessibilityFrame(CGRect(x: 556, y: 951, width: 0, height: 16),
+                                                        primaryScreenHeight: 1080) == CGRect(x: 556, y: 113, width: 1, height: 16))
+    }
+
+    @Test(arguments: [CGRect(x: 10, y: 10, width: 300, height: 400),          // a whole text view
+                      CGRect(x: 10, y: 10, width: 8, height: 0),               // no line
+                      CGRect(x: 10, y: 10, width: -1, height: 16),
+                      CGRect(x: CGFloat.nan, y: 10, width: 8, height: 16),
+                      CGRect(x: 10, y: CGFloat.infinity, width: 8, height: 16)])
+    func framesThatAreNotOneLineAreRejected(_ frame: CGRect) {
+        #expect(HUDGeometry.caretFromAccessibilityFrame(frame, primaryScreenHeight: 1080) == nil)
+    }
 }

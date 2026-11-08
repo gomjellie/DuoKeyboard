@@ -163,6 +163,24 @@ public enum HUDGeometry {
         return caret
     }
 
+    /// Tallest accessibility frame taken for one line of text (``caretFromAccessibilityFrame``).
+    public static let maximumAccessibilityLineHeight: CGFloat = 64
+
+    /// The caret rect at the left edge of an accessibility frame, in Cocoa global coordinates.
+    ///
+    /// `frame` is `AXPosition` + `AXSize` of the client's focused element: top-left origin, y down,
+    /// in points from the primary display's top-left corner. The result keeps the frame's left
+    /// edge and line, one point wide. `nil` for a frame that cannot be one line of text:
+    /// non-finite values, a negative width, a height under a point or over
+    /// ``maximumAccessibilityLineHeight`` (a whole text view).
+    public static func caretFromAccessibilityFrame(_ frame: CGRect, primaryScreenHeight: CGFloat) -> CGRect? {
+        let values = [frame.origin.x, frame.origin.y, frame.size.width, frame.size.height, primaryScreenHeight]
+        guard values.allSatisfy(\.isFinite), frame.size.width >= 0, frame.size.height >= 1,
+              frame.size.height <= maximumAccessibilityLineHeight else { return nil }
+        return CGRect(x: frame.origin.x, y: primaryScreenHeight - frame.origin.y - frame.size.height,
+                      width: 1, height: frame.size.height)
+    }
+
     /// The rect the HUD may follow for a client caret rect, or `nil`: sane (``sanitized(_:)``), not
     /// a window's corner (what Chromium reports without geometry), and inside one of the client's
     /// windows. A rect on no display is tried with top-left-origin y first, as ``place`` does.
