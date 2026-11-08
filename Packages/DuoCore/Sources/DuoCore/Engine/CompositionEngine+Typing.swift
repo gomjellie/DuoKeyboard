@@ -135,9 +135,12 @@ extension CompositionEngine {
         t.scores = prefixScores(t.raw, t.context)
         t.keepShownIfPossible()
         let text = display(t, t.shown)
-        // NSTextView ignores the replacement range while text is marked: unmark first.
-        if marked != nil { client.setMarkedText("", replacementRange: nil) }
-        client.setMarkedText(text, replacementRange: NSRange(location: anchor - length, length: length))
+        // NSTextView ignores a replacement range while text is marked, and TextEdit does not end a
+        // composition on an empty mark or insert: commit the tail as it is, then mark the word over
+        // the committed word and the tail.
+        if marked != nil { client.insertText(tail.marked, replacementRange: nil) }
+        client.setMarkedText(text, replacementRange: NSRange(location: anchor - length,
+                                                             length: length + (marked?.length ?? 0)))
         t.marked = text
         return t
     }
