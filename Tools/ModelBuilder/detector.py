@@ -114,6 +114,14 @@ def lloyd_codebook(values: list[float], k: int = 256, iters: int = 8) -> list[in
     return sorted(set(int(round(c)) for c in cb))
 
 
+def uniform_codebook(values: list[float], k: int = 256) -> list[int]:
+    """k evenly spaced levels over [min, max] (sorted, integer millinats, unique). Lexicon values use it:
+    Lloyd-Max spends its levels on the many rare words and merges the most frequent ones into one
+    coarse top level, which is where the detector needs precision (이, 내, the, so)."""
+    lo, hi = min(values), max(values)
+    return sorted(set(int(round(lo + (hi - lo) * i / (k - 1))) for i in range(k)))
+
+
 def quantize(v: float, cb: list[int]) -> int:
     """index of nearest codebook value; ties -> lower index"""
     import bisect

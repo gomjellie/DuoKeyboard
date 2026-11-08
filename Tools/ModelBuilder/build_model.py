@@ -86,7 +86,7 @@ def serialize(model: D.DetectorModel, params: D.Params, path: str, provenance: d
                 info["bowCodebook"][str(n)] = cb
         meta["lm"][tag] = info
     for tag, lex in (("ko", model.lex_ko), ("en", model.lex_en)):
-        cb = D.lloyd_codebook(list(lex.values()), k=256)
+        cb = D.uniform_codebook(list(lex.values()), k=256)
         ent = sorted((fnv1a64(k), D.quantize(v, cb)) for k, v in lex.items())
         hs = [h for h, _ in ent]
         assert len(set(hs)) == len(hs), f"FNV collision in {tag} lexicon"
