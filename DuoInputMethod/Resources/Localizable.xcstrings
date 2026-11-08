@@ -221,6 +221,17 @@
         }
       }
     },
+    "후보 늘 보기": {
+      "comment": "Input menu: the choice bar comes up for every word being typed, not only ambiguous ones.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always Show Choices"
+          }
+        }
+      }
+    },
     "힌트 표시": {
       "comment": "Input menu: toggles the alternative-reading HUD.",
       "localizations": {

@@ -40,6 +40,11 @@ extension DuoInputController {
         let hints = item(String(localized: "힌트 표시"), #selector(toggleHints(_:)))
         hints.state = settings.showHints ? .on : .off
         menu.addItem(hints)
+        let always = item(String(localized: "후보 늘 보기"), #selector(toggleAlwaysShowChoices(_:)))
+        always.state = settings.alwaysShowChoices ? .on : .off
+        always.isEnabled = settings.showHints
+        always.indentationLevel = 1
+        menu.addItem(always)
         let pause = item(String(localized: "학습 일시 정지"), #selector(togglePauseLearning(_:)))
         pause.state = settings.learningPaused ? .on : .off
         pause.isEnabled = settings.learningEnabled
@@ -95,6 +100,14 @@ extension DuoInputController {
         onMain { _ in
             DuoRuntime.shared.updateSettings { $0.showHints.toggle() }
             Log.menu.info("hints \(DuoRuntime.shared.settings.showHints ? "on" : "off", privacy: .public)")
+        }
+    }
+
+    @objc nonisolated func toggleAlwaysShowChoices(_ sender: Any?) {
+        onMain { _ in
+            DuoRuntime.shared.updateSettings { $0.alwaysShowChoices.toggle() }
+            let on = DuoRuntime.shared.settings.alwaysShowChoices
+            Log.menu.info("always show choices \(on ? "on" : "off", privacy: .public)")
         }
     }
 

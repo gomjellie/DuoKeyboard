@@ -206,7 +206,11 @@ final class DuoInputController: IMKInputController {
             trigger = .other
         case .keyDown:
             guard let key = KeyEventMapper.keyEvent(from: event) else { return false }
-            if HUDAnnouncement.isFlipKey(key, flipKey: engine.settings.flipKey) { flipPress = .keyDown }
+            // ⌘3 with the flip key held chooses like a flip, so a refusal is spoken like one.
+            if HUDAnnouncement.isFlipKey(key, flipKey: engine.settings.flipKey)
+                || engine.readingChordIndex(key) != nil {
+                flipPress = .keyDown
+            }
             var choice = ReadingChoice.notOnBar
             if let index = HUDPresentation.readingIndex(for: key),
                let shown = runtime.hud.seenRequest,
