@@ -1,18 +1,24 @@
 """Community-text typing evaluation: build the corpora, then summarise and compare engine runs.
 
     python3 -I Tools/scripts/community_corpus.py prep
+    python3 -I Tools/scripts/community_corpus.py kakao <export.csv> [--out <corpus.tsv>]
     python3 -I Tools/scripts/community_corpus.py report <run.tsv> [--base <older-run.tsv>] [--top N]
 
 prep reads Tools/data/raw/community/ (not committed) and writes two corpora there, one sentence per
 line as source<TAB>id<TAB>text with only characters a 두벌식 + ABC typist types:
   sentences.tsv  NSMC test set (nsmc_test.txt, CC0 1.0) + korean-hate-speech (khs_*.tsv, CC BY-SA 4.0)
   sites.tsv      site comments (*_comments.tsv, collected for evaluation only; see sources.md there)
+kakao reads a KakaoTalk chat export (Date,User,Message CSV) and writes the messages people typed as a
+corpus of the same shape, by default Tools/data/raw/kakao/chat.tsv (not committed). It never writes
+the User column, and drops what KakaoTalk wrote itself (Photo, Emoticon, polls, files), pasted URLs
+and bot posts.
 Tools/scripts/corpus-typing.sh types a corpus through the engine; report reads its output.
 """
 from __future__ import annotations
 
 import argparse
 import collections
+import csv
 import glob
 import os
 import re
@@ -70,6 +76,37 @@ def prep():
                 if len(parts) == 3:
                     rows.append(tuple(parts))
     write(rows, "sites.tsv")
+
+
+KAKAO_SYSTEM = re.compile(
+    r"(Photo|Emoticon|Video|Voice Call|Voice Memo|left|The message has been deleted\.|\d+ photos"
+    r"|(File|Location|Share ?): .*|(Poll|Poll Closed|Announcement|Shared Post) in Boards: .*"
+    r"|Talk Board .*|\S+ invited .+\.)", re.S)
+KAKAO_SEARCH = re.compile(r"샵검색 ?: ?")
+URL = re.compile(r"https?://\S+|www\.\S+")
+# What a Mac keyboard types for characters phones put in (… is ⌥; on ABC, but people type ...).
+TYPED_AS = str.maketrans({"…": "...", "“": '"', "”": '"', "‘": "'", "’": "'", "·": " "})
+
+
+def kakao(path, out):
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    rows, dropped = [], 0
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        reader = csv.reader(f)
+        next(reader)
+        for n, row in enumerate(reader, start=1):
+            if len(row) != 3 or KAKAO_SYSTEM.fullmatch(row[2]) or "🤖" in row[2]:
+                dropped += 1
+                continue
+            text = URL.sub(" ", KAKAO_SEARCH.sub("", row[2])).translate(TYPED_AS)
+            for i, line in enumerate(text.split("\n")):
+                c = clean(line)
+                if c and KOREAN.search(c):
+                    rows.append(("kakao", f"{n}.{i}", c))
+    with open(out, "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write("\t".join(r) + "\n")
+    print(f"{out}: {len(rows)} lines ({dropped} system messages and bot posts dropped)")
 
 
 def load(path):
@@ -140,6 +177,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("prep")
+    k = sub.add_parser("kakao")
+    k.add_argument("export")
+    k.add_argument("--out", default=os.path.join(ROOT, "Tools", "data", "raw", "kakao", "chat.tsv"))
     r = sub.add_parser("report")
     r.add_argument("run")
     r.add_argument("--base")
@@ -147,6 +187,8 @@ def main():
     a = ap.parse_args()
     if a.cmd == "prep":
         prep()
+    elif a.cmd == "kakao":
+        kakao(a.export, a.out)
     else:
         report(a.run, a.base, a.top)
 
