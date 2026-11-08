@@ -125,3 +125,17 @@
 파일	60
 버전	60
 서버	40
+# 2026-11-08: a grade or title after one Latin letter, followed by a particle (B급도, C급인, A군은).
+# The corpora have 급, 급이, 급의 but not these, so MIX_INITIAL did not reach them.
+급도	20
+급은	20
+급인	20
+급만	10
+급에	10
+급영화	20
+급이다	10
+급인데	10
+군은	10
+군이	10
+양은	10
+양이	10
