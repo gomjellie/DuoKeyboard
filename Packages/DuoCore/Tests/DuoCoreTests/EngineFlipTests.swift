@@ -410,6 +410,55 @@ struct EngineFlipTests {
         #expect(h.engine.oneShot == .english)
     }
 
+    // MARK: (b) a reading of the end of the word just committed
+
+    @Test func aLongWordWhoseEndReadsAsEnglishGetsTheLastWordsBar() {
+        let h = EngineHarness()
+        EngineChoiceTests.scriptKoreanThenEnglish(h.detector)
+        h.type("wndrksdpenglish ")
+        #expect(h.text == "중간에두히ㅑ노 ", "the commit is not changed")
+        #expect(h.hud == HUDRequest(content: .flipLastWord(bar("중간에두히ㅑ노", .korean, offering: "중간에english",
+                                                               .english, currentFirst: true)),
+                                    anchor: .location(0), immediate: true, lifetime: CompositionEngine.chipLifetime),
+                "the end reads 13 nats better as English: the last word's bar offers it")
+        h.flip()
+        #expect(h.text == "중간에english ")
+        #expect(h.buffer.selection == NSRange(location: 11, length: 0))
+        #expect(h.engine.context.previousLanguage == .english, "the text before the caret ends in English")
+        h.flip()
+        #expect(h.text == "중간에두히ㅑ노 ", "a second flip restores the word")
+        #expect(h.store.count == 0, "a reading of the end of the word is no reading of its keys: nothing learned")
+    }
+
+    @Test func aFlipOfAWordCommittedWithoutABarLooksForItsEndThen() {
+        // 사진 + jpg, 7 keys: a certain commit gets no bar, so the end is looked for at the flip.
+        let h = EngineHarness()
+        h.detector.korean("tkwls")
+        h.detector.scores["tkwlsj"] = [.korean: -6000, .english: -26_000]
+        h.detector.scores["tkwlsjp"] = [.korean: -8000, .english: -27_000]
+        h.detector.scores["tkwlsjpg"] = [.korean: -14_000, .english: -30_000]
+        h.detector.scores["jpg"] = [.english: -4000, .korean: -16_000]
+        h.type("tkwlsjpg ")
+        #expect(h.text == "사지너ㅔㅎ ")
+        #expect(h.hud == nil, "K wins by 16 nats: a certain commit")
+        #expect(!h.detector.choiceCalls.contains("jpg"), "and its end was not looked for")
+        h.flip()
+        #expect(h.text == "사진jpg ", "사진 (−5) + jpg (−4) beats tkwlsjpg (−30) by 21 nats")
+        h.flip()
+        #expect(h.text == "사지너ㅔㅎ ")
+    }
+
+    @Test func theLastWordsEndIsNotOfferedWhereCommittedTextCannotChange() {
+        let h = EngineHarness(bundleIdentifier: "com.microsoft.VSCode")
+        h.buffer.ignoresReplacementRanges = true
+        EngineChoiceTests.scriptKoreanThenEnglish(h.detector)
+        h.type("wndrksdpenglish ")
+        #expect(h.hud == nil, "no last word's bar in Monaco")
+        h.flip()
+        #expect(h.hud?.content == .cannotChange)
+        #expect(h.text == "중간에두히ㅑ노 ")
+    }
+
     // MARK: (c) nothing to flip
 
     @Test func flipWithNothingArmsAOneShotEnglishWord() {

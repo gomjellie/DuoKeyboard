@@ -54,6 +54,27 @@ extension CompositionEngine {
             alternative = t.scores.flatMap { self.alternative(of: h, raw: t.raw, in: $0) }
         }
 
+        // A reading of the end of the word replaces that alternative when it scores higher (SPEC.md
+        // 4.11절). Only where the last word's bar comes up or the word is long: a flip of a word
+        // committed without it looks then (`checkSegments`).
+        let keepsCommit = reason == nil || reason == .commitComposition
+        let canReplace = clientProfile.canReplaceCommittedText
+        let surprising = render(t.raw, t.shown) != fullText
+        let uncertain = margin.map { $0 <= Margins.uncertainCommit } ?? false
+        let offersBar = reason == nil && settings.offerUndoAfterCommit && canReplace && !t.isLocked
+        var lastAlternative = alternative.map { ChoiceReading.whole($0) }
+        var lastAlternativeText = alternative.map { render(t.raw, $0) }
+        var segmentLikely = false
+        let looksNow = !t.isLocked && !t.segmentTail && keepsCommit
+            && (t.count >= Self.segmentAutoKeys || (offersBar && (surprising || uncertain)))
+        if looksNow, let final, let found = segmentBeating(alternative, in: segments(
+            raw: t.raw, context: t.context, committed: t.committed, scored: [final]), final: final) {
+            lastAlternative = found.reading
+            lastAlternativeText = found.text
+            segmentLikely = t.count >= Self.segmentAutoKeys && found.mayLead
+                && final[h].map { found.score - $0 >= Self.segmentMargin } ?? false
+        }
+
         // 4. Learning (critique R7).
         let learnable = reason != .secureInput && t.count >= 2 && effectiveProfile != .direct && !t.segmentTail
         var votes: [LearningVote] = []
@@ -92,31 +113,27 @@ extension CompositionEngine {
         // 2. Record `lastCommit` for flip case (b); one `selectedRange()` call, only at commits.
         // Monaco reports positions but ignores replacement ranges: the end is still recorded, so a
         // flip with the caret away from the word means "next word" there too (case c).
-        let keepsCommit = reason == nil || reason == .commitComposition
-        let canReplace = clientProfile.canReplaceCommittedText
         var end: Int?
-        if keepsCommit, clientProfile.replacement != .none, alternative != nil,
+        if keepsCommit, clientProfile.replacement != .none, lastAlternative != nil,
            let caret = client.selectedRange()?.location {
             end = caret - trailing.utf16.count
         }
-        if keepsCommit, let alternative {
+        if keepsCommit, let lastAlternative, let lastAlternativeText {
             lastCommit = LastCommit(
-                text: fullText, length: fullText.utf16.count, raw: t.raw, context: t.context, hypothesis: h,
-                alternative: alternative, alternativeText: render(t.raw, alternative), endLocation: end,
-                boundaryLength: trailing.isEmpty ? boundaryLength : trailing.utf16.count, time: clock(),
-                clientBundleID: clientProfile.bundleIdentifier, committedHypothesis: h, committedVotes: votes,
-                appliedVotes: votes, learnable: learnable)
+                text: fullText, length: fullText.utf16.count, raw: t.raw, context: t.context, hypothesis: .whole(h),
+                alternative: lastAlternative, alternativeText: lastAlternativeText,
+                segmentsChecked: looksNow || t.isLocked || t.segmentTail,
+                endLocation: end, boundaryLength: trailing.isEmpty ? boundaryLength : trailing.utf16.count,
+                time: clock(), clientBundleID: clientProfile.bundleIdentifier, committedHypothesis: h,
+                committedVotes: votes, appliedVotes: votes, learnable: learnable)
         } else {
             lastCommit = nil
         }
 
-        // 3. "Never silently different" (critique R2): chip after a surprising or uncertain commit.
-        if reason == nil, settings.offerUndoAfterCommit, canReplace, let end, !t.isLocked, let lc = lastCommit {
-            let surprising = render(t.raw, t.shown) != fullText
-            let uncertain = margin.map { $0 <= Margins.uncertainCommit } ?? false
-            if surprising || uncertain {
-                hud = lastWordChoiceHUD(lc, start: end - lc.length)
-            }
+        // 3. "Never silently different" (critique R2): chip after a surprising or uncertain commit,
+        // or after a long word whose end reads much better in another script.
+        if offersBar, let end, let lc = lastCommit, surprising || uncertain || segmentLikely {
+            hud = lastWordChoiceHUD(lc, start: end - lc.length)
         }
 
         // 5. Context for the next token.
@@ -131,6 +148,25 @@ extension CompositionEngine {
         HUDRequest(content: .flipLastWord(choice(current: (lc.hypothesis, lc.text),
                                                  other: (lc.alternative, lc.alternativeText))),
                    anchor: .location(start), immediate: true, lifetime: Self.chipLifetime)
+    }
+
+    /// `lc` with a reading of the end of the word as its alternative when one scores higher than
+    /// the alternative chosen at the commit, which did not look for one (SPEC.md 4.11절).
+    func checkSegments(_ lc: LastCommit) -> LastCommit {
+        guard !lc.segmentsChecked, case .whole = lc.hypothesis, case .whole(let other) = lc.alternative else {
+            return lc
+        }
+        var checked = lc
+        checked.segmentsChecked = true
+        let final = detector.choiceScores(raw: lc.raw, context: lc.context, user: userCounts(lc.raw, lc.context),
+                                          biasKO: biasKO)
+        let found = segmentBeating(other, in: segments(raw: lc.raw, context: lc.context, committed: 0,
+                                                       scored: [final]), final: final)
+        if let found, found.reading != lc.hypothesis, found.text != lc.text {
+            checked.alternative = found.reading
+            checked.alternativeText = found.text
+        }
+        return checked
     }
 
     /// Learning is on and not paused.

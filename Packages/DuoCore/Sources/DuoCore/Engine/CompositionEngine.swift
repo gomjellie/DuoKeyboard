@@ -516,14 +516,10 @@ public final class CompositionEngine {
     }
 
     /// The choice bar for a word read as `current` with `other` offered.
-    func choice(current: (Hypothesis, String), other: (Hypothesis, String)) -> HUDChoice {
+    func choice(current: (ChoiceReading, String), other: (ChoiceReading, String)) -> HUDChoice {
         HUDChoice(current: HUDReading(text: current.1, language: current.0.language),
                   other: HUDReading(text: other.1, language: other.0.language),
                   currentFirst: Self.displayRank(current.0) <= Self.displayRank(other.0))
-    }
-
-    func choice(raw: String, current: Hypothesis, other: Hypothesis) -> HUDChoice {
-        choice(current: (current, render(raw, current)), other: (other, render(raw, other)))
     }
 
     /// Choice-bar order: the Korean reading, then mixed readings by Latin length, then English.

@@ -182,10 +182,13 @@ struct LastCommit {
     var length: Int
     let raw: String
     let context: LanguageContext
-    var hypothesis: Hypothesis
+    var hypothesis: ChoiceReading
     /// The reading a flip turns it into, and its render.
-    var alternative: Hypothesis
+    var alternative: ChoiceReading
     var alternativeText: String
+    /// Readings that change only the end of the word were looked for (they are costly, so a
+    /// certain commit leaves it to a flip).
+    var segmentsChecked: Bool
     /// `selectedRange().location` right after the insert; `nil` = not flippable (client reported
     /// `NSNotFound`, or it cannot replace text).
     var endLocation: Int?

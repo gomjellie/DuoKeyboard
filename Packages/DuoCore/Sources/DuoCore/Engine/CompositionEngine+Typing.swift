@@ -486,8 +486,11 @@ extension CompositionEngine {
             lastCommit = nil
             return
         }
-        if settings.offerUndoAfterCommit, clientProfile.canReplaceCommittedText {
-            hud = lastWordChoiceHUD(lc, start: end - lc.length)
+        if settings.offerUndoAfterCommit, clientProfile.canReplaceCommittedText, let shown = lastCommit {
+            // The bar offers what a click or flip will do.
+            let checked = checkSegments(shown)
+            lastCommit = checked
+            hud = lastWordChoiceHUD(checked, start: end - checked.length)
         }
     }
 

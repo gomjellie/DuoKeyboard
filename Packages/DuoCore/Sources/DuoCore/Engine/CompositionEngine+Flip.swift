@@ -146,7 +146,8 @@ extension CompositionEngine {
     // MARK: (b) the word just committed
 
     /// Returns `false` when the caret is not at the word, so the flip means "next word" instead.
-    private func flipLastCommit(_ lc: LastCommit, client: any TextClient) -> Bool {
+    private func flipLastCommit(_ word: LastCommit, client: any TextClient) -> Bool {
+        var lc = word
         guard let end = lc.endLocation else {
             hud = cannotChangeHUD(anchor: .caret)
             return true
@@ -192,6 +193,7 @@ extension CompositionEngine {
             hud = cannotChangeHUD(anchor: .caret)
             return true
         }
+        lc = checkSegments(lc)
         let start = range.location
         client.insertText(lc.alternativeText + suffix, replacementRange: range)
 
@@ -200,12 +202,13 @@ extension CompositionEngine {
         var updated = lc
         for vote in lc.appliedVotes { learning.cancel(vote) }
         var votes: [LearningVote] = []
-        if lc.alternative == lc.committedHypothesis {
+        if lc.alternative == .whole(lc.committedHypothesis) {
             votes = lc.committedVotes.map {
                 learning.record(raw: $0.raw, context: $0.context, hypothesis: $0.hypothesis, votes: $0.amount)
             }
-        } else if lc.learnable, canLearnNow {
-            votes = [learning.record(raw: lc.raw, context: lc.context, hypothesis: lc.alternative,
+        } else if lc.learnable, canLearnNow, case .whole(let alternative) = lc.alternative {
+            // A reading of only the end of the word is no reading of these keys: nothing to learn.
+            votes = [learning.record(raw: lc.raw, context: lc.context, hypothesis: alternative,
                                      votes: LearningStore.flipVotes)]
         }
         let learningChanged = !lc.appliedVotes.isEmpty || !votes.isEmpty

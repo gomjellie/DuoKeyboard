@@ -445,6 +445,15 @@ struct EngineScenarioTests {
         #expect(h.text == "길어졌을때중간에english가 ")
     }
 
+    @Test func theLastWordsBarOffersTheEndOfALongWord() {
+        let h = Self.harness()
+        h.type("rlfdjwuTdmfEowndrksdpenglish ")
+        #expect(h.text == "길어졌을때중간에두히ㅑ노 ", "typing is not changed")
+        #expect(h.hud?.isLastWordChoice == true)
+        h.flip()
+        #expect(h.text == "길어졌을때중간에english ")
+    }
+
     @Test(arguments: ["dhsmfdmsghldmlrkdlTdjdy", "rmfjsepdywmadpsmsdlfdlaksgdktjgkfwlahfmrpTdjdy",
                       "tkfkdgksmsakdmadmfhdnflrkcmfrjqrptkfdkdi", "rkatkgkqslekwhdmsgkfnwlsotpdy"])
     func aLongKoreanWordGetsNoBarFromItsEnd(_ keys: String) {
