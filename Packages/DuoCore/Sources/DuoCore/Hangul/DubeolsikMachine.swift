@@ -201,6 +201,58 @@ struct DubeolsikMachine {
         if machine.pendingIsOrphan { orphans += 1 }
         return (orphans, machine.pendingIsLoneConsonant)
     }
+
+    /// Jamo chat repeats for laughter and feelings (DET `EMOTIVE_JAMO`).
+    static let emotiveJamo: Set<Character> = ["ㅋ", "ㅎ", "ㅠ", "ㅜ", "ㅡ", "ㄷ", "ㅉ"]
+
+    /// ``orphanStats(_:)`` plus the orphans that stand in runs of two or more identical emotive jamo
+    /// (ㅋㅋㅋ, ㅠㅠ; DET `emotive_runs`), which the K reading is not charged for, and whether the
+    /// last block is in such a run.
+    static func orphanRunStats(_ keys: UnsafeBufferPointer<UInt8>) -> (orphans: Int, lone: Bool, runs: Int, runAtEnd: Bool) {
+        var machine = DubeolsikMachine()
+        var orphans = 0, runs = 0
+        var runBlock: Block?
+        var runLength = 0
+        func endRun() {
+            if let block = runBlock, runLength >= 2, emotiveJamo.contains(block.character) { runs += runLength }
+            runBlock = nil
+            runLength = 0
+        }
+        func note(_ block: Block?) {
+            guard let block else { return }
+            guard block.isOrphan else { return endRun() }
+            orphans += 1
+            if block == runBlock {
+                runLength += 1
+            } else {
+                endRun()
+                runBlock = block
+                runLength = 1
+            }
+        }
+        DubeolsikTables.keyConsonant.withUnsafeBufferPointer { cons in
+            DubeolsikTables.keyVowel.withUnsafeBufferPointer { vows in
+                var i = 0
+                while i < keys.count {
+                    let byte = keys[i]
+                    i &+= 1
+                    if byte < 0x80, cons[Int(byte)] >= 0 {
+                        note(machine.consonant(cons[Int(byte)]))
+                    } else if byte < 0x80, vows[Int(byte)] >= 0 {
+                        note(machine.vowel(vows[Int(byte)]))
+                    } else {
+                        note(machine.flush())
+                        endRun()  // a literal character breaks a run
+                    }
+                }
+            }
+        }
+        let lone = machine.pendingIsLoneConsonant
+        note(machine.flush())
+        let runAtEnd = runBlock.map { runLength >= 2 && emotiveJamo.contains($0.character) } ?? false
+        endRun()
+        return (orphans, lone, runs, runAtEnd)
+    }
 }
 
 extension DubeolsikMachine.Block {

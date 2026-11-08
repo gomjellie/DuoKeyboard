@@ -106,14 +106,14 @@ struct DetectionScorer: Sendable {
         let n = t.count
         let final = mode == .final
         let m = model
-        let (orphans, lone) = DubeolsikMachine.orphanStats(UnsafeBufferPointer(start: t.kno, count: n))
+        let (orphans, lone, runs, runAtEnd) = DubeolsikMachine.orphanRunStats(UnsafeBufferPointer(start: t.kno, count: n))
         let (rollover, stray) = Self.shiftCounts(t.raw, 0, n)
         let koLex = final ? m.koreanLexicon.value(hash: FNV1a64.hash(t.kno, n)) : nil
         let lowHash = FNV1a64.hash(t.low, n)
         let enLex = final ? m.englishLexicon.value(hash: lowHash) : nil
         let enCase = casePattern(t.raw, n)
         let enNumUnit = m.numberUnits.contains(t.low, n, hash: lowHash)
-        let koOrphans = final ? orphans : orphans - (lone ? 1 : 0)
+        let koOrphans = final ? orphans - runs : orphans - runs - (lone && !runAtEnd ? 1 : 0)
         let koSymbols = UnsafeBufferPointer(start: t.koSymbols, count: n)
 
         guard n >= 2, !t.hasNonLetter else {  // no M(b): one K pass and one E pass

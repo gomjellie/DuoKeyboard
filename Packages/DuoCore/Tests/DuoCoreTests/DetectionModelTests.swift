@@ -131,7 +131,7 @@ struct DetectionModelTests {
     @Test func intactCopyOpens() throws {
         try Self.withTemporaryModel(try Self.shippedBytes()) { url in
             let d = try DuoDetector(modelURL: url)
-            #expect(d.contentHash == "5c028cbea247bcc5")
+            #expect(d.contentHash == "5200eb46b6370ef1")
         }
     }
 }
