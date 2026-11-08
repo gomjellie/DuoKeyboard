@@ -647,15 +647,15 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
    - `LSUIElement`;
    - `CFBundleName` / `CFBundleDisplayName` "Duo";
    - ko와 en의 `InfoPlist.strings`;
-   - `TISIconIsTemplate = false`(템플릿 아님), `TISIconLabels` `Primary = "가A"`;
+   - `TISIconIsTemplate = false`(템플릿 아님), `TISIconLabels` `Primary = "한A"`;
    - `TICapsLockLanguageSwitchCapable = false`를 유지함;
    - **입력 모드 없이 둠**(R19. 2026-11-08에 실험함. 아래 캐럿 옆 표시 참고);
    - `NSSupportsSuddenTermination = false`. 종료할 때와 SIGTERM에서 학습을 저장함.
-   - 캐럿 옆 표시: macOS 26의 캐럿 옆 입력 소스 표시는 Duo를 초록 알약 안의 "가A" 타일로 그림(macOS 26.6.2에서 확인함). ⌘Space 목록에는 이름 "Duo"가 보임.
-   - 이 표시를 그리는 `CursorUIViewService`는 로그인 동안 Duo의 예전 모습을 들고 있음. 아이콘을 바꾼 빌드를 설치한 뒤에는 `killall -KILL CursorUIViewService`나 로그아웃이 있어야 새 모습이 보임.
+   - 캐럿 옆 표시: macOS 26의 캐럿 옆 입력 소스 표시는 Duo를 초록 알약 안의 "한A" 타일로 그림(macOS 26.6.2에서 확인함). ⌘Space 목록에는 이름 "Duo"가 보임.
+   - 이 표시를 그리는 `CursorUIViewService`는 로그인 동안 Duo의 예전 모습을 들고 있음. 아이콘을 바꾼 빌드를 설치한 뒤에는 `killall -KILL CursorUIViewService`나 로그아웃이 있어야 새 모습이 보임. 강제 종료한 서비스는 앱이 새로 연결할 때 다시 뜸.
    - 입력 모드는 필요 없음. 입력 메뉴와 ⌘Space 목록은 서드파티 입력기를 상위 입력기 항목으로만 다룸. 허용 목록에 모드 항목만 두면 Duo가 꺼짐.
 5. **메뉴 아이콘:** `Tools/IconGen/make_menu_icon.swift`로 `MenuIcon.tiff`를 다시 만듦.
-   - 템플릿이 아닌 밝은 16 pt 타일(#E5E5EA, 모서리 반지름 3.5 pt)에 거의 검은(#1C1C1E) heavy "가A";
+   - 템플릿이 아닌 밝은 16 pt 타일(#E5E5EA, 모서리 반지름 3.5 pt)에 거의 검은(#1C1C1E) heavy "한A";
    - 16×16 px(72 dpi)와 32×32 px(144 dpi) 두 장을 `tiffutil -cathidpicheck`로 묶음.
    - 템플릿 아이콘은 macOS 26 전환 창이 배경과 같은 색으로 칠해서 사라졌음.
 6. **DebugInjector**(DEBUG 전용):
