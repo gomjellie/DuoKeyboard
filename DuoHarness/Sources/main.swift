@@ -209,7 +209,7 @@ if CommandLine.arguments.dropFirst().contains("--reconnect") {
     }
     let open = Process()
     open.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-    open.arguments = ["-g", "-j", InputSourceManager.installedBundleURL.path]
+    open.arguments = ["-g", InputSourceManager.installedBundleURL.path]
     try? open.run()
     open.waitUntilExit()
     Thread.sleep(forTimeInterval: 1)
