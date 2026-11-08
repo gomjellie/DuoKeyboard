@@ -61,6 +61,10 @@ final class DuoRuntime {
             self?.applyLearningCommand(info)
         }
         notifications.observe(DuoIDs.Notifications.ping) { [weak self] _ in self?.answerPing() }
+        notifications.observe(DuoIDs.Notifications.requestAccessibility) { _ in
+            Log.runtime.info("accessibility requested (trusted: \(FocusedElementLocator.isTrusted, privacy: .public))")
+            FocusedElementLocator.requestPermission()
+        }
         notifications.observe(Self.selectedSourceChanged) { [weak self] _ in self?.selectedInputSourceDidChange() }
 
         // The panel joins every Space (ux-spec §7.1), and a latched alternative or the Bilingual
@@ -220,7 +224,8 @@ final class DuoRuntime {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         DistributedNotificationCenter.default().postNotificationName(
             DuoIDs.Notifications.pong, object: nil,
-            userInfo: ["version": version, "modelLoaded": detector == nil ? "false" : "true"],
+            userInfo: ["version": version, "modelLoaded": detector == nil ? "false" : "true",
+                       DuoIDs.pongAccessibilityKey: FocusedElementLocator.isTrusted ? "true" : "false"],
             deliverImmediately: true)
     }
 

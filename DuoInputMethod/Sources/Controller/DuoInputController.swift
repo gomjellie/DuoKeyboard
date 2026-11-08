@@ -21,6 +21,9 @@ final class DuoInputController: IMKInputController {
     private var textClient: IMKTextClient?
     /// Cached `client.bundleIdentifier()`, fetched once per activation (critique R15).
     private(set) var bundleIdentifier = ""
+    /// The client app's process, looked up once per activation, only for clients whose HUD
+    /// follows their focused element (`ClientProfile.compositionAtFocusedElement`).
+    private var focusedElementClientPID: pid_t?
     private var settingsGeneration = -1
     private var wasSecure = false
     private var pendingFlipAnnouncement: ScriptLanguage?
@@ -115,6 +118,9 @@ final class DuoInputController: IMKInputController {
             syncSettings(engine)
             textClient.needsMarkBeforeInsert = engine.clientProfile.needsMarkBeforeInsert
         }
+        focusedElementClientPID = engine?.clientProfile.compositionAtFocusedElement == true
+            ? NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first?.processIdentifier
+            : nil
 
         if !bundleIdentifier.isEmpty, !bundleIdentifier.hasPrefix("com.inkyuoh.") {
             SettingsStore.recordSeenApp(bundleIdentifier)
@@ -336,8 +342,10 @@ extension DuoInputController: HUDAnchorProvider {
         guard let proxy = textClient?.proxy ?? client() else { return nil }
         switch anchor {
         case .markedText:
+            if let rect = focusedElementCaret() { return rect }
             return lineRectAtSessionStart(proxy) ?? firstRect(proxy, of: proxy.markedRange())
         case .caret:
+            if let rect = focusedElementCaret() { return rect }
             if let rect = lineRectAtSessionStart(proxy) { return rect }
             return firstRect(proxy, of: NSRange(location: proxy.selectedRange().location, length: 0))
         case .location(let location):
@@ -369,6 +377,17 @@ extension DuoInputController: HUDAnchorProvider {
     func hudClientWindowLevel() -> Int {
         guard let proxy = textClient?.proxy ?? client() else { return Int(CGWindowLevelForKey(.normalWindow)) }
         return Int(proxy.windowLevel())
+    }
+
+    /// xterm.js terminals: the left edge of the hidden field xterm.js keeps at the composition, or
+    /// at the cursor when nothing is marked (`FocusedElementLocator`). `nil` without the
+    /// Accessibility permission or for any other client.
+    private func focusedElementCaret() -> CGRect? {
+        guard let pid = focusedElementClientPID, let frame = FocusedElementLocator.xtermFieldFrame(pid: pid),
+              let primary = NSScreen.screens.first,
+              let caret = HUDGeometry.caretFromAccessibilityFrame(frame, primaryScreenHeight: primary.frame.height)
+        else { return nil }
+        return usable(caret)
     }
 
     /// `attributes(forCharacterIndex: 0, lineHeightRectangle:)`: the start of the marked text, or
