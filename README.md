@@ -138,9 +138,9 @@ Duo는 고친 단어를 이 Mac 안에서 기억해요. 문장은 저장하지 �
 
 | 프로필 | 동작 | 기본으로 쓰는 앱 |
 |---|---|---|
-| 자동 | 단어마다 판단함. 치우침 0 | 아래에 없는 모든 앱 |
+| 자동 | 단어마다 판단함. 치우침 0 | 아래에 없는 모든 앱. 터미널(Terminal, iTerm2, Orca, cmux, Ghostty, Warp, kitty, Alacritty, WezTerm, Hyper)도 여기 듦 |
 | 한국어 우선 | 한국어 쪽 점수 +1000 millinats | 카카오톡, LINE, 한컴오피스 한글 |
-| English 우선 | 한국어 쪽 점수 −1000 millinats | 터미널(Terminal, iTerm2, Orca, cmux, Ghostty, Warp, kitty, Alacritty, WezTerm, Hyper), 코드 편집기(Xcode, VS Code, Cursor, Zed, Sublime Text, Nova, BBEdit), JetBrains IDE, Android Studio |
+| English 우선 | 한국어 쪽 점수 −1000 millinats | 코드 편집기(Xcode, VS Code, Cursor, Zed, Sublime Text, Nova, BBEdit), JetBrains IDE, Android Studio |
 | 직접 입력 | 키를 그대로 보냄. 바꾸기 키를 누르면 그 줄만 한영 자동이 됨. Return이나 Esc에서 끝남 | 없음 |
 
 어떤 앱은 이미 쓴 글자를 바꾸지 못해요. Duo는 그런 앱의 목록을 갖고 있어요(`Packages/DuoCore/Sources/DuoCore/Engine/ClientProfile.swift`).

@@ -473,11 +473,13 @@ Forward Delete와 F-키는 L을 유지해요.
 
 | 기본값 | 번들 ID |
 |---|---|
-| **englishFirst + isTerminal** (R10) | `com.apple.Terminal`(replacement `.beforeCaretOnly`), `com.googlecode.iterm2`(`.none`), `com.stablyai.orca`, `com.cmuxterm.app`, `com.mitchellh.ghostty`, `dev.warp.Warp-Stable`, `net.kovidgoyal.kitty`, `org.alacritty`, `com.github.wez.wezterm`(모두 `.full`), `co.zeit.hyper`(`.none`) |
+| **automatic + isTerminal** (R10) | `com.apple.Terminal`(replacement `.beforeCaretOnly`), `com.googlecode.iterm2`(`.none`), `com.stablyai.orca`, `com.cmuxterm.app`, `com.mitchellh.ghostty`, `dev.warp.Warp-Stable`, `net.kovidgoyal.kitty`, `org.alacritty`, `com.github.wez.wezterm`(모두 `.full`), `co.zeit.hyper`(`.none`) |
 | **englishFirst** | `com.apple.dt.Xcode`, `com.microsoft.VSCode`, `com.todesktop.230313mzl4w4u92`(Cursor), `dev.zed.Zed`, `com.sublimetext.4`, `com.panic.Nova`, `com.barebones.bbedit` |
 | **englishFirst** (Java) | `com.jetbrains.*`, `com.google.android.studio`(`.none`, `needsMarkBeforeInsert`) |
 | **koreanFirst** | `com.kakao.KakaoTalkMac`, `com.hancom.office.hwp*`, `jp.naver.line.mac` |
 | **automatic** | 그 밖의 모든 앱(`.full`) |
+
+터미널은 2026-11-08부터 automatic이에요(처음에는 englishFirst). Duo 사용자는 한국어에 영어를 섞어 쓰고, 터미널에서도 한국어 프롬프트를 많이 쳐요. 터미널 명령과 프롬프트 70줄은 세 프로필에서 똑같이 쳐졌고, 실제 카카오톡 대화는 englishFirst에서 문장 정확도가 1.4–1.6 %p 낮았어요.
 
 Direct는 기본값이 아니에요. 입력 메뉴나 설정에서 직접 골라야 해요. 사용자가 고른 프로필(`settings.appProfiles`)이 기본값보다 앞서요. 알려지지 않은 앱도 `.full`로 시작하지만, 바꾸기는 모두 쓰기 전에 확인해요.
 
