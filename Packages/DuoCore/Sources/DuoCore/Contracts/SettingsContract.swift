@@ -53,6 +53,9 @@ public struct DuoSettings: Sendable, Hashable, Codable {
     public var flipTapWindowMs: Int = 300
     /// Show the composition HUD (alternative reading). Failure messages and badges still show.
     public var showHints: Bool = true
+    /// With `showHints`, the choice bar is up for every word being typed, not only when another
+    /// reading is likely (SPEC.md 4.11절). The flip key brings it up either way.
+    public var alwaysShowChoices: Bool = false
     /// Offer "↺ flip last word" after an uncertain or surprising commit.
     public var offerUndoAfterCommit: Bool = true
     public var backspaceUnit: BackspaceUnit = .jaso
@@ -74,7 +77,7 @@ public struct DuoSettings: Sendable, Hashable, Codable {
     public static let `default` = DuoSettings()
 
     private enum CodingKeys: String, CodingKey {
-        case flipKey, flipTapWindowMs, showHints, offerUndoAfterCommit, backspaceUnit, graveTypesWon,
+        case flipKey, flipTapWindowMs, showHints, alwaysShowChoices, offerUndoAfterCommit, backspaceUnit, graveTypesWon,
              languageBias, eagerEnglishCommit, learningEnabled, learningPaused, appProfiles,
              hasCompletedOnboarding
     }
@@ -85,6 +88,7 @@ public struct DuoSettings: Sendable, Hashable, Codable {
         flipKey = (try? c.decodeIfPresent(FlipKey.self, forKey: .flipKey)) ?? d.flipKey
         flipTapWindowMs = (try? c.decodeIfPresent(Int.self, forKey: .flipTapWindowMs)) ?? d.flipTapWindowMs
         showHints = (try? c.decodeIfPresent(Bool.self, forKey: .showHints)) ?? d.showHints
+        alwaysShowChoices = (try? c.decodeIfPresent(Bool.self, forKey: .alwaysShowChoices)) ?? d.alwaysShowChoices
         offerUndoAfterCommit = (try? c.decodeIfPresent(Bool.self, forKey: .offerUndoAfterCommit)) ?? d.offerUndoAfterCommit
         backspaceUnit = (try? c.decodeIfPresent(BackspaceUnit.self, forKey: .backspaceUnit)) ?? d.backspaceUnit
         graveTypesWon = (try? c.decodeIfPresent(Bool.self, forKey: .graveTypesWon)) ?? d.graveTypesWon
@@ -122,6 +126,7 @@ public struct DuoSettings: Sendable, Hashable, Codable {
         try c.encode(flipKey, forKey: .flipKey)
         try c.encode(flipTapWindowMs, forKey: .flipTapWindowMs)
         try c.encode(showHints, forKey: .showHints)
+        try c.encode(alwaysShowChoices, forKey: .alwaysShowChoices)
         try c.encode(offerUndoAfterCommit, forKey: .offerUndoAfterCommit)
         try c.encode(backspaceUnit, forKey: .backspaceUnit)
         try c.encode(graveTypesWon, forKey: .graveTypesWon)

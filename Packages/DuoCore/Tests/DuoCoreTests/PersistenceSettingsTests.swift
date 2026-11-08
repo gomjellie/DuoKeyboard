@@ -32,6 +32,15 @@ struct PersistenceSettingsTests {
         #expect(settings.showHints == false)
     }
 
+    @Test func alwaysShowChoicesDefaultsOffAndRoundTrips() throws {
+        let older = try JSONDecoder().decode(DuoSettings.self, from: Data(#"{"showHints":true}"#.utf8))
+        #expect(older.alwaysShowChoices == false, "a blob from before the setting keeps the bar to likely words")
+        var on = DuoSettings()
+        on.alwaysShowChoices = true
+        let back = try JSONDecoder().decode(DuoSettings.self, from: JSONEncoder().encode(on))
+        #expect(back.alwaysShowChoices)
+    }
+
     /// The IME's input menu (`SettingsStore.update`) toggling 힌트 표시 on a newer host's blob.
     @Test func anUpdateWritesOnlyWhatChanged() throws {
         let before = SettingsStore.decode(Self.newer)

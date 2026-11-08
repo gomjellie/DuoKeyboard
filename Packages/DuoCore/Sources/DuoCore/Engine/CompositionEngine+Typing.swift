@@ -7,6 +7,8 @@ extension CompositionEngine {
     static let maxTokenLength = 32
     /// Fewest keys in a token before English may be committed early (see `shouldEagerCommit`).
     static let eagerMinimumKeys = 3
+    /// One-key tokens that are words in both scripts get the HUD without a second key (critique R12).
+    static let collisionKeys: Set<String> = ["a", "e", "i", "o", "u", "x"]
     /// Prefix margin of K over every other reading before a capital may end the word (SPEC.md 4.3절 8).
     /// On the shipped model, Korean heads that end with a capital score ≥ 12.4 nats (한, 삼성, 회사,
     /// 그런데), camelCase heads ≤ 10.6 nats (to 새, do 애, did 양, db 유, cnt 츠, z, e, d).
@@ -223,12 +225,30 @@ extension CompositionEngine {
     }
 
     /// §4.3.7, §4.11: the choice bar while the token is marked: the word's readings in the order
-    /// the flip key walks them. It earns the HUD on every key but an autorepeat, so it is up while
-    /// the word is typed, as a Pinyin candidate window is (user request, 2026-11-08).
+    /// the flip key walks them.
+    ///
+    /// It earns the HUD on any key but an autorepeat when `alwaysShowChoices` is on, or when the
+    /// user chose the reading (a flip or the bar), or when a listed reading is within
+    /// ``Margins/hudCandidates`` of the shown one (P ≥ 5 %) and the token has at least two keys
+    /// (or is one of the 1-key collision words).
     func alternativeHUD(_ t: Token, pulse: Bool, isRepeat: Bool) -> HUDRequest? {
         guard settings.showHints, !t.marked.isEmpty, let prefix = t.scores,
               let bar = choiceList(t, prefix) else { return nil }
-        return HUDRequest(content: .alternative(bar.choice, eligible: !isRepeat), anchor: .markedText, pulse: pulse)
+        // Close in prefix mode, or, for Latin plus an ending only, in final mode: prefix mode charges
+        // no end of word, so 층로 buries cmd로 there; final mode scores an unfinished syllable as a
+        // finished word (감ㅅ → rkat), so only M(b) may earn the bar on its final score.
+        func closeness(_ scores: HypothesisScores, onlyMixed: Bool) -> Bool {
+            let shownScore = scores[t.shown] ?? scores.best?.score ?? 0
+            return bar.hypotheses.enumerated().contains { i, h in
+                guard i != bar.selected, let s = scores[h] else { return false }
+                if onlyMixed, case .mixed = h {} else if onlyMixed { return false }
+                return shownScore - s <= Margins.hudCandidates
+            }
+        }
+        let likely = (closeness(bar.prefix, onlyMixed: false) || closeness(bar.final, onlyMixed: true))
+            && (t.count >= 2 || Self.collisionKeys.contains(t.raw.lowercased()))
+        let eligible = !isRepeat && (settings.alwaysShowChoices || t.locked != nil || likely)
+        return HUDRequest(content: .alternative(bar.choice, eligible: eligible), anchor: .markedText, pulse: pulse)
     }
 
     // MARK: Apostrophe (§4.4)

@@ -155,12 +155,12 @@ struct EngineRobustnessTests {
 
     // MARK: HUD while composing (§4.3.7)
 
-    @Test func alternativeIsEligibleFromTheFirstKey() {
+    @Test func alternativeIsEligibleWhenCloseAndLongEnough() {
         let h = EngineHarness()
         EngineFlipTests.scriptGo(h.detector)
         h.type("g")
         #expect(h.hud?.alternativeText == "g")
-        #expect(h.hud?.isEligible == true, "the bar is up while the word is typed, as a candidate window is")
+        #expect(h.hud?.isEligible == false, "one key outside the collision set")
         h.type("o")
         #expect(h.hud == HUDRequest(content: .alternative(bar("해", .korean, offering: "go", .english, currentFirst: true),
                                                           eligible: true), anchor: .markedText))
@@ -174,11 +174,25 @@ struct EngineRobustnessTests {
         #expect(h.hud?.isEligible == true)
     }
 
-    @Test(arguments: [2944, 2945, 20_000])
-    func theBarIsEligibleAtAnyMargin(_ margin: Int) {
+    @Test(arguments: [(2944, true), (2945, false)])
+    func theBarIsEligibleUpToFivePercent(_ margin: Int, _ eligible: Bool) {
+        // Margins.hudCandidates: the other reading has P ≥ 5 %.
         let h = EngineHarness()
         h.detector.scores["dk"] = [.korean: -2000, .english: -2000 - margin]
         h.type("dk")
+        #expect(h.hud?.isEligible == eligible)
+        #expect(h.hud?.alternativeText == "dk", "always sent, so a visible HUD can update in place")
+    }
+
+    @Test(arguments: [2944, 2945, 20_000])
+    func alwaysShowChoicesMakesTheBarEligibleAtAnyMargin(_ margin: Int) {
+        var settings = DuoSettings()
+        settings.alwaysShowChoices = true
+        let h = EngineHarness(settings: settings)
+        h.detector.scores["dk"] = [.korean: -2000, .english: -2000 - margin]
+        h.type("d")
+        #expect(h.hud?.isEligible == true, "from the first key, as a candidate window is")
+        h.type("k")
         #expect(h.hud?.isEligible == true, "unlikely readings are listed too: the user picks")
         #expect(h.hud?.alternativeText == "dk")
     }
