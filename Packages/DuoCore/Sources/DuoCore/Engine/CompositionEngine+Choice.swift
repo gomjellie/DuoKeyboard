@@ -58,6 +58,14 @@ extension CompositionEngine {
             : detector.prefixScores(raw: t.raw, context: t.context, user: carried, biasKO: biasKO)
         let final = detector.choiceScores(raw: t.raw, context: t.context, user: carried, biasKO: biasKO)
         let otherScript = alternative(of: t.lockedOriginal ?? t.shown, raw: t.raw, in: prefix)
+        // Prefix mode charges no end of word, so Latin plus an ending can be a real contender in final
+        // mode only (gpt가 for 헷가). It goes first then, as it earns the bar there (alternativeHUD).
+        var firstWhole = otherScript
+        if otherScript == nil || otherScript == .korean || otherScript == .english,
+           let m = alternative(of: t.lockedOriginal ?? t.shown, raw: t.raw, in: final),
+           m != .korean, m != .english, canChoose(t, m) {
+            firstWhole = m
+        }
         let bestPrefix = prefix.best?.score ?? 0
         let bestFinal = final.best?.score ?? 0
 
@@ -71,12 +79,12 @@ extension CompositionEngine {
                 if segments.count == Self.maxSegmentRows { break }
             }
         }
-        let first = segmentBeating(otherScript, in: segments, final: final, prefix: prefix)?.reading
-            ?? otherScript.map(ChoiceReading.whole)
+        let first = segmentBeating(firstWhole, in: segments, final: final, prefix: prefix)?.reading
+            ?? firstWhole.map(ChoiceReading.whole)
 
         var kept: [ChoiceReading] = [original]
         if let first { kept.append(first) }
-        // When a reading of the end goes first, the other script's reading stays listed.
+        // When another reading goes first, the other script's reading stays listed.
         if let otherScript { kept.append(.whole(otherScript)) }
         kept.append(shown)
         if let b = t.lockedLatin, b < t.count, !t.raw.contains("'") { kept.append(.whole(.mixed(latin: b))) }

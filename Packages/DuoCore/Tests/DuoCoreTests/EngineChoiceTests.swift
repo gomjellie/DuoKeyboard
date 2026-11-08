@@ -114,6 +114,18 @@ struct EngineChoiceTests {
         #expect(choice.readings.map(\.text) == ["층로", "cmd로"], "E is more than 10 nats behind")
     }
 
+    @Test func aLatinPlusEndingCloseOnlyInFinalModeIsTheFirstFlip() {
+        // gpt가 typed as 헷가: M(3) is 9 nats behind in prefix mode (no end of word) but 1.5 in final mode.
+        let h = EngineHarness()
+        h.detector.scores["gptrk"] = [.korean: -11_000, .english: -30_000, .mixed(latin: 3): -20_000]
+        h.detector.finals["gptrk"] = [.korean: -19_000, .english: -31_000, .mixed(latin: 3): -20_500]
+        h.type("gptrk")
+        #expect(h.marked == "헷가")
+        #expect(Self.readings(h) == ["헷가", "gpt가", "gptrk"], "the prefix-mode R11 alternative stays listed")
+        h.flip()
+        #expect(h.marked == "gpt가")
+    }
+
     // MARK: The flip key held (⌘3)
 
     static func isNumbered(_ h: EngineHarness) -> Bool {
