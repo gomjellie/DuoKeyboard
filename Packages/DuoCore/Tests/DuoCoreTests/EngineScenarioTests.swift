@@ -222,6 +222,13 @@ struct EngineScenarioTests {
         Row(.korean, "tqzzz ", "ㅅㅂㅋㅋㅋ "),
         Row(.english, "class ", "class "),
         Row(.start, "try ", "try "),
+        // Lone jamo that chat uses far more than the Latin letter, at a low rate: Korean only after Korean
+        Row(.korean, "m ", "ㅡ "),
+        Row(.korean, "r ", "ㄱ "),
+        Row(.korean, "W ", "ㅉ "),
+        Row(.english, "m ", "m "),
+        Row(.start, "e ", "e "),
+        Row(.korean, "e2e ", "e2e "),
         // AI is an everyday word in Korean chat (en_terms tier 0): ai + a Korean suffix
         Row(.korean, "airk ", "ai가 "),
         Row(.start, "aidp ", "ai에 "),
