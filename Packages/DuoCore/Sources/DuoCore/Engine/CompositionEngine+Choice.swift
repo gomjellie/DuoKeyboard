@@ -99,7 +99,7 @@ extension CompositionEngine {
         let readings = rows.map { HUDReading(text: $0.text, language: $0.hypothesis.language) }
         return ChoiceList(hypotheses: rows.map(\.hypothesis),
                           choice: HUDChoice(readings: readings, selected: selected, alternate: alternate,
-                                            numbered: t.locked != nil),
+                                            numbered: t.locked != nil || t.choicesRevealed),
                           prefix: prefix, final: final)
     }
 
@@ -163,6 +163,26 @@ extension CompositionEngine {
         case .oneShot, .cannotChange, .bilingualLine:
             return .notOnBar
         }
+    }
+
+    /// The bar index a digit chooses while the flip key (right ⌘ or right ⌥) is held on its own:
+    /// ⌘1 … ⌘9 (SPEC.md 4.11절). `nil` for any other key, a repeat, or another modifier with it.
+    public func readingChordIndex(_ event: KeyEvent) -> Int? {
+        guard tap.isFlipKeyHeld, !event.isRepeat, case .character(let c) = event.key,
+              let digit = c.wholeNumberValue, (1...9).contains(digit) else { return nil }
+        let flag: KeyEvent.Modifiers = settings.flipKey == .rightOption ? .option : .command
+        guard event.modifiers.intersection([.shift, .control, .option, .command]) == flag else { return nil }
+        return digit - 1
+    }
+
+    /// The flip key went down while a word is typed: the word's bar comes up numbered, whether it
+    /// had earned the HUD or not, so a digit chooses while the key is held (⌘3) and after a flip.
+    /// The text does not change; releasing the key alone still flips.
+    func revealChoices() {
+        guard !literal, var t = token, !t.marked.isEmpty, !t.choicesRevealed else { return }
+        t.choicesRevealed = true
+        token = t
+        if let request = alternativeHUD(t, pulse: false, isRepeat: false) { hud = request }
     }
 
     /// The keys a chosen reading confirms as Latin: all of them for E, the first `b` for M(b).

@@ -25,6 +25,9 @@ struct Token {
     /// The user kept the shown reading on the choice bar: an explicit choice, taught at the commit
     /// when the model would have committed another reading.
     var keptByChoice = false
+    /// The flip key was pressed while the word was typed: its bar is up and numbered until the word
+    /// ends, so the digits choose (SPEC.md 4.11절).
+    var choicesRevealed = false
     /// A one-shot language chosen with nothing to flip (SPEC.md §4.7 c): only readings in this
     /// language are allowed, and hysteresis runs inside it.
     var languageLock: ScriptLanguage?

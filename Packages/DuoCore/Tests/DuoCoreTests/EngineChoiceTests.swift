@@ -114,6 +114,113 @@ struct EngineChoiceTests {
         #expect(choice.readings.map(\.text) == ["층로", "cmd로"], "E is more than 10 nats behind")
     }
 
+    // MARK: The flip key held (⌘3)
+
+    static func isNumbered(_ h: EngineHarness) -> Bool {
+        guard let content = h.hud?.content else { return false }
+        return HUDPresentation(content, flipKey: h.engine.settings.flipKey).isNumbered
+    }
+
+    @Test func pressingTheFlipKeyBringsUpTheNumberedBarWithoutChangingTheWord() {
+        let h = EngineHarness()
+        h.detector.scores["dk"] = [.korean: -2000, .english: -9000]
+        h.type("dk")
+        #expect(h.hud?.isEligible == false, "E is 7 nats behind: the bar does not come up by itself")
+        h.modifier(down: true)
+        #expect(h.hud?.isEligible == true)
+        #expect(Self.isNumbered(h))
+        #expect(h.marked == "아")
+    }
+
+    @Test func aDigitWithTheFlipKeyHeldChoosesAndTheReleaseDoesNotFlip() {
+        let h = EngineHarness()
+        Self.typeCmdFh(h)
+        h.modifier(down: true)
+        let step = h.press(.character("2"), .command)
+        #expect(step.consumed, "⌘2 is aimed at the bar, never a shortcut")
+        #expect(h.marked == "cmd로")
+        #expect(h.engine.token?.locked == .mixed(latin: 3))
+        h.modifier(down: false)
+        #expect(h.marked == "cmd로", "the digit made a chord: no tap")
+        #expect(Self.isNumbered(h))
+    }
+
+    @Test func releasingTheFlipKeyAloneStillFlipsAndKeepsTheNumbers() {
+        let h = EngineHarness()
+        EngineFlipTests.scriptGo(h.detector)
+        h.type("go")
+        h.modifier(down: true)
+        h.modifier(down: false, after: 0.08)
+        #expect(h.marked == "go")
+        #expect(Self.isNumbered(h))
+    }
+
+    @Test func holdingTheFlipKeyPastTheTapWindowKeepsTheWordAndTheNumbers() {
+        let h = EngineHarness()
+        EngineFlipTests.scriptGo(h.detector)
+        h.type("go")
+        h.modifier(down: true)
+        h.modifier(down: false, after: 0.8)
+        #expect(h.marked == "해")
+        #expect(Self.isNumbered(h), "the bar stays numbered until the word ends")
+    }
+
+    @Test func aChordPastTheLastReadingDoesNothing() {
+        let h = EngineHarness()
+        EngineFlipTests.scriptGo(h.detector)
+        h.type("go")
+        h.modifier(down: true)
+        let step = h.press(.character("9"), .command)
+        #expect(step.consumed)
+        #expect(h.marked == "해")
+        #expect(h.text == "해")
+    }
+
+    @Test func leftCommandWithADigitIsAShortcut() {
+        let h = EngineHarness()
+        EngineFlipTests.scriptGo(h.detector)
+        h.type("go")
+        h.modifier(down: true, keyCode: FlipTapDetector.KeyCode.leftCommand,
+                   device: FlipTapDetector.Flags.leftCommandDevice)
+        #expect(!Self.isNumbered(h), "only the flip key brings up the numbers")
+        let step = h.press(.character("2"), .command)
+        #expect(!step.consumed, "the app gets ⌘2")
+        #expect(h.marked == nil, "the shortcut commits the word first")
+        #expect(h.text == "해")
+    }
+
+    @Test func aDigitWithShiftAndTheFlipKeyIsNotAChoice() {
+        let h = EngineHarness()
+        EngineFlipTests.scriptGo(h.detector)
+        h.type("go")
+        h.modifier(down: true)
+        #expect(h.engine.readingChordIndex(KeyEvent(.character("2"), modifiers: [.command, .shift])) == nil)
+        #expect(h.engine.readingChordIndex(KeyEvent(.character("2"), modifiers: .command)) == 1)
+    }
+
+    @Test func rightOptionAsTheFlipKeyChoosesWithOptionDigits() {
+        var settings = DuoSettings()
+        settings.flipKey = .rightOption
+        let h = EngineHarness(settings: settings)
+        Self.typeCmdFh(h)
+        h.modifier(down: true, keyCode: FlipTapDetector.KeyCode.rightOption, flag: FlipTapDetector.Flags.option,
+                   device: FlipTapDetector.Flags.rightOptionDevice)
+        #expect(Self.isNumbered(h))
+        let step = h.press(.character("3"), .option)
+        #expect(step.consumed)
+        #expect(h.marked == "cmdfh")
+    }
+
+    @Test func theFlipKeyAfterACommitRevealsNothing() {
+        let h = EngineHarness()
+        EngineFlipTests.scriptGo(h.detector)
+        h.type("go ")
+        h.modifier(down: true)
+        #expect(h.hud == nil)
+        let step = h.press(.character("1"), .command)
+        #expect(!step.consumed, "no word is being typed: ⌘1 is the app's")
+    }
+
     @Test func aDigitChoosesAReadingAndCommittingTeachesTheLatinWord() throws {
         let h = EngineHarness()
         Self.typeCmdFh(h)

@@ -292,6 +292,15 @@ final class EngineHarness {
     @discardableResult
     func flip() -> [RecordingClient.Call] { tap() }
 
+    /// Presses (`down`) or releases one modifier, `dt` seconds after the last event: half a tap.
+    func modifier(down: Bool, keyCode: UInt16 = FlipTapDetector.KeyCode.rightCommand,
+                  flag: UInt = FlipTapDetector.Flags.command,
+                  device: UInt = FlipTapDetector.Flags.rightCommandDevice, after dt: TimeInterval = 0.05) {
+        now += dt
+        engine.handleModifier(ModifierEvent(keyCode: keyCode, flags: down ? flag | device : 0, timestamp: now),
+                              client: client)
+    }
+
     func commit(_ reason: CommitReason) -> [RecordingClient.Call] {
         _ = client.take()
         engine.commit(reason, client: client)

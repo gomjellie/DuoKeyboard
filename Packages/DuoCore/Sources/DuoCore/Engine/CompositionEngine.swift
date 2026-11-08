@@ -118,6 +118,12 @@ public final class CompositionEngine {
 
     /// A keyDown. Returns `true` if consumed (`handle(_:client:)` return value).
     public func handle(_ event: KeyEvent, client: any TextClient) -> Bool {
+        if let index = readingChordIndex(event), let shown = hud, case .alternative = shown.content {
+            // A digit with the flip key held is aimed at the bar, never a shortcut: one past the
+            // last reading does nothing.
+            selectReading(at: index, on: shown, client: client)
+            return true
+        }
         tap.noteKeyDown()
         hud = nil
         capsLockOn = event.modifiers.contains(.capsLock)
@@ -350,6 +356,7 @@ public final class CompositionEngine {
             resyncIfNeeded(at: event.timestamp, client: client)
             commitFromModifier(client: client)
         }
+        let wasHeld = tap.isFlipKeyHeld
         if tap.handle(event) {
             flip(client: client, at: event.timestamp)
             // A flip that changed nothing in a Bilingual line (literal text, a word with no other
@@ -357,6 +364,8 @@ public final class CompositionEngine {
             // every key (`handle`). Otherwise it vanishes and VoiceOver hears "back to direct
             // input". Only after a flip: a bare press must not announce the line again.
             if bilingualLine, hud == nil { hud = Self.bilingualBadge }
+        } else if !wasHeld, tap.isFlipKeyHeld {
+            revealChoices()
         }
     }
 

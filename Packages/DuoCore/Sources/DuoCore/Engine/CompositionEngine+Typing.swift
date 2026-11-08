@@ -227,10 +227,10 @@ extension CompositionEngine {
     /// §4.3.7, §4.11: the choice bar while the token is marked: the word's readings in the order
     /// the flip key walks them.
     ///
-    /// It earns the HUD on any key but an autorepeat when `alwaysShowChoices` is on, or when the
-    /// user chose the reading (a flip or the bar), or when a listed reading is within
-    /// ``Margins/hudCandidates`` of the shown one (P ≥ 5 %) and the token has at least two keys
-    /// (or is one of the 1-key collision words).
+    /// It earns the HUD on any key but an autorepeat when `alwaysShowChoices` is on, when the user
+    /// chose the reading (a flip or the bar) or pressed the flip key, or when a listed reading is
+    /// within ``Margins/hudCandidates`` of the shown one (P ≥ 5 %) and the token has at least two
+    /// keys (or is one of the 1-key collision words).
     func alternativeHUD(_ t: Token, pulse: Bool, isRepeat: Bool) -> HUDRequest? {
         guard settings.showHints, !t.marked.isEmpty, let prefix = t.scores,
               let bar = choiceList(t, prefix) else { return nil }
@@ -247,7 +247,7 @@ extension CompositionEngine {
         }
         let likely = (closeness(bar.prefix, onlyMixed: false) || closeness(bar.final, onlyMixed: true))
             && (t.count >= 2 || Self.collisionKeys.contains(t.raw.lowercased()))
-        let eligible = !isRepeat && (settings.alwaysShowChoices || t.locked != nil || likely)
+        let eligible = !isRepeat && (settings.alwaysShowChoices || t.locked != nil || t.choicesRevealed || likely)
         return HUDRequest(content: .alternative(bar.choice, eligible: eligible), anchor: .markedText, pulse: pulse)
     }
 

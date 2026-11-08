@@ -24,6 +24,8 @@ public struct FlipTapDetector: Sendable, Hashable {
     public var tapWindow: TimeInterval
 
     private var previousFlags: UInt = 0
+    /// Right ⌘ / right ⌥ is down with no other held modifier (a digit now chooses a reading).
+    public private(set) var isFlipKeyHeld = false
     private var armedAt: TimeInterval?
     private var shiftPressedAt: TimeInterval?
     private var firstShiftTapReleasedAt: TimeInterval?
@@ -74,8 +76,10 @@ public struct FlipTapDetector: Sendable, Hashable {
         guard event.keyCode != 0 else { return false }
         let flags = event.flags & Flags.deviceIndependentMask
         defer { previousFlags = flags }
+        if flipKey != .rightCommand, flipKey != .rightOption { isFlipKeyHeld = false }
         guard event.pressedMouseButtons == 0 else {
             disarm()
+            isFlipKeyHeld = false
             return false
         }
         switch flipKey {
@@ -104,6 +108,7 @@ public struct FlipTapDetector: Sendable, Hashable {
     public mutating func reset() {
         disarm()
         previousFlags = 0
+        isFlipKeyHeld = false
     }
 
     /// Whether a press is armed and waiting for its release (for tests and diagnostics).
@@ -127,15 +132,18 @@ public struct FlipTapDetector: Sendable, Hashable {
         if event.keyCode == keyCode, !wasSet, isSet {
             let othersHeld = flags & Flags.held & ~flag != 0
             armedAt = othersHeld || event.flags & otherSide != 0 ? nil : event.timestamp
+            isFlipKeyHeld = armedAt != nil
             return false
         }
         if event.keyCode == keyCode, wasSet, !isSet {
+            isFlipKeyHeld = false
             defer { armedAt = nil }
             guard let start = armedAt, event.flags & otherSide == 0, flags & Flags.held == 0 else { return false }
             return withinWindow(event.timestamp - start)
         }
         // Any other modifier change (left ⌘ joining, ⇧ pressed during the hold, …).
         armedAt = nil
+        isFlipKeyHeld = false
         return false
     }
 

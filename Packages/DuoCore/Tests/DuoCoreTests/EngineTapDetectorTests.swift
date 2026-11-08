@@ -34,6 +34,39 @@ struct EngineTapDetectorTests {
         #expect(fired2 == fires)
     }
 
+    @Test func theFlipKeyIsHeldFromPressToReleasePastTheTapWindow() {
+        var d = FlipTapDetector(flipKey: .rightCommand)
+        _ = d.handle(ModifierEvent(keyCode: K.rightCommand, flags: Self.rcmdDown, timestamp: 10))
+        #expect(d.isFlipKeyHeld)
+        d.noteKeyDown()
+        #expect(d.isFlipKeyHeld, "a digit while held (⌘3) ends the tap, not the hold")
+        _ = d.handle(ModifierEvent(keyCode: K.rightCommand, flags: 0, timestamp: 12))
+        #expect(!d.isFlipKeyHeld)
+    }
+
+    @Test func anotherModifierEndsTheHold() {
+        var d = FlipTapDetector(flipKey: .rightCommand)
+        _ = d.handle(ModifierEvent(keyCode: K.rightCommand, flags: Self.rcmdDown, timestamp: 10))
+        _ = d.handle(ModifierEvent(keyCode: K.leftShift, flags: Self.rcmdDown | F.shift, timestamp: 10.1))
+        #expect(!d.isFlipKeyHeld, "⌘⇧3 is not a choice")
+    }
+
+    @Test func leftCommandIsNotTheFlipKeyHeld() {
+        var d = FlipTapDetector(flipKey: .rightCommand)
+        _ = d.handle(ModifierEvent(keyCode: K.leftCommand, flags: Self.lcmdDown, timestamp: 10))
+        #expect(!d.isFlipKeyHeld)
+        _ = d.handle(ModifierEvent(keyCode: K.rightCommand, flags: Self.lcmdDown | F.rightCommandDevice, timestamp: 10.1))
+        #expect(!d.isFlipKeyHeld, "right ⌘ joining a held left ⌘ is a shortcut chord")
+    }
+
+    @Test(arguments: [FlipKey.doubleShift, .capsLock, .shiftSpace])
+    func flipKeysThatAreNotHeldNeverReportAHold(_ key: FlipKey) {
+        var d = FlipTapDetector(flipKey: key)
+        _ = d.handle(ModifierEvent(keyCode: K.rightCommand, flags: Self.rcmdDown, timestamp: 10))
+        _ = d.handle(ModifierEvent(keyCode: K.leftShift, flags: F.shift, timestamp: 10.1))
+        #expect(!d.isFlipKeyHeld)
+    }
+
     @Test func injectedEventsWithoutDeviceBitsStillFire() {
         // Critique V3: synthesised flagsChanged may carry 0x100000 with no 0x10.
         var d = FlipTapDetector(flipKey: .rightCommand)
