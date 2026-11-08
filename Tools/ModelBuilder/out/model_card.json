@@ -3,205 +3,205 @@
  "sections": {
   "meta": {
    "offset": 1616,
-   "bytes": 149601,
+   "bytes": 149620,
    "elemSize": 1,
-   "count": 149601
+   "count": 149620
   },
   "ko.1.key": {
-   "offset": 151224,
+   "offset": 151240,
    "bytes": 144,
    "elemSize": 4,
    "count": 36
   },
   "ko.1.lp": {
-   "offset": 151368,
+   "offset": 151384,
    "bytes": 36,
    "elemSize": 1,
    "count": 36
   },
   "ko.1.bow": {
-   "offset": 151408,
+   "offset": 151424,
    "bytes": 36,
    "elemSize": 1,
    "count": 36
   },
   "ko.2.key": {
-   "offset": 151448,
+   "offset": 151464,
    "bytes": 3432,
    "elemSize": 4,
    "count": 858
   },
   "ko.2.lp": {
-   "offset": 154880,
+   "offset": 154896,
    "bytes": 858,
    "elemSize": 1,
    "count": 858
   },
   "ko.2.bow": {
-   "offset": 155744,
+   "offset": 155760,
    "bytes": 858,
    "elemSize": 1,
    "count": 858
   },
   "ko.3.key": {
-   "offset": 156608,
+   "offset": 156624,
    "bytes": 45672,
    "elemSize": 4,
    "count": 11418
   },
   "ko.3.lp": {
-   "offset": 202280,
+   "offset": 202296,
    "bytes": 11418,
    "elemSize": 1,
    "count": 11418
   },
   "ko.3.bow": {
-   "offset": 213704,
+   "offset": 213720,
    "bytes": 11418,
    "elemSize": 1,
    "count": 11418
   },
   "ko.4.key": {
-   "offset": 225128,
+   "offset": 225144,
    "bytes": 250080,
    "elemSize": 4,
    "count": 62520
   },
   "ko.4.lp": {
-   "offset": 475208,
+   "offset": 475224,
    "bytes": 62520,
    "elemSize": 1,
    "count": 62520
   },
   "ko.4.bow": {
-   "offset": 537728,
+   "offset": 537744,
    "bytes": 62520,
    "elemSize": 1,
    "count": 62520
   },
   "ko.5.key": {
-   "offset": 600248,
+   "offset": 600264,
    "bytes": 790388,
    "elemSize": 4,
    "count": 197597
   },
   "ko.5.lp": {
-   "offset": 1390640,
+   "offset": 1390656,
    "bytes": 197597,
    "elemSize": 1,
    "count": 197597
   },
   "en.1.key": {
-   "offset": 1588240,
+   "offset": 1588256,
    "bytes": 144,
    "elemSize": 4,
    "count": 36
   },
   "en.1.lp": {
-   "offset": 1588384,
+   "offset": 1588400,
    "bytes": 36,
    "elemSize": 1,
    "count": 36
   },
   "en.1.bow": {
-   "offset": 1588424,
+   "offset": 1588440,
    "bytes": 36,
    "elemSize": 1,
    "count": 36
   },
   "en.2.key": {
-   "offset": 1588464,
+   "offset": 1588480,
    "bytes": 3116,
    "elemSize": 4,
    "count": 779
   },
   "en.2.lp": {
-   "offset": 1591584,
+   "offset": 1591600,
    "bytes": 779,
    "elemSize": 1,
    "count": 779
   },
   "en.2.bow": {
-   "offset": 1592368,
+   "offset": 1592384,
    "bytes": 779,
    "elemSize": 1,
    "count": 779
   },
   "en.3.key": {
-   "offset": 1593152,
+   "offset": 1593168,
    "bytes": 67656,
    "elemSize": 4,
    "count": 16914
   },
   "en.3.lp": {
-   "offset": 1660808,
+   "offset": 1660824,
    "bytes": 16914,
    "elemSize": 1,
    "count": 16914
   },
   "en.3.bow": {
-   "offset": 1677728,
+   "offset": 1677744,
    "bytes": 16914,
    "elemSize": 1,
    "count": 16914
   },
   "en.4.key": {
-   "offset": 1694648,
+   "offset": 1694664,
    "bytes": 473084,
    "elemSize": 4,
    "count": 118271
   },
   "en.4.lp": {
-   "offset": 2167736,
+   "offset": 2167752,
    "bytes": 118271,
    "elemSize": 1,
    "count": 118271
   },
   "en.4.bow": {
-   "offset": 2286008,
+   "offset": 2286024,
    "bytes": 118271,
    "elemSize": 1,
    "count": 118271
   },
   "en.5.key": {
-   "offset": 2404280,
+   "offset": 2404296,
    "bytes": 1430872,
    "elemSize": 4,
    "count": 357718
   },
   "en.5.lp": {
-   "offset": 3835152,
+   "offset": 3835168,
    "bytes": 357718,
    "elemSize": 1,
    "count": 357718
   },
   "lexko.key": {
-   "offset": 4192872,
+   "offset": 4192888,
    "bytes": 800000,
    "elemSize": 8,
    "count": 100000
   },
   "lexko.val": {
-   "offset": 4992872,
+   "offset": 4992888,
    "bytes": 100000,
    "elemSize": 1,
    "count": 100000
   },
   "lexen.key": {
-   "offset": 5092872,
+   "offset": 5092888,
    "bytes": 480000,
    "elemSize": 8,
    "count": 60000
   },
   "lexen.val": {
-   "offset": 5572872,
+   "offset": 5572888,
    "bytes": 60000,
    "elemSize": 1,
    "count": 60000
   }
  },
- "contentHash": "aa722069c1e3076e",
- "fileBytes": 5632872,
+ "contentHash": "5c028cbea247bcc5",
+ "fileBytes": 5632888,
  "params": {
   "NG_KO": -3000,
   "LEX_KO": -300,
@@ -217,6 +217,7 @@
   "CASE_EXACT": -300,
   "MIX": -7000,
   "MIX_MIN_LATIN": 2,
+  "MIX_INITIAL": 6000,
   "MIX_GENERIC": -12000,
   "TERM_DIGIT_EN": 2000,
   "TERM_HYPHEN_EN": 5000,

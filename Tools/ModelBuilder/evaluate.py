@@ -146,7 +146,7 @@ def eval_words(rows, F, p, ctx="START"):
     tok = defaultdict(lambda: [0, 0]); typ = defaultdict(lambda: [0, 0])
     errs = []
     for k, g, n in rows:
-        h, _ = D.best(D.hyp_scores(F[k], p, ctx, True))
+        h, _ = D.best(D.automatic(k, ctx, D.hyp_scores(F[k], p, ctx, True)))
         ok = D.hyp_key(h) == g
         cls = g[0]
         tok[cls][0] += n * ok; tok[cls][1] += n
@@ -176,7 +176,8 @@ def decode(sent, F, p, mode="greedy", gold_ctx=False):
             for tok in seg:
                 new = {}
                 for c, (sc, path) in dp.items():
-                    for h, s_ in D.hyp_scores(F[tok[1]], p, _ctx_for(tok, c), True, None, tok[4]):
+                    c1 = _ctx_for(tok, c)
+                    for h, s_ in D.automatic(tok[1], c1, D.hyp_scores(F[tok[1]], p, c1, True, None, tok[4])):
                         nc = D.next_ctx(h); v = sc + s_
                         if nc not in new or v > new[nc][0]:
                             new[nc] = (v, path + [h])
@@ -190,15 +191,15 @@ def decode(sent, F, p, mode="greedy", gold_ctx=False):
                 if mode == "lookback" and prev is not None:
                     ptok, pctx, _ = prev
                     best_v = None
-                    for h1, s1 in D.hyp_scores(F[ptok[1]], p, pctx, True, None, ptok[4]):
+                    for h1, s1 in D.automatic(ptok[1], pctx, D.hyp_scores(F[ptok[1]], p, pctx, True, None, ptok[4])):
                         c2 = _ctx_for(tok, D.next_ctx(h1))
-                        h2, s2 = D.best(D.hyp_scores(F[tok[1]], p, c2, True, None, tok[4]))
+                        h2, s2 = D.best(D.automatic(tok[1], c2, D.hyp_scores(F[tok[1]], p, c2, True, None, tok[4])))
                         if best_v is None or s1 + s2 > best_v:
                             best_v, bh1, bh2, bc2 = s1 + s2, h1, h2, c2
                     out[-1] = (ptok[2], bh1)
                     h, c = bh2, bc2
                 else:
-                    h, _ = D.best(D.hyp_scores(F[tok[1]], p, c, True, None, tok[4]))
+                    h, _ = D.best(D.automatic(tok[1], c, D.hyp_scores(F[tok[1]], p, c, True, None, tok[4])))
                 out.append((tok[2], h))
                 prev = (tok, c, h)
                 ctx = D.next_ctx(hyp_from_key(tok[2]) if gold_ctx else h)

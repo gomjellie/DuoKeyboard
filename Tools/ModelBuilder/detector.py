@@ -33,7 +33,9 @@ class Params:
     CASE_MIXED: int = -6000
     CASE_EXACT: int = -300       # exact-case match in the case lexicon (iOS, GitHub, API)
     MIX: int = -1500             # Latin word + attached Korean suffix
-    MIX_MIN_LATIN: int = 2       # Latin part length >= 2, or a single uppercase letter (any length after a digit)
+    MIX_MIN_LATIN: int = 2       # Latin part length >= 2, or a single uppercase letter (any length after a digit);
+                                 # a single lowercase letter only with a table suffix (m에, h의)
+    MIX_INITIAL: int = 0         # single uppercase letter + table suffix outside EN context (A씨, B양, C가)
     MIX_GENERIC: int = -6000     # Latin word + any Korean continuation scored by the Korean LM
     TERM_DIGIT_EN: int = 0       # token terminated by a digit ("Q1", "iOS17")
     TERM_HYPHEN_EN: int = 0      # token terminated by '-' ("co-founder", "e-mail")
@@ -307,8 +309,12 @@ def hyp_scores(f: Feats, p: Params, ctx: str, final: bool = True, user: dict | N
     out.append((("E",), en))
     for (b, lm, lex, cp, suf, gen, r2, s2, short_ok) in f.mix:
         if not short_ok and ctx != "NUM":
-            continue
+            if suf is None:
+                continue
+            gen = None  # a single lowercase letter takes table suffixes only
         a = suf + p.MIX if suf is not None else None
+        if a is not None and b == 1 and cp != CASE_LOWER and ctx != "EN":
+            a += p.MIX_INITIAL
         g = gen + p.MIX_GENERIC if gen is not None else None
         tail = a if g is None or (a is not None and a >= g) else g
         s = word_score(lm, lex, p.NG_EN, p.LEX_EN) + case_cost(p, cp) + tail \
@@ -317,6 +323,15 @@ def hyp_scores(f: Feats, p: Params, ctx: str, final: bool = True, user: dict | N
     if user:
         out = [(h, s + user_bonus(p, user.get(hyp_key(h), 0))) for h, s in out]
     return out
+
+
+def automatic(raw: str, ctx: str, scored: list[tuple[tuple, int]]) -> list[tuple[tuple, int]]:
+    """The readings the engine picks by itself (SPEC.md 4.3절 4): all but one lowercase Latin letter +
+    a suffix outside NUM (a양), which only the flip key or the choice bar picks. As a reading of its
+    own it mostly mistakes English words (ask, ago) and Korean initials (ㄱ씨는)."""
+    if ctx == "NUM" or not raw[:1].islower():
+        return scored
+    return [(h, s) for h, s in scored if h != ("M", 1)]
 
 
 def best(scored: list[tuple[tuple, int]]) -> tuple[tuple, int]:
