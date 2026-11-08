@@ -96,6 +96,10 @@ CC BY-SA 4.0)를 썼어요. 데이터는 `Tools/data/raw/community/`에만 두�
   - 라틴 + 한글 섞임: cg, sm, ebs, gps 같은 소문자 줄임말 + 한글
   - ㅡㅡ나 ㅋㅋㅋ 뒤에 음절이 바로 붙은 단어 일부 (ㅡㅡ아 → mmdk)
   - 홀로 쓴 자모 한 개는 한국어 문맥에서 ㅡ ㅉ ㅇ ㄱ ㅈ ㅂ ㅣ만 자모로 읽음. ㄷ ㅅ ㅗ ㅁ ㄴ은 라틴 글자로 읽음
+  - 치는 도중의 표시(접두 모드)는 어휘 사전을 쓰지 않음. 그래서 ai가는 Space 전까지 먀가로, 낱자모 m은 m으로
+    보이다가 확정할 때 바뀌고 후보 막대가 뜸. wrkxek(ㅈ같다)과 wfgkrh(ㅈㄹ하고)는 둘째, 셋째 키에서 잠깐 영어로 보임
+- **다시 재는 방법**: `python3 -I Tools/scripts/community_corpus.py prep`으로 두 말뭉치를 만들고
+  `Tools/scripts/corpus-typing.sh <말뭉치> <결과.tsv> --base <이전 결과.tsv>`로 침 (detection.md 11절)
 
 ## 후보 막대를 늘 띄우기 (2026-11-08)
 
