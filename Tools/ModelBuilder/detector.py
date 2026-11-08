@@ -37,6 +37,7 @@ class Params:
                                  # a single lowercase letter only with a table suffix (m에, h의)
     MIX_INITIAL: int = 0         # single uppercase letter + table suffix outside EN context (A씨, B양, C가)
     MIX_GENERIC: int = -6000     # Latin word + any Korean continuation scored by the Korean LM
+    SPLIT: int = -2000           # each extra word when K reads as chat words typed without a space (ㅋㅋ + ㅅㅂ)
     TERM_DIGIT_EN: int = 0       # token terminated by a digit ("Q1", "iOS17")
     TERM_HYPHEN_EN: int = 0      # token terminated by '-' ("co-founder", "e-mail")
     # context prior ln P(lang | previous token language)
@@ -240,6 +241,7 @@ class Feats:
     en_case: int
     mix: list  # (b, en_lm, en_lex, en_case, suf, gen, roll, stray, short_ok)
     en_unit: bool = False
+    ko_split: int | None = None  # final mode: `split_reading`
 
 
 KEY_IS_CONSONANT = set("qwertasdfgzxcvQWERT")
@@ -321,6 +323,34 @@ def chat_runs(m: DetectorModel, text: str) -> tuple[int, bool]:
     return exempt, last
 
 
+def split_reading(m: DetectorModel, p: Params, kno: str, text: str) -> int | None:
+    """K read as chat words typed without a space: the syllable runs and the jamo pieces of `jamo_pieces`
+    each score as a word, plus SPLIT per extra word (ㅋㅋㅋㅅㅂ = ㅋㅋㅋ + ㅅㅂ, 대박ㅋㅋ = 대박 + ㅋㅋ,
+    ㅁㅊㅋㅋㅋ = ㅁㅊ + ㅋㅋㅋ). Every jamo piece must be free or, as in `chat_runs`, a lexicon word of
+    >= 2 jamo (a single ㅠ or ㅣ would read dll, ejb as 이ㅣ, 더ㅠ). None for one word, or when jamo come
+    before a syllable (ㄹㅇ로 and mm를 alike: a Latin abbreviation with a suffix is as likely)."""
+    offs = [0]
+    for ch in text:
+        offs.append(offs[-1] + len(hangul_to_keys(ch)))
+    segs, i = [], 0
+    for a, b, free in jamo_pieces(text):
+        if not free and (b - a < 2 or m.lex_ko.get(kno[offs[a]:offs[b]]) is None):
+            return None
+        if i < a:
+            segs.append((i, a))
+        segs.append((a, b))
+        i = b
+    if i < len(text):
+        segs.append((i, len(text)))
+    if len(segs) < 2 or (_is_jamo(text[0]) and not all(_is_jamo(text[a]) for a, _ in segs)):
+        return None
+    total = p.SPLIT * (len(segs) - 1)
+    for a, b in segs:
+        keys = kno[offs[a]:offs[b]]
+        total += word_score(m.lm_ko.score(keys, True), m.lex_ko.get(keys), p.NG_KO, p.LEX_KO)
+    return total
+
+
 def features(m: DetectorModel, raw: str, p: Params, final: bool = True) -> Feats:
     kno = korean_normalize(raw)
     low = raw.lower()
@@ -359,7 +389,8 @@ def features(m: DetectorModel, raw: str, p: Params, final: bool = True) -> Feats
                 continue
             r2, s2 = shift_counts(raw[b:])
             mix.append((b, F[b], en_lex_l, case_pattern(lat, m.case_lex), suf, gen, r2, s2, short_ok))
-    return Feats(raw, ko_lm, ko_lex, ko_orph, nr, ns, en_lm, en_lex, en_case, mix, low in m.num_units)
+    ko_split = split_reading(m, p, kno, txt) if final and "'" not in raw else None
+    return Feats(raw, ko_lm, ko_lex, ko_orph, nr, ns, en_lm, en_lex, en_case, mix, low in m.num_units, ko_split)
 
 
 def word_score(lm: int, lex: int | None, ng_off: int, lex_off: int) -> int:
@@ -377,6 +408,8 @@ def hyp_scores(f: Feats, p: Params, ctx: str, final: bool = True, user: dict | N
     out = []
     if final:
         ko = word_score(f.ko_lm + p.ORPHAN * f.ko_orph, f.ko_lex, p.NG_KO, p.LEX_KO)
+        if f.ko_split is not None and f.ko_split > ko:
+            ko = f.ko_split
         en = word_score(f.en_lm, f.en_lex, p.NG_EN, p.LEX_EN)
         if term == "D":
             en += p.TERM_DIGIT_EN

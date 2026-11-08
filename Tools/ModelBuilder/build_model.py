@@ -224,6 +224,7 @@ AUTOMATON_CASES = [
 
 def vec_features(f: D.Feats):
     return {"koLm": f.ko_lm, "koLex": f.ko_lex, "koOrphans": f.ko_orph, "koRollover": f.ko_roll, "koStray": f.ko_stray,
+            "koSplit": f.ko_split,
             "enLm": f.en_lm, "enLex": f.en_lex, "enCase": D.CASE_NAMES[f.en_case], "enNumUnit": f.en_unit,
             "mix": [{"b": b, "enLm": lm, "enLex": lex, "enCase": D.CASE_NAMES[cp], "suffix": suf, "generic": gen,
                      "rollover": r2, "stray": s2, "shortOk": ok} for (b, lm, lex, cp, suf, gen, r2, s2, ok) in f.mix]}
@@ -278,7 +279,13 @@ def make_vectors(model: D.DetectorModel, p: D.Params, meta: dict, seed: int = 20
                 # whose K reading has such a run
                 "dddd", "rrrr", "cccc", "ttt", "vv", "dd", "rdd", "zzzrdd", "bnn", "nbnb", "zrzrzrrzz", "zRzRz", "ztzrz", "zrz", "zr",
                 "rzrz", "dhfz", "rntzrnt", "rntz", "dkssudg", "fizz", "fuzz", "jazz", "www", "xxx", "css", "ssh",
-                "ssd", "cctv", "gcc", "rgb", "sdk", "tcp", "dvd", "csv", "tree", "sun", "club"])
+                "ssd", "cctv", "gcc", "rgb", "sdk", "tcp", "dvd", "csv", "tree", "sun", "club",
+                # chat words typed without a space (split reading), and tokens it does not apply to
+                "zzzztq", "zzzfd", "zdz", "eoqkrzz", "dhdzzz", "aczzzz", "zzzrnt", "eofh", "fdfh", "mmfmf",
+                "zzzsj", "gkrh'zz", "tns", "fps",
+                # a single non-free jamo is not a word of the split reading (English words, and chat that
+                # pays the orphan charge instead)
+                "dll", "ejb", "enb", "whgdkb", "ggz"])
     with open(os.path.join(md.DATA, "mixed_sentences.txt"), encoding="utf-8") as fh:
         for line in fh:
             if line.startswith("#"):
