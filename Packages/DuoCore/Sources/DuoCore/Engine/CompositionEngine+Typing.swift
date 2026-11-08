@@ -292,7 +292,9 @@ extension CompositionEngine {
 
     // MARK: Characters, literal triggers (§4.5, §4.6)
 
-    func handleCharacter(_ ch: Character, event: KeyEvent, colonAfterEnglish: Bool,
+    /// - Parameter slashStartsLiteral: the previous key was the `:` after an English word (`https:/`)
+    ///   or a `~` at a word start (`~/`).
+    func handleCharacter(_ ch: Character, event: KeyEvent, slashStartsLiteral: Bool,
                          client: any TextClient) -> Bool {
         switch ch {
         case "'":
@@ -311,9 +313,15 @@ extension CompositionEngine {
                 beginLiteral()
                 return false
             }
-        case "/", "~", "\\", ":":
+        case "~" where token == nil && context.atWordStart:
+            // Only `~/` (a home path) is literal: the `/` starts L. `~` before anything else is
+            // punctuation (~하자, ~~강조~~).
+            _ = passThrough(event, terminator: .punctuation, client: client)
+            context.tildeAtWordStart = true
+            return false
+        case "/", "\\", ":":
             if token == nil,
-               context.atWordStart || (ch == "/" && (colonAfterEnglish || context.dotRun > 0)) {
+               context.atWordStart || (ch == "/" && (slashStartsLiteral || context.dotRun > 0)) {
                 beginLiteral()
                 return passThrough(event, terminator: .punctuation, client: client)
             }

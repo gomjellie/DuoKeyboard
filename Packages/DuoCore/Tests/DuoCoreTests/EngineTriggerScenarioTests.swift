@@ -105,6 +105,21 @@ struct EngineTriggerScenarioTests {
         all(.korean, "dkssud@example.com ", "dkssud@example.com "),
     ].flatMap { $0 }
 
+    /// Only `~/` is a path; `~` before anything else is punctuation.
+    nonisolated static let tilde: [Row] = [
+        all(.start, "~gkwk ", "~하자 "),
+        all(.english, "~gkwk ", "~하자 "),
+        all(.korean, "~sk ", "~나 "),
+        all(.korean, "~~rkdwh~~ ", "~~강조~~ "),
+        all(.korean, "\"~dmf\" ", "\"~을\" "),
+        all(.korean, "~5cjs ", "~5천 "),
+        all(.korean, "10~20ro ", "10~20개 "),
+        all(.korean, "~test ", "~test "),
+        all(.start, "~/Library ", "~/Library "),
+        all(.korean, "cd ~/Projects/duo ", "cd ~/Projects/duo "),
+        all(.start, "ls ~/.ssh ", "ls ~/.ssh "),
+    ].flatMap { $0 }
+
     static func run(_ row: Row) -> (EngineHarness, String) {
         let h = EngineHarness(bundleIdentifier: row.app.rawValue, scorer: RealModel.detector)
         h.type(row.prime.rawValue)
@@ -133,6 +148,13 @@ struct EngineTriggerScenarioTests {
 
     @Test(arguments: at)
     func atRow(_ row: Row) {
+        let (h, produced) = Self.run(row)
+        #expect(produced == row.expected)
+        #expect(!h.engine.literal)
+    }
+
+    @Test(arguments: tilde)
+    func tildeRow(_ row: Row) {
         let (h, produced) = Self.run(row)
         #expect(produced == row.expected)
         #expect(!h.engine.literal)

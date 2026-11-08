@@ -196,6 +196,8 @@ struct ContextTracker {
     var dotAfterEnglishToken = false
     /// The previous key was the `:` that ended an English token (https:/).
     var colonAfterEnglishToken = false
+    /// The previous key was a `~` typed at word start (`~/`).
+    var tildeAtWordStart = false
 
     /// SPEC.md §4.2.
     var contextForNewToken: LanguageContext {
@@ -228,6 +230,7 @@ struct ContextTracker {
         dotRun = 0
         dotAfterEnglishToken = false
         colonAfterEnglishToken = false
+        tildeAtWordStart = false
     }
 
     /// Effect of a key the app handles itself (after any commit), SPEC.md §4.1/§4.2.

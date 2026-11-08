@@ -138,9 +138,10 @@ public final class CompositionEngine {
         let mods = event.modifiers
         // One-key look-behinds for the literal triggers (SPEC.md §4.6).
         let dotAfterEnglish = context.dotAfterEnglishToken
-        let colonAfterEnglish = context.colonAfterEnglishToken
+        let slashStartsLiteral = context.colonAfterEnglishToken || context.tildeAtWordStart
         context.dotAfterEnglishToken = false
         context.colonAfterEnglishToken = false
+        context.tildeAtWordStart = false
 
         if isShiftSpaceFlip(event), !literal {
             // The flip does its own marked-text check. Autorepeat must not flip back and forth with
@@ -200,7 +201,7 @@ public final class CompositionEngine {
                                    client: client)
             }
             if literal { return passThrough(event, terminator: .punctuation, client: client) }
-            return handleCharacter(ch, event: event, colonAfterEnglish: colonAfterEnglish, client: client)
+            return handleCharacter(ch, event: event, slashStartsLiteral: slashStartsLiteral, client: client)
 
         case .space:
             endLiteral()

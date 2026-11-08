@@ -285,6 +285,40 @@ struct EngineBoundaryTests {
         #expect(h.text == "www.example.com ")
     }
 
+    @Test func tildeBeforeAWordIsPunctuation() {
+        // ~하자, ~~강조~~: only `~/` is a path.
+        let h = EngineHarness()
+        h.detector.korean("gkwk")
+        h.detector.korean("rkdwh")
+        let tilde = h.press(.character("~"), .shift)
+        #expect(!tilde.consumed)
+        #expect(tilde.calls.isEmpty)
+        #expect(!h.engine.literal)
+        h.type("gkwk ~~rkdwh~~ ")
+        #expect(h.text == "~하자 ~~강조~~ ")
+    }
+
+    @Test func tildeSlashIsAHomePath() {
+        let h = EngineHarness()
+        h.detector.fallback = { raw in [.korean: 0, .english: -9000 - raw.count] }   // would read Korean
+        let tilde = h.press(.character("~"), .shift)
+        #expect(!h.engine.literal)
+        let slash = h.press(.character("/"))
+        #expect(h.engine.literal)
+        let rest = h.type("Library ")
+        #expect(([tilde, slash] + rest).allSatisfy { !$0.consumed && $0.calls.isEmpty })
+        #expect(h.text == "~/Library ")
+    }
+
+    @Test func aSlashAfterATildeInsideAWordIsNotAPath() {
+        let h = EngineHarness()
+        h.detector.korean("rk")
+        h.detector.korean("sk")
+        h.type("rk~/sk ")
+        #expect(h.text == "가~/나 ")
+        #expect(!h.engine.literal)
+    }
+
     @Test func hashIsNotLiteral() {
         let h = EngineHarness()
         h.detector.korean("aktwlq")
@@ -312,7 +346,7 @@ struct EngineBoundaryTests {
 
     // MARK: Where L ends besides whitespace
 
-    @Test(arguments: ["/", "~", ":"])
+    @Test(arguments: ["/", ":"])
     func backspacingOverTheTriggerEndsLiteral(_ trigger: String) {
         // Slack `/` menu: the trigger is typed, deleted, and Korean follows.
         let h = EngineHarness()
@@ -323,6 +357,17 @@ struct EngineBoundaryTests {
         #expect(!h.engine.literal)
         h.type("dkssud ")
         #expect(h.text == "안녕 ")
+    }
+
+    @Test func backspacingOverTheSlashOfAHomePathEndsLiteral() {
+        let h = EngineHarness()
+        h.detector.korean("dkssud")
+        h.type("~/")
+        #expect(h.engine.literal)
+        h.press(.backspace)
+        #expect(!h.engine.literal, "`~` alone is not a trigger")
+        h.type("dkssud ")
+        #expect(h.text == "~안녕 ")
     }
 
     @Test func backspaceInsideTheLiteralTextKeepsLiteral() {
