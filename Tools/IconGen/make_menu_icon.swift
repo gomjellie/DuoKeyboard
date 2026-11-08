@@ -1,5 +1,5 @@
 // Renders the input-source icon as a TIFF in Apple's format (ui-design 4.4절): a full-bleed 16 pt
-// rounded tile with "가A" on it; one 16×16 px rep at 72 dpi and one 32×32 px rep at 144 dpi,
+// rounded tile with "한A" on it; one 16×16 px rep at 72 dpi and one 32×32 px rep at 144 dpi,
 // combined with `tiffutil -cathidpicheck` like KoreanIM's 2SetKorean.tiff.
 //
 // Not a template (Info.plist: TISIconIsTemplate = false). macOS 26's input source switcher shows
@@ -26,7 +26,7 @@ enum Metrics {
     static let size: CGFloat = 16
     /// Apple's tiles are full-bleed with a ~3.5 pt corner radius.
     static let cornerRadius: CGFloat = 3.5
-    /// Widest ink run of "가A": the tile minus ~1 pt per side.
+    /// Widest ink run of "한A": the tile minus ~1 pt per side.
     static let maximumInkWidth: CGFloat = 13.8
     static let tracking: CGFloat = -0.2
     /// The tile: Apple's template tiles as dark menus draw them (systemGray6 light, #E5E5EA).
@@ -37,7 +37,7 @@ enum Metrics {
 
 func glyphLine(size: CGFloat) -> CTLine {
     let font = NSFont.systemFont(ofSize: size, weight: .heavy)
-    let text = NSAttributedString(string: "가A", attributes: [.font: font, .kern: Metrics.tracking,
+    let text = NSAttributedString(string: "한A", attributes: [.font: font, .kern: Metrics.tracking,
                                                               .foregroundColor: Metrics.glyph])
     return CTLineCreateWithAttributedString(text)
 }
