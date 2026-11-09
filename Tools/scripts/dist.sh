@@ -32,7 +32,7 @@ for file in install.sh index.html; do
       -e "s|@SHA256@|$SHA256|g" -e "s|@SIZE@|$SIZE|g" -e "s|@DATE@|$DATE|g" \
       "Tools/dist/$file" > "$OUT/$file"
 done
-if grep -q '@[A-Z0-9]*@' "$OUT/install.sh" "$OUT/index.html"; then
+if grep -q '@[A-Z0-9_]*@' "$OUT/install.sh" "$OUT/index.html"; then
   echo "unfilled template field in $OUT" >&2
   exit 1
 fi

@@ -68,10 +68,10 @@
     border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px;
     padding: 3px 7px; background: var(--bg); white-space: nowrap;
   }
-  .demo { font-size: 18px; }
-  .demo .from { font-family: ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); }
-  .demo .ko { font-weight: 600; color: var(--orange); }
-  .demo .en { font-weight: 600; color: var(--blue); }
+  .lead { font-size: 21px; font-weight: 600; line-height: 1.45; margin-bottom: 12px; }
+  .oops { font-family: ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); }
+  .ko { font-weight: 600; color: var(--orange); }
+  .en { font-weight: 600; color: var(--blue); }
   footer { color: var(--muted); font-size: 13px; margin-top: 28px; line-height: 1.7; }
   footer code { font-size: 12px; word-break: break-all; }
   @media (max-width: 560px) {
@@ -92,9 +92,9 @@
   </header>
 
   <section>
-    <p>Duo는 한국어와 영어를 입력 소스 하나로 치는 macOS 입력기예요. 치는 대로 Duo가 한국어인지 영어인지 골라요.</p>
-    <p class="demo"><span class="from">dkssud</span> → <span class="ko">안녕</span> &nbsp;·&nbsp; <span class="from">hello</span> → <span class="en">hello</span></p>
-    <p class="muted">잘못 고르면 <kbd>오른쪽 ⌘</kbd>를 톡 누르면 바뀌어요. 바꾼 단어는 Duo가 기억해요.</p>
+    <p class="lead">한/영 키를 누르지 않아도 한국어와 영어가 알아서 나와요.</p>
+    <p>한/영 전환을 깜빡해서 <span class="oops">ㅗ디ㅣㅐ</span>나 <span class="oops">dkssud</span>가 나온 적 있죠? Duo는 지금 치는 단어가 한국어인지 영어인지 보고 알맞게 바꿔 줘요. <span class="ko">안녕</span>을 치다가 그대로 <span class="en">hello</span>를 쳐도 돼요.</p>
+    <p class="muted">어쩌다 잘못 나오면 <kbd>오른쪽 ⌘</kbd>를 톡 누르세요. 바로 고쳐지고, Duo가 그 단어를 기억해요.</p>
   </section>
 
   <section>
