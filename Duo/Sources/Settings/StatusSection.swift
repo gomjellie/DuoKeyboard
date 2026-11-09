@@ -104,7 +104,13 @@ private struct SummaryContent {
     @MainActor init(status: InputMethodStatus) {
         let state = status.state
         let turnOn = Action(title: "Duo 켜기") { await $0.turnOn() }
-        if status.isUpdateAvailable {
+        if state.isBlockedBySecureInput {
+            symbol = "lock.shield.fill"
+            color = .orange
+            title = "지금은 Duo를 쓸 수 없어요"
+            detail = String(localized: "보안 키보드 입력이 꺼지면 입력 메뉴에서 Duo를 다시 고를 수 있어요.")
+            action = nil
+        } else if status.isUpdateAvailable {
             symbol = "arrow.down.circle.fill"
             color = .blue
             title = "새 버전이 준비됐어요"

@@ -1033,6 +1033,16 @@
         }
       }
     },
+    "보안 키보드 입력이 꺼지면 입력 메뉴에서 Duo를 다시 고를 수 있어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once Secure Keyboard Entry is off, you can pick Duo in the input menu again."
+          }
+        }
+      }
+    },
     "보안 키보드 입력이 켜져 있어요" : {
       "localizations" : {
         "en" : {
@@ -1759,6 +1769,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Starts typing with Duo right away."
+          }
+        }
+      }
+    },
+    "지금은 Duo를 쓸 수 없어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo can’t be used right now"
           }
         }
       }

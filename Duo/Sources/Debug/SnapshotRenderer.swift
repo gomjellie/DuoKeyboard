@@ -64,6 +64,8 @@ struct SnapshotRenderer {
         var secure = ready
         secure.isSecureInputActive = true
         secure.secureInputAppName = "Google Chrome"
+        secure.isSelected = false
+        secure.otherSelectedSourceName = "ABC"
 
         var result: [(String, Scene)] = []
         let onboarding = CGSize(width: DuoStyle.onboardingSize.width, height: DuoStyle.onboardingSize.height)
