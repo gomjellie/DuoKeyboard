@@ -198,6 +198,41 @@ public enum InputSourceManager {
         return enabled.first { boolProperty($0, kTISPropertyInputSourceIsASCIICapable) }
     }
 
+    // MARK: - macOS's Korean input method
+
+    /// macOS's own Korean input method. The input method's source id is its bundle id; its modes
+    /// (2벌식, 3벌식, …) are `com.apple.inputmethod.Korean.*`.
+    public static let appleKoreanID = "com.apple.inputmethod.Korean"
+
+    /// Names of the Apple Korean modes in the input menu, e.g. `["2벌식"]`. Empty when the input
+    /// method is not in the input menu.
+    public static func appleKoreanModeNames() -> [String] {
+        onMain { appleKoreanModeNames(in: appleKoreanSources().map(info)) }
+    }
+
+    /// A mode stays enabled after its input method is turned off, so the input method decides.
+    static func appleKoreanModeNames(in sources: [SourceInfo]) -> [String] {
+        guard sources.contains(where: { $0.id == appleKoreanID && $0.isEnabled }) else { return [] }
+        return sources.filter { $0.id != appleKoreanID && $0.isEnabled && $0.isSelectCapable }
+            .compactMap(\.localizedName)
+    }
+
+    /// Takes macOS's Korean input method out of the input menu, with all its modes, as System
+    /// Settings does when its last mode is removed. Keyboard Settings can add it back.
+    @discardableResult
+    public static func removeAppleKorean() -> OSStatus {
+        onMain {
+            guard let src = appleKoreanSources().first(where: { stringProperty($0, kTISPropertyInputSourceID) == appleKoreanID }),
+                  boolProperty(src, kTISPropertyInputSourceIsEnabled) else { return noErr }
+            return TISDisableInputSource(src)
+        }
+    }
+
+    static func appleKoreanSources() -> [TISInputSource] {
+        let filter = [kTISPropertyBundleID as String: appleKoreanID] as CFDictionary
+        return TISCreateInputSourceList(filter, true)?.takeRetainedValue() as? [TISInputSource] ?? []
+    }
+
     // MARK: - Property helpers
 
     static func enabledKeyboardSources() -> [TISInputSource] {

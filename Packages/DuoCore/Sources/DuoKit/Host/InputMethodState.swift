@@ -89,12 +89,15 @@ public struct InputMethodState: Sendable, Equatable {
     public var secureInputAppName: String?
     /// Localized name of the selected keyboard input source, when it is not Duo.
     public var otherSelectedSourceName: String?
+    /// Names of macOS's Korean input modes in the input menu (e.g. "2벌식"); empty when it is not there.
+    public var appleKoreanModeNames: [String]
 
     /// A state with every flag given explicitly (tests and fixtures); `read()` reads the live one.
     public init(isInstalled: Bool = false, isRegistered: Bool = false, isAllowListed: Bool = false,
                 isEnabled: Bool = false, isSelected: Bool = false, installedVersion: BundleVersion? = nil,
                 isServerRunning: Bool = false, isSecureInputActive: Bool = false,
-                secureInputAppName: String? = nil, otherSelectedSourceName: String? = nil) {
+                secureInputAppName: String? = nil, otherSelectedSourceName: String? = nil,
+                appleKoreanModeNames: [String] = []) {
         self.isInstalled = isInstalled
         self.isRegistered = isRegistered
         self.isAllowListed = isAllowListed
@@ -105,6 +108,7 @@ public struct InputMethodState: Sendable, Equatable {
         self.isSecureInputActive = isSecureInputActive
         self.secureInputAppName = secureInputAppName
         self.otherSelectedSourceName = otherSelectedSourceName
+        self.appleKoreanModeNames = appleKoreanModeNames
     }
 
     /// Reads TIS, the allow-list, the installed bundle and the process list. Read-only.
@@ -122,7 +126,8 @@ public struct InputMethodState: Sendable, Equatable {
                 withBundleIdentifier: DuoIDs.inputMethodBundleID).isEmpty,
             isSecureInputActive: secure,
             secureInputAppName: secure ? SecureInputOwner.appName() : nil,
-            otherSelectedSourceName: selected ? nil : InputSourceManager.currentKeyboardSource()?.localizedName)
+            otherSelectedSourceName: selected ? nil : InputSourceManager.currentKeyboardSource()?.localizedName,
+            appleKoreanModeNames: InputSourceManager.appleKoreanModeNames())
     }
 
     /// Whether an install step is already true on this Mac (the checklist shows it as done).
