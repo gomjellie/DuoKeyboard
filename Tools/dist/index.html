@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duo 설치</title>
+<meta name="description" content="한영 전환 없이 한국어와 영어를 치는 macOS 입력기 Duo를 설치해요.">
+<link rel="icon" href="icon.png">
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --line: #e3e3e8;
+    --accent: #0a84ff;
+    --orange: #f28c28;
+    --blue: #0a84ff;
+    --code-bg: #1d1d1f;
+    --code-text: #f5f5f7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f5f5f7;
+      --muted: #a1a1a6;
+      --line: #2c2c2e;
+      --code-bg: #2c2c2e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 56px 16px 72px; }
+  header { display: flex; gap: 20px; align-items: center; margin-bottom: 36px; }
+  header img { width: 88px; height: 88px; flex: none; }
+  h1 { font-size: 40px; line-height: 1.1; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .tagline { font-size: 20px; color: var(--muted); margin: 0; }
+  h2 { font-size: 20px; margin: 0 0 12px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-bottom: 16px; }
+  p { margin: 0 0 10px; }
+  p:last-child { margin-bottom: 0; }
+  .muted { color: var(--muted); }
+  .command {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: 12px; padding: 14px 14px 14px 18px; margin: 14px 0 10px;
+  }
+  .command code { flex: 1; font: 15px/1.5 ui-monospace, "SF Mono", Menlo, monospace; overflow-x: auto; white-space: nowrap; }
+  button {
+    flex: none; border: 0; border-radius: 9px; padding: 8px 14px;
+    background: var(--accent); color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+  ol, ul { margin: 0; padding-left: 22px; }
+  li { margin-bottom: 8px; }
+  li:last-child { margin-bottom: 0; }
+  kbd {
+    font: 600 13px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+    border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px;
+    padding: 3px 7px; background: var(--bg); white-space: nowrap;
+  }
+  .demo { font-size: 18px; }
+  .demo .from { font-family: ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); }
+  .demo .ko { font-weight: 600; color: var(--orange); }
+  .demo .en { font-weight: 600; color: var(--blue); }
+  footer { color: var(--muted); font-size: 13px; margin-top: 28px; line-height: 1.7; }
+  footer code { font-size: 12px; word-break: break-all; }
+  @media (max-width: 560px) {
+    header { flex-direction: column; align-items: flex-start; gap: 14px; }
+    h1 { font-size: 34px; }
+    .command { flex-direction: column; align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="icon.png" alt="">
+    <div>
+      <h1>Duo</h1>
+      <p class="tagline">한영 전환 없이, 그냥 쓰세요.</p>
+    </div>
+  </header>
+
+  <section>
+    <p>Duo는 한국어와 영어를 입력 소스 하나로 치는 macOS 입력기예요. 치는 대로 Duo가 한국어인지 영어인지 골라요.</p>
+    <p class="demo"><span class="from">dkssud</span> → <span class="ko">안녕</span> &nbsp;·&nbsp; <span class="from">hello</span> → <span class="en">hello</span></p>
+    <p class="muted">잘못 고르면 <kbd>오른쪽 ⌘</kbd>를 톡 누르면 바뀌어요. 바꾼 단어는 Duo가 기억해요.</p>
+  </section>
+
+  <section>
+    <h2>설치</h2>
+    <p>터미널에 아래 명령을 붙여 넣고 Return을 누르세요.</p>
+    <div class="command">
+      <code id="cmd">curl -fsSL @BASE_URL@/install.sh | zsh</code>
+      <button type="button" id="copy">복사</button>
+    </div>
+    <p class="muted">Duo.app이 <code>~/Applications</code>에 설치되고 바로 열려요. 관리자 암호는 필요 없어요.</p>
+  </section>
+
+  <section>
+    <h2>처음 열면</h2>
+    <ol>
+      <li><strong>Duo 켜기</strong>를 누르세요. macOS가 확인을 요청하면 <strong>허용</strong>을 눌러요.</li>
+      <li>원하면 <strong>macOS 기본 한국어 입력기 빼기</strong>를 체크하세요. Duo 하나로 한국어와 영어를 다 치니까 입력 메뉴가 깔끔해져요. 키보드 설정에서 언제든 다시 넣을 수 있어요.</li>
+      <li><strong>써보기</strong>에서 몇 문장 쳐 보고 <kbd>오른쪽 ⌘</kbd>로 바꾸는 법을 익히세요.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>업데이트와 제거</h2>
+    <ul>
+      <li><strong>업데이트:</strong> 위 명령을 다시 실행하세요. 그다음 Duo 설정 ▸ 일반에서 <strong>업데이트</strong>를 누르면 입력기까지 바뀌어요.</li>
+      <li><strong>제거:</strong> Duo 설정 ▸ 정보 ▸ <strong>Duo 제거…</strong>를 누른 다음, <code>~/Applications/Duo.app</code>을 휴지통에 버리세요.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>알아 두기</h2>
+    <ul>
+      <li>macOS 15 이상에서 동작해요. Apple 실리콘과 Intel Mac을 모두 지원해요.</li>
+      <li>모든 판단과 학습은 이 Mac 안에서만 이뤄져요. 친 글을 밖으로 보내지 않아요.</li>
+      <li>Apple 공증을 받지 않은 빌드라서, 브라우저로 내려받으면 macOS가 열지 못하게 막아요. 위 명령으로 설치하세요.</li>
+      <li>다른 앱의 암호 칸에 커서가 있으면(보안 키보드 입력) macOS가 그동안 Duo를 꺼요. 암호 칸을 벗어나면 다시 쓸 수 있어요.</li>
+      <li>입력 메뉴에서 Duo를 골라도 Safari나 메모 같은 일부 앱에서만 입력되지 않으면 Mac을 재시동해 보세요.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Duo @VERSION@ (@BUILD@) · @DATE@ · Duo.zip @SIZE@<br>
+    SHA-256 <code>@SHA256@</code><br>
+    언어 모델 데이터는 CC BY-SA 4.0으로 배포해요. 고지문은 Duo 설정 ▸ 정보에 있어요.
+  </footer>
+</main>
+<script>
+  const button = document.getElementById("copy");
+  button.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById("cmd").textContent);
+      button.textContent = "복사했어요";
+    } catch {
+      getSelection().selectAllChildren(document.getElementById("cmd"));
+      button.textContent = "선택했어요";
+    }
+    setTimeout(() => { button.textContent = "복사"; }, 1600);
+  });
+</script>
+</body>
+</html>

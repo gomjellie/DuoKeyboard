@@ -4,8 +4,9 @@ DD := build/dd
 DEBUG_PRODUCTS := $(DD)/Build/Products/Debug
 RELEASE_PRODUCTS := $(DD)/Build/Products/Release
 SCRATCH ?= build/spm
+DIST_URL ?= https://gomjellie.github.io/DuoKeyboard
 
-.PHONY: help project build build-release test install e2e app run-app clean model
+.PHONY: help project build build-release test install e2e app dist run-app clean model
 
 help:
 	@echo "make project        Regenerate Duo.xcodeproj from project.yml (XcodeGen)"
@@ -14,6 +15,7 @@ help:
 	@echo "make install        Build + install the Debug input method into ~/Library/Input Methods"
 	@echo "make e2e            Run end-to-end cases through the real IMK client path"
 	@echo "make app            Build the Duo host app (Release) into build/Release/Duo.app"
+	@echo "make dist           Package the download site into build/dist (DIST_URL=$(DIST_URL))"
 	@echo "make model          Rebuild the language model from corpora (Python)"
 
 project:
@@ -41,6 +43,9 @@ e2e: install
 app: build-release
 	mkdir -p build/Release && rm -rf build/Release/Duo.app && ditto $(RELEASE_PRODUCTS)/Duo.app build/Release/Duo.app
 	@echo "→ build/Release/Duo.app"
+
+dist: project
+	Tools/scripts/dist.sh $(DIST_URL)
 
 model:
 	python3 Tools/ModelBuilder/build_model.py
