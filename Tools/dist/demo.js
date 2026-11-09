@@ -4,15 +4,18 @@
 (() => {
   const NS = "http://www.w3.org/2000/svg";
   const $ = (id) => document.getElementById(id);
+  // In captions and notes, {en:…} and {ko:…} mark words shown in that language's colour (classes
+  // en and ko). "오른쪽 ⌘" uses a no-break space so the key name never splits across lines.
   const META = {
-    mix: { tab: "한국어 사이에 영어", caption: "한/영 키를 한 번도 누르지 않았는데 meeting이 그대로 나와요." },
-    dev: { tab: "영어 뒤에 조사", caption: "PR을, CI가처럼 영어 뒤에 붙는 조사도 그대로 이어져요." },
+    mix: { tab: "한국어 사이에 영어", caption: "한/영 키를 한 번도 누르지 않았는데 {en:meeting}이 그대로 나와요." },
+    dev: { tab: "영어 뒤에 조사", caption: "{en:PR}{ko:을}, {en:CI}{ko:가}처럼 영어 바로 뒤에 붙는 조사도 한글로 나와요." },
     flip: {
       tab: "둘 다 말이 될 때",
-      caption: "go와 해는 둘 다 말이 돼서 뜻에 따라 갈려요. 오른쪽 ⌘를 톡 누르면 바로 바뀌어요.",
+      caption: "{en:go}와 {ko:해}는 둘 다 말이 돼서 뜻에 따라 갈려요. 오른쪽\u00a0⌘를 톡 누르면 바로 바뀌어요.",
       noteKo: "보통은 지우고 → 한/영 키 → 다시 쳐야 해요",
-      noteDuo: "오른쪽 ⌘ 한 번: 해 → go",
-      good: "✓ 오른쪽 ⌘ 한 번으로 고침",
+      noteDuo: "오른쪽\u00a0⌘ 한 번: {ko:해} → {en:go}",
+      good: "✓ 오른쪽\u00a0⌘ 한 번으로 고쳐요",
+      how: "오른쪽 ⌘를 한 번 눌러 ",
     },
   };
   const scenes = JSON.parse($("demo-frames").textContent).filter((s) => META[s.id]);
@@ -313,9 +316,16 @@
       else keysEl.append(span(now ? "now" : "", now && t === " " ? "␣" : t));
     });
   }
+  function rich(target, value) {
+    target.textContent = "";
+    for (const part of value.split(/(\{(?:en|ko):[^}]*\})/)) {
+      const m = part.match(/^\{(en|ko):([^}]*)\}$/);
+      target.append(m ? span(m[1], m[2]) : part);
+    }
+  }
   function setNotes(meta, on) {
-    $("note-ko").textContent = meta.noteKo || "";
-    $("note-duo").textContent = meta.noteDuo || "";
+    rich($("note-ko"), meta.noteKo || "");
+    rich($("note-duo"), meta.noteDuo || "");
     $("note-ko").classList.toggle("on", on && !!meta.noteKo);
     $("note-duo").classList.toggle("on", on && !!meta.noteDuo);
   }
@@ -341,21 +351,31 @@
   function select(i) {
     tabs.forEach((b, j) => b.setAttribute("aria-selected", String(i === j)));
     const scene = scenes[i];
-    $("caption").textContent = META[scene.id].caption;
+    const meta = META[scene.id];
+    rich($("caption"), meta.caption);
     const last = scene.frames[scene.frames.length - 1];
     $("demo").setAttribute("aria-description",
-      `${scene.tokens.join("").replace("{rcmd}", " (오른쪽 ⌘) ")}를 치면 한글 모드는 ${last.ko}, Duo는 ${last.duo}`);
+      `${meta.tab}: 한/영 전환을 깜빡하면 “${last.ko}”, Duo로 치면 ${meta.how || ""}“${last.duo}”로 나와요.`);
   }
 
   const CANCEL = Symbol("cancel");
   let runId = 0;
   let visible = true;
+  let paused = false;
   let wakers = [];
   async function wait(ms, id) {
     await new Promise((resolve) => setTimeout(resolve, ms));
-    while (!visible && id === runId) await new Promise((resolve) => wakers.push(resolve));
+    while ((!visible || paused) && id === runId) await new Promise((resolve) => wakers.push(resolve));
     if (id !== runId) throw CANCEL;
   }
+  // The page's pause button (WCAG 2.2.2) holds playback at the next step and resumes it.
+  window.duoDemo = {
+    pause() { paused = true; },
+    resume() {
+      paused = false;
+      wakers.splice(0).forEach((wake) => wake());
+    },
+  };
   const jitter = (base, spread) => base + Math.random() * spread;
 
   async function play(i, id) {
