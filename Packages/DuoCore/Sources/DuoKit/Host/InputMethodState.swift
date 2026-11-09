@@ -139,6 +139,10 @@ public struct InputMethodState: Sendable, Equatable {
     /// Duo can be used: installed and turned on. Onboarding opens on launch until this holds.
     public var isReady: Bool { isInstalled && isEnabled }
 
+    /// Duo is ready, but Secure Keyboard Entry keeps macOS from selecting it. Selecting Duo, which
+    /// 업데이트 and Duo로 전환 both do, fails until Secure Keyboard Entry is off.
+    public var isBlockedBySecureInput: Bool { isReady && isSecureInputActive }
+
     /// The embedded copy is newer than the installed one, so the host offers 업데이트.
     public func isUpdateAvailable(embedded: BundleVersion?) -> Bool {
         guard isInstalled, let embedded, let installedVersion else { return false }

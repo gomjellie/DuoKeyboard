@@ -31,4 +31,15 @@ struct HostSecureInputTests {
         let odd: [String: Any] = ["kCGSSessionUserIDKey": NSNumber(value: 501), "kCGSSessionSecureInputPID": "46626"]
         #expect(SecureInputOwner.pid(inConsoleUsers: [odd], uid: 501) == nil)
     }
+
+    @Test(arguments: [
+        (true, true, true, true),
+        (true, true, false, false),
+        (false, true, true, false),
+        (true, false, true, false),
+    ])
+    func onlyAReadyDuoIsBlocked(installed: Bool, enabled: Bool, secure: Bool, blocked: Bool) {
+        let state = InputMethodState(isInstalled: installed, isEnabled: enabled, isSecureInputActive: secure)
+        #expect(state.isBlockedBySecureInput == blocked)
+    }
 }
