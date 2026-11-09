@@ -686,7 +686,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "While another app has Secure Keyboard Entry on, macOS turns Duo off and you can't pick Duo in the input menu. Leave the password field in that app, turn Secure Keyboard Entry off, or quit the app to use Duo again."
+            "value" : "While another app has Secure Keyboard Entry on, macOS turns Duo off and you can’t pick Duo in the input menu. Leave the password field in that app, turn Secure Keyboard Entry off, or quit the app to use Duo again."
           }
         }
       }
