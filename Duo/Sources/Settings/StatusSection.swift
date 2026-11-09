@@ -155,13 +155,13 @@ struct StatusValue: View {
     }
 }
 
-/// Some app turned on Secure Keyboard Entry: Duo passes keys through until it is off (critique R5).
+/// Some app turned on Secure Keyboard Entry: macOS turns Duo off until it is off.
 private struct SecureInputWarning: View {
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 2) {
                 Text("보안 키보드 입력이 켜져 있어요")
-                Text("다른 앱이 보안 키보드 입력을 켜 두면 Duo는 잠시 키를 그대로 보내요. 그 앱에서 끄거나 앱을 닫으면 다시 동작해요.")
+                Text("다른 앱이 보안 키보드 입력을 켜 두면 그동안 macOS가 Duo를 끄고, 입력 메뉴에서도 Duo를 고를 수 없어요. 그 앱에서 암호 칸을 벗어나거나, 보안 키보드 입력을 끄거나, 앱을 닫으면 다시 쓸 수 있어요.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

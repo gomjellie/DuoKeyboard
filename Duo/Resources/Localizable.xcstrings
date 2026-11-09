@@ -681,12 +681,12 @@
         }
       }
     },
-    "다른 앱이 보안 키보드 입력을 켜 두면 Duo는 잠시 키를 그대로 보내요. 그 앱에서 끄거나 앱을 닫으면 다시 동작해요." : {
+    "다른 앱이 보안 키보드 입력을 켜 두면 그동안 macOS가 Duo를 끄고, 입력 메뉴에서도 Duo를 고를 수 없어요. 그 앱에서 암호 칸을 벗어나거나, 보안 키보드 입력을 끄거나, 앱을 닫으면 다시 쓸 수 있어요." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "While another app has Secure Keyboard Entry on, Duo passes keys straight through. Turn it off in that app, or quit the app, and Duo works again."
+            "value" : "While another app has Secure Keyboard Entry on, macOS turns Duo off and you can't pick Duo in the input menu. Leave the password field in that app, turn Secure Keyboard Entry off, or quit the app to use Duo again."
           }
         }
       }
