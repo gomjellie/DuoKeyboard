@@ -82,8 +82,11 @@ public struct InputMethodState: Sendable, Equatable {
     public var installedVersion: BundleVersion?
     /// A `DuoInputMethod` process is running (learning edits must go through it, critique R14).
     public var isServerRunning: Bool
-    /// Some app turned on Secure Keyboard Entry; Duo passes keys through while it is on (critique R5).
+    /// Some app turned on Secure Keyboard Entry. While it is on, macOS turns Duo off and dims it in
+    /// the input menu.
     public var isSecureInputActive: Bool
+    /// Name of the app holding Secure Keyboard Entry, when it is on and the holder is known.
+    public var secureInputAppName: String?
     /// Localized name of the selected keyboard input source, when it is not Duo.
     public var otherSelectedSourceName: String?
 
@@ -91,7 +94,7 @@ public struct InputMethodState: Sendable, Equatable {
     public init(isInstalled: Bool = false, isRegistered: Bool = false, isAllowListed: Bool = false,
                 isEnabled: Bool = false, isSelected: Bool = false, installedVersion: BundleVersion? = nil,
                 isServerRunning: Bool = false, isSecureInputActive: Bool = false,
-                otherSelectedSourceName: String? = nil) {
+                secureInputAppName: String? = nil, otherSelectedSourceName: String? = nil) {
         self.isInstalled = isInstalled
         self.isRegistered = isRegistered
         self.isAllowListed = isAllowListed
@@ -100,12 +103,14 @@ public struct InputMethodState: Sendable, Equatable {
         self.installedVersion = installedVersion
         self.isServerRunning = isServerRunning
         self.isSecureInputActive = isSecureInputActive
+        self.secureInputAppName = secureInputAppName
         self.otherSelectedSourceName = otherSelectedSourceName
     }
 
     /// Reads TIS, the allow-list, the installed bundle and the process list. Read-only.
     public static func read() -> InputMethodState {
         let selected = InputSourceManager.isSelected
+        let secure = IsSecureEventInputEnabled()
         return InputMethodState(
             isInstalled: InputMethodInstaller.isInstalled,
             isRegistered: InputSourceManager.isRegistered,
@@ -115,7 +120,8 @@ public struct InputMethodState: Sendable, Equatable {
             installedVersion: BundleVersion(bundleURL: InputSourceManager.installedBundleURL),
             isServerRunning: !NSRunningApplication.runningApplications(
                 withBundleIdentifier: DuoIDs.inputMethodBundleID).isEmpty,
-            isSecureInputActive: IsSecureEventInputEnabled(),
+            isSecureInputActive: secure,
+            secureInputAppName: secure ? SecureInputOwner.appName() : nil,
             otherSelectedSourceName: selected ? nil : InputSourceManager.currentKeyboardSource()?.localizedName)
     }
 
