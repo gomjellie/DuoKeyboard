@@ -128,7 +128,7 @@ func symbolColorRenderingMode(_ mode: SymbolColorRenderingMode?)              //
 * 칩 높이 **28**. 앞쪽 여백 **4**(배지가 캡슐 안에 동심으로 들어감). 내부 간격 **6**. 뒤쪽 여백 **4**, 힌트를 숨기면 **10**.
 * 배지: **20** pt 원. 영어는 `Color.blue`, 한국어는 `Color.orange`로 채움. 안에 SF Symbol `character`("A") 또는 `character.ko`("가")가 들어감. 11 pt semibold, 흰색. 시스템 색이라 다크 모드와 대비 증가(Increase Contrast)에 자동으로 맞춰짐.
 * 텍스트: SF Pro 14 pt medium, `.primary`, 한 줄, `fixedSize`. 한글은 자동으로 Apple SD Gothic Neo로 대체됨.
-* 키캡: SF Pro Rounded 10 pt semibold, `.secondary`. `RoundedRectangle(cornerRadius: 4, style: .continuous)`를 `primary.opacity(0.08)`로 채움(투명도 줄이기(Reduce Transparency)에서는 0.14). 최소 16×16, 가로 여백 4 pt, 키캡 사이 간격 2 pt.
+* 키캡: SF Pro Rounded 10 pt semibold, `.secondary`. `RoundedRectangle(cornerRadius: 4, style: .continuous)`를 `primary.opacity(0.08)`로 채움(투명도 줄이기(Reduce Transparency)에서는 0.14). 최소 16×16, 가로 여백 4 pt, 키캡 사이 간격 2 pt. 오른쪽 ⌘·⌥는 키캡 하나에 "오른쪽 ⌘"(영어 "Right ⌘")를 적음. 왼쪽 키도 기호가 같기 때문임.
 * 배치: 캐럿 줄 상자에서 **5 pt** 아래. 칩의 앞쪽 가장자리는 **조합 문자열 시작점보다 8 pt 왼쪽**에 둠. `visibleFrame` 가장자리에서 **6 pt** 떨어뜨림. 패널 안쪽에는 유리 그림자와 맥박 오버슈트를 위한 **8 pt** 투명 여백이 있음.
 * 창 그림자는 끔(`hasShadow = false`). 유리가 자체 그림자를 그리고, 창 그림자는 사각형으로 나오기 때문임.
 
