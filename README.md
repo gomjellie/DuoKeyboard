@@ -2,6 +2,7 @@
 
 Duo는 macOS 15 이상에서 쓰는 입력기예요. 키보드 하나로 한국어(두벌식)와 영어를 한/영 전환 없이 써요. 단어를 치는 동안 두 언어의 읽기를 함께 점수 매기고, 단어가 끝나면 뜻한 언어로 확정해요. `dkssudgktpdy hello`를 치면 `안녕하세요 hello`가 되고, `PRdmf`는 `PR을`이 돼요. 드물게 틀리면 바꾸기 키(기본 오른쪽 ⌘ 톡)를 한 번 눌러 고쳐요. 고친 단어는 이 Mac 안에서 학습해요. 읽기가 애매한 단어에는 후보 막대가 뜨고, 바꾸기 키를 누른 채 숫자를 누르면(⌘3) 그 읽기를 골라요. 호스트 앱은 설치와 켜기, 설정, 연습장을 맡아요. 목표는 전환 키 없이 두 언어를 Apple 입력기 수준으로 쓰는 거예요. 한국어 단어는 치는 중에 깜빡이지 않고, 키 하나의 점수 계산은 300 µs 안에 끝나고, Backspace는 지우기만 해요.
 
+- 설치: 터미널에서 `curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh`. 안내 페이지는 <https://gomjellie.github.io/DuoKeyboard/>([배포](#배포) 참고)
 - 구현 명세: [`SPEC.md`](./SPEC.md)
 - 진행 상황과 알려진 문제: [`docs/STATUS.md`](./docs/STATUS.md)
 - 연구 문서: [`docs/research/`](./docs/research) — 언어 판별(`detection.md`), 입력 동작과 UX(`ux-spec.md`), InputMethodKit(`imk-platform.md`), UI와 시각 디자인(`ui-design.md`), 검토와 결정(`critique.md`)
@@ -278,6 +279,7 @@ make app          # Release 호스트 앱을 build/Release/Duo.app에 만들어�
 | `make install` | Debug 입력기를 빌드해 `~/Library/Input Methods`에 넣고 옛 입력기 서버를 멈춤. `Tools/scripts/dev-signing.sh setup`을 한 번 해 두면 고정 인증서로 서명해서, 손쉬운 사용 허용이 재설치 뒤에도 유지됨 |
 | `make e2e` | `install` 다음 하네스를 빌드하고 실제 IMK 경로로 E2E 사례를 돌림. 보고서는 `build/e2e/report.json` |
 | `make app` | `build-release` 다음 `build/Release/Duo.app`으로 복사함 |
+| `make dist` | 내려받기 사이트 묶음을 `build/dist`에 만듦(`Duo.zip`, `install.sh`, `index.html`, `icon.png`). [배포](#배포) 참고 |
 | `make model` | 말뭉치로 언어 모델을 다시 만듦(`Tools/ModelBuilder/build_model.py`) |
 | `make clean` | `build`와 `Duo.xcodeproj`를 지움 |
 
@@ -299,6 +301,27 @@ make app          # Release 호스트 앱을 build/Release/Duo.app에 만들어�
 - `make e2e`는 Duo를 고르고 1분 안쪽 동안 포커스를 가져감. 누가 치는 중에는 돌리지 않음
 - 하네스는 끝나면 이전 입력 소스로 돌려놓음. 학습은 빈 저장소로 돌리고 사용자의 `learning.json`을 되돌려 둠
 - 실행이 중간에 끊기면 원래 입력 소스를 직접 골라 되돌림. 이 개발 기기에서는 `com.apple.inputmethod.Korean.2SetKorean`임
+
+### 배포
+
+GitHub Pages에서 설치해요. 안내 페이지는 <https://gomjellie.github.io/DuoKeyboard/>이고, 설치 명령은 한 줄이에요.
+
+```sh
+curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh
+```
+
+- `install.sh`가 `Duo.zip`을 받고 SHA-256을 맞춰 본 뒤 `~/Applications/Duo.app`을 바꾸고 엶. 관리자 암호는 필요 없음
+- 앱은 ad-hoc 서명이고 Apple 공증을 받지 않았음. 이 Mac에는 Developer ID 인증서가 없음
+  - 브라우저로 받은 파일에는 macOS가 격리 표시를 붙여서 Gatekeeper가 막음
+  - `curl`로 받은 파일에는 격리 표시가 붙지 않음. 그래서 설치 명령을 기본 경로로 둠
+- 사이트를 private으로 바꾸면 `curl`이 401을 받음. 설치 명령을 쓰려면 public이어야 함
+
+새 버전을 올리는 순서:
+
+1. `project.yml`의 `CURRENT_PROJECT_VERSION`을 올림. Duo 설정의 업데이트는 안에 든 입력기가 설치된 입력기보다 새것일 때만 뜸
+2. `make dist`. Release 빌드를 만들고 `Tools/dist`의 틀에 버전, 크기, SHA-256, 사이트 주소를 채움. 주소는 `DIST_URL`(기본 `https://gomjellie.github.io/DuoKeyboard`)
+3. `make deploy --version <버전>-<빌드>`
+4. `curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh`로 설치해 봄
 
 ---
 

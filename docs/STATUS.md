@@ -66,6 +66,35 @@
 환경은 macOS 26.6.2, Xcode 27.2, Swift 6.4.2(Swift 6 언어 모드, 엄격한 동시성 검사), XcodeGen 2.46.0이에요.
 모델 빌더(`Tools/ModelBuilder`)는 표준 라이브러리만 쓰는 Python 3로 돌아요.
 
+## GitHub Pages 배포 (2026-11-09)
+
+사용자 요청: 다른 사람도 쓸 수 있게 GitHub Pages로 배포함.
+
+바뀐 것:
+- `make dist`(`Tools/scripts/dist.sh`)가 `build/dist`에 내려받기 사이트를 만듦
+  - `Duo.zip`(Release 빌드, universal, 8.8 MB), `install.sh`, `index.html`, `icon.png`
+  - `Tools/dist`의 틀에 버전, 크기, SHA-256, 사이트 주소(`DIST_URL`)를 채움
+- GitHub Pages 사이트를 만들었음
+  - 안내 페이지와 설치 명령이 같은 주소에 있음
+  - 첫 배포 버전: `1.0.0-1`
+- 설치 명령: `curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh`
+
+설계:
+- 이 Mac에는 Developer ID 인증서가 없음(Apple Development만 있음). 그래서 공증을 받을 수 없음
+- 브라우저로 받은 앱은 격리 표시 때문에 Gatekeeper가 막음. `curl`로 받은 파일에는 격리 표시가 붙지 않음
+- private 사이트는 로그인 없는 `curl`에 401을 줌. public 사이트는 200을 줌. 그래서 public으로 만들었음
+- `install.sh`는 SHA-256을 맞춰 본 뒤 `~/Applications/Duo.app`을 바꿈. 입력기 업데이트는 Duo 설정이 맡음
+
+확인한 것:
+- 로그인 없이 네 파일이 모두 200으로 받아지고, 받은 `Duo.zip`의 SHA-256이 `install.sh`의 값과 같음
+- 이 Mac에서 설치 명령을 실행했음. 격리 표시 없이 설치되고 서명 검증(`codesign --verify --deep --strict`)을 통과하고 앱이 열림
+
+확인하지 않은 것:
+- 다른 Mac에서 처음 설치하는 흐름(macOS의 허용 요청, 입력기 복사). 이 Mac에는 이미 Duo가 설치되어 있었음
+- macOS 15에서의 설치
+- 브라우저로 받은 zip의 동작. 안내 페이지는 브라우저 내려받기를 권하지 않음
+- 다른 네트워크에서 사이트에 접근되는지
+
 ## 온보딩에서 macOS 기본 한국어 입력기 빼기 (2026-11-09)
 
 사용자 요청: 설치할 때 기본 한국어 키보드를 뺄 수 있게 해 달라고 했음. Duo가 한국어와 영어를 모두 치므로
