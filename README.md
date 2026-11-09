@@ -279,7 +279,7 @@ make app          # Release 호스트 앱을 build/Release/Duo.app에 만들어�
 | `make install` | Debug 입력기를 빌드해 `~/Library/Input Methods`에 넣고 옛 입력기 서버를 멈춤. `Tools/scripts/dev-signing.sh setup`을 한 번 해 두면 고정 인증서로 서명해서, 손쉬운 사용 허용이 재설치 뒤에도 유지됨 |
 | `make e2e` | `install` 다음 하네스를 빌드하고 실제 IMK 경로로 E2E 사례를 돌림. 보고서는 `build/e2e/report.json` |
 | `make app` | `build-release` 다음 `build/Release/Duo.app`으로 복사함 |
-| `make dist` | 내려받기 사이트 묶음을 `build/dist`에 만듦(`Duo.zip`, `install.sh`, `index.html`, `icon.png`). [배포](#배포) 참고 |
+| `make dist` | 내려받기 사이트 묶음을 `build/dist`에 만듦(`Duo.zip`, `install.sh`, `index.html`, `demo.js`, `icon.png`). [배포](#배포) 참고 |
 | `make model` | 말뭉치로 언어 모델을 다시 만듦(`Tools/ModelBuilder/build_model.py`) |
 | `make clean` | `build`와 `Duo.xcodeproj`를 지움 |
 
@@ -323,7 +323,7 @@ curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh
 3. `make deploy --version <버전>-<빌드>`
 4. `curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh`로 설치해 봄. 사이트는 파일을 60초 캐시함. 배포 직후에는 `Duo.zip`과 `install.sh`의 SHA-256이 어긋나 설치가 멈출 수 있음. 1분 뒤 다시 실행함
 
-페이지 맨 위의 입력 데모는 같은 키를 한글 모드와 Duo로 친 결과를 나란히 보여 줘요. 장면 데이터 `Tools/dist/demo-frames.json`은 `DemoFramesTests`가 실제 엔진과 모델로 만들어요. 엔진이나 모델을 바꾸면 다시 만들어요.
+페이지의 입력 데모(`Tools/dist/demo.js`)는 같은 키를 한글 모드와 Duo로 친 결과를 나란히 보여 줘요. 장면 데이터 `Tools/dist/demo-frames.json`은 `DemoFramesTests`가 실제 엔진과 모델로 만들어요. 엔진이나 모델을 바꾸면 다시 만들어요.
 
 ```sh
 cd Packages/DuoCore && DUO_DEMO_FRAMES_OUT=$PWD/../../Tools/dist/demo-frames.json swift test --filter DemoFrames
