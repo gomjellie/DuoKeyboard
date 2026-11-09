@@ -58,7 +58,7 @@ struct SnapshotRenderer {
         var enabledOnly = ready
         enabledOnly.isSelected = false
         enabledOnly.otherSelectedSourceName = "2벌식"
-        let fresh = InputMethodState(otherSelectedSourceName: "2벌식")
+        let fresh = InputMethodState(otherSelectedSourceName: "2벌식", appleKoreanModeNames: ["2벌식"])
         var outdated = ready
         outdated.installedVersion = BundleVersion(marketing: "0.9.0", build: "1")
         var secure = ready

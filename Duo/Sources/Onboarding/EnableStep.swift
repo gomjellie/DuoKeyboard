@@ -8,6 +8,7 @@ struct EnableStep: View {
     var onEnabled: () -> Void = {}
 
     @Environment(AppModel.self) private var app
+    @State private var removesAppleKorean = false
 
     var body: some View {
         let status = app.status
@@ -48,33 +49,44 @@ struct EnableStep: View {
                 .font(.body.weight(.medium))
                 .symbolRenderingMode(.multicolor)
         } else {
-            HStack(spacing: 12) {
-                Button {
-                    Task {
-                        await status.turnOn()
-                        if status.failure == nil && status.state.isReady {
-                            try? await Task.sleep(for: .milliseconds(700))
-                            onEnabled()
-                        }
+            let appleKorean = status.state.appleKoreanModeNames
+            VStack(alignment: .leading, spacing: 14) {
+                if !appleKorean.isEmpty {
+                    Toggle(isOn: $removesAppleKorean) {
+                        Text("macOS 기본 한국어 입력기(\(appleKorean.formatted(.list(type: .and)))) 빼기")
+                        Text("Duo가 한국어와 영어를 모두 쳐요. 키보드 설정에서 언제든 다시 넣을 수 있어요.")
                     }
-                } label: {
-                    Text(status.state.isReady ? "Duo로 전환" : "Duo 켜기")
-                        .frame(minWidth: 96)
+                    .toggleStyle(.checkbox)
+                    .disabled(status.isBusy)
                 }
-                .glassButton(prominent: true)
-                .controlSize(.large)
-                // ⏎ turns Duo on; once it is on, ⏎ is the bottom bar's 계속.
-                .keyboardShortcut(status.state.isReady ? nil : .defaultAction)
-                .disabled(status.isBusy)
+                HStack(spacing: 12) {
+                    Button {
+                        Task {
+                            await status.turnOn(removingAppleKorean: removesAppleKorean && !appleKorean.isEmpty)
+                            if status.failure == nil && status.state.isReady {
+                                try? await Task.sleep(for: .milliseconds(700))
+                                onEnabled()
+                            }
+                        }
+                    } label: {
+                        Text(status.state.isReady ? "Duo로 전환" : "Duo 켜기")
+                            .frame(minWidth: 96)
+                    }
+                    .glassButton(prominent: true)
+                    .controlSize(.large)
+                    // ⏎ turns Duo on; once it is on, ⏎ is the bottom bar's 계속.
+                    .keyboardShortcut(status.state.isReady ? nil : .defaultAction)
+                    .disabled(status.isBusy)
 
-                if status.isBusy {
-                    Text("macOS가 확인을 요청하면 허용을 눌러 주세요.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .transition(.opacity)
+                    if status.isBusy {
+                        Text("macOS가 확인을 요청하면 허용을 눌러 주세요.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .transition(.opacity)
+                    }
                 }
+                .animation(.snappy, value: status.isBusy)
             }
-            .animation(.snappy, value: status.isBusy)
         }
     }
 }

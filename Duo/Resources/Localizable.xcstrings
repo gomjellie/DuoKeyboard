@@ -291,6 +291,16 @@
         }
       }
     },
+    "Duo가 한국어와 영어를 모두 쳐요. 키보드 설정에서 언제든 다시 넣을 수 있어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo types both Korean and English. You can add it back anytime in Keyboard Settings."
+          }
+        }
+      }
+    },
     "Duo가 확신하지 못한 단어를 확정하면 잠깐 ‘↺ 바꾸기’를 띄워요." : {
       "localizations" : {
         "en" : {
@@ -497,6 +507,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Typing dkssud gives 안녕; typing hello gives hello."
+          }
+        }
+      }
+    },
+    "macOS 기본 한국어 입력기(%@) 빼기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove macOS’s Korean input source (%@)"
           }
         }
       }

@@ -155,7 +155,9 @@ final class InputMethodStatus {
     // MARK: Actions
 
     /// "Duo 켜기": copy (when missing or outdated), register, enable (the user approves in macOS) and select.
-    func turnOn() async {
+    /// - Parameter removingAppleKorean: once Duo is on, take macOS's Korean input method out of the
+    ///   input menu. Never before, so a failed install still leaves a way to type Korean.
+    func turnOn(removingAppleKorean: Bool = false) async {
         guard isLive, !isBusy else { return }
         failure = nil
         finishedSteps = []
@@ -194,6 +196,9 @@ final class InputMethodStatus {
             }
         } catch {
             failure = Self.failure(for: error, during: currentStep ?? .copied)
+        }
+        if removingAppleKorean && failure == nil && InputSourceManager.isEnabled {
+            _ = try? await Self.perform { InputSourceManager.removeAppleKorean() }
         }
         activity = .idle
         refresh()
