@@ -16,6 +16,7 @@ struct HUDPresentationTests {
         #expect(p.choice == choice)
         #expect(p.badge == nil)
         #expect(p.keycaps == flipKey.keycaps)
+        #expect(p.namesKeySide == flipKey.isRightSideModifier)
         #expect(p.isClickable)
         #expect(!p.isBadgeOnly)
         #expect(p.opacity == 1)
@@ -45,6 +46,13 @@ struct HUDPresentationTests {
         #expect(p.choice == choice)
         #expect(p.isClickable)
         #expect(p.keycaps == ["⌘"])
+        #expect(p.namesKeySide)
+    }
+
+    @Test("only right ⌘ and right ⌥ name their side, since the left key has the same glyph",
+          arguments: FlipKey.allCases)
+    func keySide(flipKey: FlipKey) {
+        #expect(flipKey.isRightSideModifier == [.rightCommand, .rightOption].contains(flipKey))
     }
 
     @Test("one-shot is a badge only and lets clicks through", arguments: [ScriptLanguage.korean, .english])
@@ -55,6 +63,7 @@ struct HUDPresentationTests {
         #expect(p.isBadgeOnly)
         #expect(!p.isClickable)
         #expect(p.keycaps.isEmpty)
+        #expect(!p.namesKeySide)
     }
 
     @Test("only the word being typed gets numbers, once the user flipped or chose in it")

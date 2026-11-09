@@ -27,12 +27,16 @@ public struct HUDPresentation: Hashable, Sendable {
     public var badge: ScriptLanguage?
     /// Flip-key glyphs to draw as keycaps at the end (empty = none).
     public var keycaps: [String]
+    /// The keycaps name the side ("오른쪽 ⌘"): the flip key is a right-side modifier.
+    public var namesKeySide: Bool
 
-    public init(kind: Kind, choice: HUDChoice? = nil, badge: ScriptLanguage? = nil, keycaps: [String] = []) {
+    public init(kind: Kind, choice: HUDChoice? = nil, badge: ScriptLanguage? = nil, keycaps: [String] = [],
+                namesKeySide: Bool = false) {
         self.kind = kind
         self.choice = choice
         self.badge = badge
         self.keycaps = keycaps
+        self.namesKeySide = namesKeySide
     }
 
     /// Maps engine content to what the chip shows. Keycaps hint the flip key only on the choice
@@ -40,9 +44,11 @@ public struct HUDPresentation: Hashable, Sendable {
     public init(_ content: HUDRequest.Content, flipKey: FlipKey) {
         switch content {
         case .alternative(let choice, _):
-            self.init(kind: .alternative, choice: choice, keycaps: flipKey.keycaps)
+            self.init(kind: .alternative, choice: choice, keycaps: flipKey.keycaps,
+                      namesKeySide: flipKey.isRightSideModifier)
         case .flipLastWord(let choice):
-            self.init(kind: .flipLastWord, choice: choice, keycaps: flipKey.keycaps)
+            self.init(kind: .flipLastWord, choice: choice, keycaps: flipKey.keycaps,
+                      namesKeySide: flipKey.isRightSideModifier)
         case .oneShot(let language):
             self.init(kind: .oneShot, badge: language)
         case .cannotChange:
@@ -75,4 +81,14 @@ public struct HUDPresentation: Hashable, Sendable {
 
     /// Opacity of the whole chip: the Bilingual-line badge is a quiet, persistent indicator (ux-spec §7.2).
     public var opacity: Double { kind == .bilingualLine ? 0.6 : 1 }
+}
+
+extension FlipKey {
+    /// Right ⌘ or right ⌥. Its keycap names the side: the left key has the same glyph and does not flip.
+    public var isRightSideModifier: Bool {
+        switch self {
+        case .rightCommand, .rightOption: true
+        case .doubleShift, .shiftSpace, .capsLock: false
+        }
+    }
 }
