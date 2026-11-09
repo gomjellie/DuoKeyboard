@@ -34,17 +34,17 @@ struct TryItStep: View {
     }
 
     private var tasks: some View {
-        let caps = app.settings.value.flipKey.keycaps
+        let flipKey = app.settings.value.flipKey
         return VStack(alignment: .leading, spacing: 10) {
             ChecklistRow(mark: progress.greeting ? .done : .pending, title: Text("‘안녕하세요 Duo를 써봐요’ 입력하기"))
             ChecklistRow(mark: progress.numbers ? .done : .pending, title: Text("‘macOS 26 업데이트’ 입력하기"))
             ChecklistRow(mark: progress.flippedWhileTyping ? .done : .pending,
                          title: Text("한국어 문장 속 go를 쓰는 중에 go ↔ 해 바꾸기")) {
-                KeyCaps(caps: caps, size: 10)
+                KeyCaps(flipKey: flipKey, size: 10)
             }
             ChecklistRow(mark: progress.flippedLastWord ? .done : .pending,
                          title: Text("단어를 쓰고 Space를 누른 다음, 그 단어 바꾸기")) {
-                KeyCaps(caps: caps, size: 10)
+                KeyCaps(flipKey: flipKey, size: 10)
             }
         }
         .duoCard(padding: 14)

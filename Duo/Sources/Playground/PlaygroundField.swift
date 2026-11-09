@@ -211,7 +211,7 @@ struct PlaygroundHUDChip: View {
                 choiceBar(choice)
                     .animation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(duration: 0.3, bounce: 0.15),
                                value: choice.selected)
-                KeyCaps(caps: flipKey.keycaps, size: 10)
+                KeyCaps(flipKey: flipKey, size: 10)
             case .oneShot(let language):
                 LanguageBadge(language: language, size: 22)
             case .cannotChange:

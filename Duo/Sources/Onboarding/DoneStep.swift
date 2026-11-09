@@ -26,7 +26,7 @@ struct DoneStep: View {
                     text: "메뉴 막대의 입력 메뉴에서 언제든 Duo 설정을 열 수 있어요.")
                 Tip(symbol: "arrow.left.arrow.right", color: .orange,
                     text: "단어가 잘못 나오면 바꾸기 키를 눌러요. 바꾼 단어는 Duo가 기억해요.") {
-                    KeyCaps(caps: app.settings.value.flipKey.keycaps, size: 11)
+                    KeyCaps(flipKey: app.settings.value.flipKey, size: 11)
                 }
                 Tip(symbol: "lock.fill", color: .green,
                     text: "모든 판단과 학습은 이 Mac 안에서만 이뤄져요.")

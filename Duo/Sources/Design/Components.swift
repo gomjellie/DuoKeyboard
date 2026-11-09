@@ -23,11 +23,13 @@ struct KeyCaps: View {
     let caps: [String]
     var size: CGFloat = 11
     var isHighlighted = false
+    /// Each cap says "오른쪽 ⌘" instead of "⌘".
+    var namesSide = false
 
     var body: some View {
         HStack(spacing: size * 0.3) {
             ForEach(Array(caps.enumerated()), id: \.offset) { _, cap in
-                Text(cap)
+                label(cap)
                     .font(.system(size: size, weight: .semibold, design: .rounded))
                     .foregroundStyle(isHighlighted ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
                     .padding(.horizontal, size * 0.45)
@@ -42,6 +44,19 @@ struct KeyCaps: View {
         }
         .fixedSize()
         .accessibilityHidden(true)
+    }
+
+    private func label(_ cap: String) -> Text {
+        namesSide ? Text("오른쪽 \(cap)") : Text(verbatim: cap)
+    }
+}
+
+extension KeyCaps {
+    /// The flip key as a hint. A right-side modifier names its side, so the left key is not pressed
+    /// instead.
+    init(flipKey: FlipKey, size: CGFloat = 11, isHighlighted: Bool = false) {
+        self.init(caps: flipKey.keycaps, size: size, isHighlighted: isHighlighted,
+                  namesSide: flipKey.isRightSideModifier)
     }
 }
 

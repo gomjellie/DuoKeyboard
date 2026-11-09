@@ -1433,6 +1433,16 @@
         }
       }
     },
+    "오른쪽 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right %@"
+          }
+        }
+      }
+    },
     "오른쪽 Command" : {
       "localizations" : {
         "en" : {

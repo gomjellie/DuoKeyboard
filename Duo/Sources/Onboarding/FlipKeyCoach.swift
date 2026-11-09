@@ -109,7 +109,7 @@ struct FlipKeyCoach: View {
         let flipKey = app.settings.value.flipKey
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 14) {
-                KeyCaps(caps: flipKey.keycaps, size: 17, isHighlighted: coach.flash)
+                KeyCaps(flipKey: flipKey, size: 17, isHighlighted: coach.flash)
                     .frame(minWidth: 52)
                     .animation(.snappy, value: coach.flash)
                 VStack(alignment: .leading, spacing: 2) {
