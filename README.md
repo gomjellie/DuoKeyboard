@@ -321,7 +321,13 @@ curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh
 1. `project.yml`의 `CURRENT_PROJECT_VERSION`을 올림. Duo 설정의 업데이트는 안에 든 입력기가 설치된 입력기보다 새것일 때만 뜸
 2. `make dist`. Release 빌드를 만들고 `Tools/dist`의 틀에 버전, 크기, SHA-256, 사이트 주소를 채움. 주소는 `DIST_URL`(기본 `https://gomjellie.github.io/DuoKeyboard`)
 3. `make deploy --version <버전>-<빌드>`
-4. `curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh`로 설치해 봄
+4. `curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh`로 설치해 봄. 사이트는 파일을 60초 캐시함. 배포 직후에는 `Duo.zip`과 `install.sh`의 SHA-256이 어긋나 설치가 멈출 수 있음. 1분 뒤 다시 실행함
+
+페이지 맨 위의 입력 데모는 같은 키를 한글 모드와 Duo로 친 결과를 나란히 보여 줘요. 장면 데이터 `Tools/dist/demo-frames.json`은 `DemoFramesTests`가 실제 엔진과 모델로 만들어요. 엔진이나 모델을 바꾸면 다시 만들어요.
+
+```sh
+cd Packages/DuoCore && DUO_DEMO_FRAMES_OUT=$PWD/../../Tools/dist/demo-frames.json swift test --filter DemoFrames
+```
 
 ---
 
@@ -543,7 +549,7 @@ Duo의 언어 판별(DET)은 단어의 키 입력을 ABC 자판이 만들었을 
 
 | 검사 | 명령 | 결과 |
 |---|---|---|
-| 패키지 단위 테스트(debug) | `make test` | 52개 묶음, 609개 테스트 통과. 알려진 문제 2개 |
+| 패키지 단위 테스트(debug) | `make test` | 53개 묶음, 610개 테스트 통과(환경 변수가 있어야 도는 묶음 포함). 알려진 문제 2개 |
 | 호스트 앱 테스트 | `xcodebuild test -scheme Duo` | 11개 묶음, 50개 테스트 통과 |
 | 실제 IMK E2E | `make e2e` | 70/70 |
 | E2E 미러(`E2ECaseMirrorTests`) | `make test`에 들어 있음 | 70개 사례를 프로세스 안에서 실제 모델로 다시 돌림 |
