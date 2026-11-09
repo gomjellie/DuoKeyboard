@@ -133,6 +133,17 @@
         }
       }
     },
+    "오른쪽 %@": {
+      "comment": "HUD keycap of a right-side flip key. %@ is the key glyph (⌘ or ⌥).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right %@"
+          }
+        }
+      }
+    },
     "이 줄은 한영 자동": {
       "comment": "VoiceOver announcement: in a Direct-input app, the flip key turned on Korean/English detection for this line.",
       "localizations": {

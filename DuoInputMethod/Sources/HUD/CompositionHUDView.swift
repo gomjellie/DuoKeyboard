@@ -59,7 +59,8 @@ struct CompositionHUDView: View {
                     .fixedSize()
             }
             if !presentation.keycaps.isEmpty {
-                Keycaps(glyphs: presentation.keycaps, emphasized: reduceTransparency || contrast == .increased)
+                Keycaps(glyphs: presentation.keycaps, namesSide: presentation.namesKeySide,
+                        emphasized: reduceTransparency || contrast == .increased)
             }
         }
         .padding(.leading, leadingPadding(presentation))
@@ -210,15 +211,16 @@ private struct LanguageBadge: View {
     }
 }
 
-/// The flip key as small rounded keycaps (⌘, ⇧ Space, …).
+/// The flip key as small rounded keycaps (오른쪽 ⌘, ⇧ Space, …).
 private struct Keycaps: View {
     let glyphs: [String]
+    let namesSide: Bool
     let emphasized: Bool
 
     var body: some View {
         HStack(spacing: 2) {
             ForEach(Array(glyphs.enumerated()), id: \.offset) { _, glyph in
-                Text(verbatim: glyph)
+                label(glyph)
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 4)
@@ -229,6 +231,10 @@ private struct Keycaps: View {
                     )
             }
         }
+    }
+
+    private func label(_ glyph: String) -> Text {
+        namesSide ? Text("오른쪽 \(glyph)") : Text(verbatim: glyph)
     }
 }
 
