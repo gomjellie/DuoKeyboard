@@ -795,7 +795,7 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
 1. UI 3절과 critique P2를 합친 SwiftUI 앱:
    - **온보딩**(4단계):
      1. 환영: 히어로 변형 애니메이션과 실제 연습장 칸;
-     2. Duo 켜기: `InputMethodInstaller.install(from: embeddedBundleURL)`, 1 s마다 갱신하는 상태 체크리스트(‘Duo 입력기 복사’, ‘입력 소스로 등록’, ‘macOS에서 허용’, ‘입력 소스 켜기’, ‘Duo로 전환’), 딥 링크 대안;
+     2. Duo 켜기: `InputMethodInstaller.install(from: embeddedBundleURL)`, 1 s마다 갱신하는 상태 체크리스트(‘Duo 입력기 복사’, ‘입력 소스로 등록’, ‘macOS에서 허용’, ‘입력 소스 켜기’, ‘Duo로 전환’), 딥 링크 대안, 입력 메뉴에 macOS 기본 한국어 입력기가 있을 때만 보이는 ‘macOS 기본 한국어 입력기 빼기’ 체크박스(기본 꺼짐, Duo가 켜진 뒤 `InputSourceManager.removeAppleKorean()`);
         - 켜기는 macOS의 허용 창("Allow “Duo” to enable “Duo”?")을 거침. 설치기는 허용 목록을 직접 쓰지 않음;
         - 허용을 최대 60 s 기다림(`InstallRecovery`). TIS가 거절하면 2 s 뒤 오류를 보여 줌. 시스템 설정이 꺼져 있었으면 4 s 뒤 한 번 더 요청함;
      3. 써보기: 연습 과제(‘안녕하세요 Duo를 써봐요’, ‘macOS 26 업데이트’, 치는 중인 단어 바꾸기, 방금 확정한 단어 바꾸기)와 바꾸기 키 톡 감지. 로컬 이벤트 모니터(권한 불필요)와 `FlipTapDetector`로 설정한 바꾸기 키(기본 오른쪽 ⌘)를 봄. 8 s 안에 누르지 않으면 다른 키를 제안함;

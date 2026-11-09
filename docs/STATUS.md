@@ -51,12 +51,12 @@
 
 | 묶음 | 결과 |
 |---|---|
-| `swift test` (debug, `build/spm`) | 51개 묶음의 테스트 606개 통과, 알려진 문제 2개, 실패 0개 (2026-11-09) |
+| `swift test` (debug, `build/spm`) | 52개 묶음의 테스트 609개 통과, 알려진 문제 2개, 실패 0개 (2026-11-09) |
 | `swift test -c release` (`build/spm-rel`) | 48개 묶음의 테스트 514개 통과, 알려진 문제 2개, 실패 0개 (2026-11-08) |
 | 호스트 앱 테스트 (`xcodebuild test -scheme Duo`) | 11개 묶음의 테스트 50개 통과 |
 | live E2E (`make e2e`) | 60/60 (2026-11-08, `make e2e`, 새 모델). 이전: 58/58, 51/51 (2차 수정에서 3번, 리드 점검 뒤 2번, 최신 작업 뒤) |
 | E2E 미러 (`E2ECaseMirrorTests`) | 60개 사례 모두 프로세스 안의 엔진 결과와 같음 |
-| 문자열 카탈로그 (`Duo/Tools/check-strings.py`) | 219/219개 키 통과 (2026-11-09) |
+| 문자열 카탈로그 (`Duo/Tools/check-strings.py`) | 221/221개 키 통과 (2026-11-09) |
 | 벤치마크, release (단독 실행) | 접두 p99 18.5 µs, 최종 p99 20.2 µs, 접두 + 최종 p99 39.3 µs, 예산 300 µs (2026-11-08, 초성 줄임말 조각 규칙 뒤). 2차 수정 기록: 15.6 / 17.1 / 32.7 µs |
 | DET 골든 벡터 | 모두 통과 (비트 단위로 같음, 모델 해시 `ff05a9602f67b6f7`, 2026-11-08에 다시 만듦: final 1117, incremental 672) |
 
@@ -65,6 +65,29 @@
 
 환경은 macOS 26.6.2, Xcode 27.2, Swift 6.4.2(Swift 6 언어 모드, 엄격한 동시성 검사), XcodeGen 2.46.0이에요.
 모델 빌더(`Tools/ModelBuilder`)는 표준 라이브러리만 쓰는 Python 3로 돌아요.
+
+## 온보딩에서 macOS 기본 한국어 입력기 빼기 (2026-11-09)
+
+사용자 요청: 설치할 때 기본 한국어 키보드를 뺄 수 있게 해 달라고 했음. Duo가 한국어와 영어를 모두 치므로
+기본 한국어 입력기가 입력 메뉴에 남으면 바꿀 때 헷갈림.
+
+바뀐 것:
+- 온보딩 Duo 켜기 단계에 "macOS 기본 한국어 입력기(2벌식) 빼기" 체크박스를 더했음. 기본값은 꺼짐
+  - 입력 메뉴에 기본 한국어 입력기가 있을 때만 보임. 괄호 안은 켜진 모드 이름임
+  - 체크하면 `InputMethodStatus.turnOn(removingAppleKorean:)`이 Duo가 켜진 뒤에만 뺌. 설치가 실패하면 빼지 않음
+- `InputSourceManager.removeAppleKorean()`이 입력기 `com.apple.inputmethod.Korean`을 끔(`TISDisableInputSource`)
+  - 모드(`com.apple.inputmethod.Korean.2SetKorean` 등)는 입력기를 꺼도 켜짐으로 남음. 그래도 입력 메뉴에서는 빠짐
+  - 시스템 설정에서 마지막 모드를 지울 때도 같은 상태가 됨(이 Mac에서 확인함)
+- `InputMethodState.appleKoreanModeNames`가 입력 메뉴에 있는 모드 이름을 줌. 입력기가 꺼져 있으면 빈 목록임
+
+확인한 것:
+- 실험 도구로 입력기를 켰다가 끄면 새 프로세스의 켜진 목록에서 한국어가 빠졌음
+  - 같은 프로세스에서 끈 직후에 다시 읽으면 모드가 아직 보였음. 런 루프가 돌기 전의 TIS 캐시로 봄
+- 스냅샷 `onboarding-2-enable-*`(한국어, 영어)에서 체크박스가 고정 창 안에 들어감
+- 단위 테스트 `HostAppleKoreanTests` 3개
+
+확인하지 않은 것:
+- 실제 온보딩에서 체크하고 Duo 켜기를 누르는 흐름. 이 Mac은 이미 기본 한국어 입력기를 뺀 상태였음
 
 ## 바꾸기 키 키캡에 쪽 표시 (2026-11-09)
 
