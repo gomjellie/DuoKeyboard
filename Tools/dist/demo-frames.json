@@ -1,0 +1,671 @@
+[
+  {
+    "frames" : [
+      {
+        "duo" : "",
+        "duoMarked" : "ㄴ",
+        "ko" : "",
+        "koMarked" : "ㄴ"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "내",
+        "hud" : {
+          "readings" : [
+            {
+              "lang" : "ko",
+              "text" : "내"
+            },
+            {
+              "lang" : "en",
+              "text" : "so"
+            }
+          ],
+          "selected" : 0
+        },
+        "ko" : "",
+        "koMarked" : "내"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "냉",
+        "ko" : "",
+        "koMarked" : "냉"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "내이",
+        "hud" : {
+          "readings" : [
+            {
+              "lang" : "ko",
+              "text" : "내이"
+            },
+            {
+              "lang" : "ko",
+              "text" : "so이"
+            },
+            {
+              "lang" : "en",
+              "text" : "sodl"
+            }
+          ],
+          "selected" : 0
+        },
+        "ko" : "내",
+        "koMarked" : "이"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "내일",
+        "ko" : "내",
+        "koMarked" : "일"
+      },
+      {
+        "duo" : "내일 ",
+        "duoMarked" : "",
+        "ko" : "내일 ",
+        "koMarked" : ""
+      },
+      {
+        "duo" : "내일 ",
+        "duoMarked" : "m",
+        "ko" : "내일 ",
+        "koMarked" : "ㅡ"
+      },
+      {
+        "duo" : "내일 ",
+        "duoMarked" : "me",
+        "ko" : "내일 ㅡ",
+        "koMarked" : "ㄷ"
+      },
+      {
+        "duo" : "내일 ",
+        "duoMarked" : "mee",
+        "ko" : "내일 ㅡㄷ",
+        "koMarked" : "ㄷ"
+      },
+      {
+        "duo" : "내일 ",
+        "duoMarked" : "meet",
+        "ko" : "내일 ㅡㄷㄷ",
+        "koMarked" : "ㅅ"
+      },
+      {
+        "duo" : "내일 meeti",
+        "duoMarked" : "",
+        "ko" : "내일 ㅡㄷㄷ",
+        "koMarked" : "샤"
+      },
+      {
+        "duo" : "내일 meetin",
+        "duoMarked" : "",
+        "ko" : "내일 ㅡㄷㄷ샤",
+        "koMarked" : "ㅜ"
+      },
+      {
+        "duo" : "내일 meetin",
+        "duoMarked" : "g",
+        "ko" : "내일 ㅡㄷㄷ샤ㅜ",
+        "koMarked" : "ㅎ"
+      },
+      {
+        "duo" : "내일 meeting ",
+        "duoMarked" : "",
+        "ko" : "내일 ㅡㄷㄷ샤ㅜㅎ ",
+        "koMarked" : ""
+      },
+      {
+        "duo" : "내일 meeting ",
+        "duoMarked" : "a",
+        "hud" : {
+          "readings" : [
+            {
+              "lang" : "en",
+              "text" : "a"
+            },
+            {
+              "lang" : "ko",
+              "text" : "ㅁ"
+            }
+          ],
+          "selected" : 0
+        },
+        "ko" : "내일 ㅡㄷㄷ샤ㅜㅎ ",
+        "koMarked" : "ㅁ"
+      },
+      {
+        "duo" : "내일 meeting ",
+        "duoMarked" : "au",
+        "hud" : {
+          "readings" : [
+            {
+              "lang" : "en",
+              "text" : "au"
+            },
+            {
+              "lang" : "ko",
+              "text" : "며"
+            }
+          ],
+          "selected" : 0
+        },
+        "ko" : "내일 ㅡㄷㄷ샤ㅜㅎ ",
+        "koMarked" : "며"
+      },
+      {
+        "duo" : "내일 meeting ",
+        "duoMarked" : "몇",
+        "hud" : {
+          "readings" : [
+            {
+              "lang" : "ko",
+              "text" : "몇"
+            },
+            {
+              "lang" : "en",
+              "text" : "auc"
+            }
+          ],
+          "selected" : 0
+        },
+        "ko" : "내일 ㅡㄷㄷ샤ㅜㅎ ",
+        "koMarked" : "몇"
+      },
+      {
+        "duo" : "내일 meeting 몇 ",
+        "duoMarked" : "",
+        "ko" : "내일 ㅡㄷㄷ샤ㅜㅎ 몇 ",
+        "koMarked" : ""
+      },
+      {
+        "duo" : "내일 meeting 몇 ",
+        "duoMarked" : "ㅅ",
+        "ko" : "내일 ㅡㄷㄷ샤ㅜㅎ 몇 ",
+        "koMarked" : "ㅅ"
+      },
+      {
+        "duo" : "내일 meeting 몇 ",
+        "duoMarked" : "시",
+        "ko" : "내일 ㅡㄷㄷ샤ㅜㅎ 몇 ",
+        "koMarked" : "시"
+      },
+      {
+        "duo" : "내일 meeting 몇 ",
+        "duoMarked" : "싱",
+        "ko" : "내일 ㅡㄷㄷ샤ㅜㅎ 몇 ",
+        "koMarked" : "싱"
+      },
+      {
+        "duo" : "내일 meeting 몇 ",
+        "duoMarked" : "시야",
+        "ko" : "내일 ㅡㄷㄷ샤ㅜㅎ 몇 시",
+        "koMarked" : "야"
+      },
+      {
+        "duo" : "내일 meeting 몇 시야?",
+        "duoMarked" : "",
+        "ko" : "내일 ㅡㄷㄷ샤ㅜㅎ 몇 시야?",
+        "koMarked" : ""
+      }
+    ],
+    "id" : "mix",
+    "tokens" : [
+      "s",
+      "o",
+      "d",
+      "l",
+      "f",
+      " ",
+      "m",
+      "e",
+      "e",
+      "t",
+      "i",
+      "n",
+      "g",
+      " ",
+      "a",
+      "u",
+      "c",
+      " ",
+      "t",
+      "l",
+      "d",
+      "i",
+      "?"
+    ]
+  },
+  {
+    "frames" : [
+      {
+        "duo" : "",
+        "duoMarked" : "ㅇ",
+        "ko" : "",
+        "koMarked" : "ㅇ"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "오",
+        "ko" : "",
+        "koMarked" : "오"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "온",
+        "ko" : "",
+        "koMarked" : "온"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "오느",
+        "ko" : "오",
+        "koMarked" : "느"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "오늘",
+        "ko" : "오",
+        "koMarked" : "늘"
+      },
+      {
+        "duo" : "오늘 ",
+        "duoMarked" : "",
+        "ko" : "오늘 ",
+        "koMarked" : ""
+      },
+      {
+        "duo" : "오늘 ",
+        "duoMarked" : "P",
+        "ko" : "오늘 ",
+        "koMarked" : "ㅖ"
+      },
+      {
+        "duo" : "오늘 ",
+        "duoMarked" : "PR",
+        "ko" : "오늘 ㅖ",
+        "koMarked" : "ㄲ"
+      },
+      {
+        "duo" : "오늘 ",
+        "duoMarked" : "PRㅇ",
+        "ko" : "오늘 ㅖㄲ",
+        "koMarked" : "ㅇ"
+      },
+      {
+        "duo" : "오늘 ",
+        "duoMarked" : "PR으",
+        "ko" : "오늘 ㅖㄲ",
+        "koMarked" : "으"
+      },
+      {
+        "duo" : "오늘 ",
+        "duoMarked" : "PR을",
+        "ko" : "오늘 ㅖㄲ",
+        "koMarked" : "을"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "",
+        "ko" : "오늘 ㅖㄲ을 ",
+        "koMarked" : ""
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "ㅇ",
+        "ko" : "오늘 ㅖㄲ을 ",
+        "koMarked" : "ㅇ"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "오",
+        "ko" : "오늘 ㅖㄲ을 ",
+        "koMarked" : "오"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "올",
+        "ko" : "오늘 ㅖㄲ을 ",
+        "koMarked" : "올"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "올ㄹ",
+        "ko" : "오늘 ㅖㄲ을 올",
+        "koMarked" : "ㄹ"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "올려",
+        "ko" : "오늘 ㅖㄲ을 올",
+        "koMarked" : "려"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "올렸",
+        "ko" : "오늘 ㅖㄲ을 올",
+        "koMarked" : "렸"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "올렸ㄴ",
+        "ko" : "오늘 ㅖㄲ을 올렸",
+        "koMarked" : "ㄴ"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "올렸느",
+        "ko" : "오늘 ㅖㄲ을 올렸",
+        "koMarked" : "느"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "올렸는",
+        "ko" : "오늘 ㅖㄲ을 올렸",
+        "koMarked" : "는"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "올렸는ㄷ",
+        "ko" : "오늘 ㅖㄲ을 올렸는",
+        "koMarked" : "ㄷ"
+      },
+      {
+        "duo" : "오늘 PR을 ",
+        "duoMarked" : "올렸는데",
+        "ko" : "오늘 ㅖㄲ을 올렸는",
+        "koMarked" : "데"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 ",
+        "duoMarked" : "",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 ",
+        "koMarked" : ""
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 ",
+        "duoMarked" : "C",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 ",
+        "koMarked" : "ㅊ"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 ",
+        "duoMarked" : "CI",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 ",
+        "koMarked" : "챠"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 ",
+        "duoMarked" : "CIr",
+        "hud" : {
+          "readings" : [
+            {
+              "lang" : "en",
+              "text" : "CIr"
+            },
+            {
+              "lang" : "ko",
+              "text" : "CIㄱ"
+            }
+          ],
+          "selected" : 0
+        },
+        "ko" : "오늘 ㅖㄲ을 올렸는데 ",
+        "koMarked" : "챡"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 ",
+        "duoMarked" : "CI가",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠",
+        "koMarked" : "가"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 ",
+        "duoMarked" : "",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 ",
+        "koMarked" : ""
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 ",
+        "duoMarked" : "ㄲ",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 ",
+        "koMarked" : "ㄲ"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 ",
+        "duoMarked" : "깨",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 ",
+        "koMarked" : "깨"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 ",
+        "duoMarked" : "깾",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 ",
+        "koMarked" : "깾"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 ",
+        "duoMarked" : "깨져",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 깨",
+        "koMarked" : "져"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 ",
+        "duoMarked" : "깨졌",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 깨",
+        "koMarked" : "졌"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 ",
+        "duoMarked" : "깨졌ㄴ",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 깨졌",
+        "koMarked" : "ㄴ"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 ",
+        "duoMarked" : "깨졌네",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 깨졌",
+        "koMarked" : "네"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 ",
+        "duoMarked" : "깨졌넹",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 깨졌",
+        "koMarked" : "넹"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 ",
+        "duoMarked" : "깨졌네요",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 깨졌네",
+        "koMarked" : "요"
+      },
+      {
+        "duo" : "오늘 PR을 올렸는데 CI가 깨졌네요.",
+        "duoMarked" : "",
+        "ko" : "오늘 ㅖㄲ을 올렸는데 챠가 깨졌네요.",
+        "koMarked" : ""
+      }
+    ],
+    "id" : "dev",
+    "tokens" : [
+      "d",
+      "h",
+      "s",
+      "m",
+      "f",
+      " ",
+      "P",
+      "R",
+      "d",
+      "m",
+      "f",
+      " ",
+      "d",
+      "h",
+      "f",
+      "f",
+      "u",
+      "T",
+      "s",
+      "m",
+      "s",
+      "e",
+      "p",
+      " ",
+      "C",
+      "I",
+      "r",
+      "k",
+      " ",
+      "R",
+      "o",
+      "w",
+      "u",
+      "T",
+      "s",
+      "p",
+      "d",
+      "y",
+      "."
+    ]
+  },
+  {
+    "frames" : [
+      {
+        "duo" : "",
+        "duoMarked" : "ㅂ",
+        "ko" : "",
+        "koMarked" : "ㅂ"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "배",
+        "ko" : "",
+        "koMarked" : "배"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "뱊",
+        "ko" : "",
+        "koMarked" : "뱊"
+      },
+      {
+        "duo" : "",
+        "duoMarked" : "배포",
+        "ko" : "배",
+        "koMarked" : "포"
+      },
+      {
+        "duo" : "배포 ",
+        "duoMarked" : "",
+        "ko" : "배포 ",
+        "koMarked" : ""
+      },
+      {
+        "duo" : "배포 ",
+        "duoMarked" : "ㅎ",
+        "ko" : "배포 ",
+        "koMarked" : "ㅎ"
+      },
+      {
+        "duo" : "배포 ",
+        "duoMarked" : "해",
+        "ko" : "배포 ",
+        "koMarked" : "해"
+      },
+      {
+        "duo" : "배포 ",
+        "duoMarked" : "go",
+        "hud" : {
+          "readings" : [
+            {
+              "lang" : "ko",
+              "text" : "해"
+            },
+            {
+              "lang" : "en",
+              "text" : "go"
+            }
+          ],
+          "selected" : 1
+        },
+        "ko" : "배포 ",
+        "koMarked" : "해"
+      },
+      {
+        "duo" : "배포 go ",
+        "duoMarked" : "",
+        "ko" : "배포 해 ",
+        "koMarked" : ""
+      },
+      {
+        "duo" : "배포 go ",
+        "duoMarked" : "g",
+        "ko" : "배포 해 ",
+        "koMarked" : "ㅎ"
+      },
+      {
+        "duo" : "배포 go ",
+        "duoMarked" : "하",
+        "ko" : "배포 해 ",
+        "koMarked" : "하"
+      },
+      {
+        "duo" : "배포 go ",
+        "duoMarked" : "할",
+        "ko" : "배포 해 ",
+        "koMarked" : "할"
+      },
+      {
+        "duo" : "배포 go ",
+        "duoMarked" : "할ㄲ",
+        "ko" : "배포 해 할",
+        "koMarked" : "ㄲ"
+      },
+      {
+        "duo" : "배포 go ",
+        "duoMarked" : "할까",
+        "ko" : "배포 해 할",
+        "koMarked" : "까"
+      },
+      {
+        "duo" : "배포 go ",
+        "duoMarked" : "할깡",
+        "ko" : "배포 해 할",
+        "koMarked" : "깡"
+      },
+      {
+        "duo" : "배포 go ",
+        "duoMarked" : "할까요",
+        "ko" : "배포 해 할까",
+        "koMarked" : "요"
+      },
+      {
+        "duo" : "배포 go 할까요?",
+        "duoMarked" : "",
+        "ko" : "배포 해 할까요?",
+        "koMarked" : ""
+      }
+    ],
+    "id" : "flip",
+    "tokens" : [
+      "q",
+      "o",
+      "v",
+      "h",
+      " ",
+      "g",
+      "o",
+      "{rcmd}",
+      " ",
+      "g",
+      "k",
+      "f",
+      "R",
+      "k",
+      "d",
+      "y",
+      "?"
+    ]
+  }
+]

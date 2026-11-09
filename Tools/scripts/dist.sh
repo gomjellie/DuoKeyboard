@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Packages the Release host app for the download site.
 # Usage: Tools/scripts/dist.sh <base-url>   (the site URL that will serve build/dist)
-# Output: build/dist/{index.html, install.sh, Duo.zip, icon.png} from the templates in Tools/dist.
+# Output: build/dist/{index.html, demo.js, install.sh, Duo.zip, icon.png} from Tools/dist.
 # Raise CURRENT_PROJECT_VERSION in project.yml before each release: Duo 설정 offers 업데이트 only
 # when the embedded input method is newer than the installed one.
 set -euo pipefail
@@ -27,11 +27,14 @@ SHA256=$(shasum -a 256 "$OUT/Duo.zip" | cut -d' ' -f1)
 SIZE=$(stat -f %z "$OUT/Duo.zip" | awk '{ printf "%.1f MB", $1 / 1048576 }')
 DATE=$(date +%Y-%m-%d)
 
+# The demo's frames come from the engine (DemoFramesTests) and go inline into the page.
 for file in install.sh index.html; do
-  sed -e "s|@BASE_URL@|$BASE_URL|g" -e "s|@VERSION@|$VERSION|g" -e "s|@BUILD@|$BUILD|g" \
-      -e "s|@SHA256@|$SHA256|g" -e "s|@SIZE@|$SIZE|g" -e "s|@DATE@|$DATE|g" \
-      "Tools/dist/$file" > "$OUT/$file"
+  awk -v frames=Tools/dist/demo-frames.json \
+      '/@DEMO_FRAMES@/ { while ((getline line < frames) > 0) print line; next } { print }' "Tools/dist/$file" \
+    | sed -e "s|@BASE_URL@|$BASE_URL|g" -e "s|@VERSION@|$VERSION|g" -e "s|@BUILD@|$BUILD|g" \
+          -e "s|@SHA256@|$SHA256|g" -e "s|@SIZE@|$SIZE|g" -e "s|@DATE@|$DATE|g" > "$OUT/$file"
 done
+cp Tools/dist/demo.js "$OUT/demo.js"
 if grep -q '@[A-Z0-9_]*@' "$OUT/install.sh" "$OUT/index.html"; then
   echo "unfilled template field in $OUT" >&2
   exit 1
