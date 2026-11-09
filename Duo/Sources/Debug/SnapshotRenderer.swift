@@ -63,6 +63,7 @@ struct SnapshotRenderer {
         outdated.installedVersion = BundleVersion(marketing: "0.9.0", build: "1")
         var secure = ready
         secure.isSecureInputActive = true
+        secure.secureInputAppName = "Google Chrome"
 
         var result: [(String, Scene)] = []
         let onboarding = CGSize(width: DuoStyle.onboardingSize.width, height: DuoStyle.onboardingSize.height)

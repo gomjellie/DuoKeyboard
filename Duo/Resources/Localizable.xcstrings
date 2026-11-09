@@ -1833,6 +1833,16 @@
         }
       }
     },
+    "켠 앱: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turned on by: %@"
+          }
+        }
+      }
+    },
     "코드 편집기는 처음부터 English 우선이에요." : {
       "localizations" : {
         "en" : {

@@ -41,7 +41,7 @@ struct StatusSection: View {
                 }
             }
             if state.isSecureInputActive {
-                SecureInputWarning()
+                SecureInputWarning(appName: state.secureInputAppName)
             }
             if let failure = status.failure {
                 Label {
@@ -157,6 +157,8 @@ struct StatusValue: View {
 
 /// Some app turned on Secure Keyboard Entry: macOS turns Duo off until it is off.
 private struct SecureInputWarning: View {
+    let appName: String?
+
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 2) {
@@ -165,6 +167,11 @@ private struct SecureInputWarning: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                if let appName {
+                    Text("켠 앱: \(appName)")
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
             }
         } icon: {
             Image(systemName: "lock.shield.fill").foregroundStyle(.orange)
