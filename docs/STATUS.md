@@ -5,6 +5,8 @@
 
 ## 요약
 
+- **보안 키보드 입력 (2026-11-09)**: 어느 앱이든 보안 키보드 입력을 켜면 macOS가 Duo를 끄고 입력 메뉴에서
+  흐리게 보여 줌. 호스트 앱이 켠 앱의 이름을 보여 줌. 아래 "보안 키보드 입력" 절 참고.
 - **카카오톡 대화로 찾은 문제 (2026-11-09)**: 실제 단체 대화 6만 7천 줄을 카카오톡 프로필로 친 줄 정확도
   94.52 % → 97.52 %, 단어 오류율 1.556 % → 0.690 %. `_`, `@`, `~`, 점 단어의 리터럴 규칙, 채팅 자모 규칙과 낱말,
   긴 단어의 끝 읽기, 터미널 기본 프로필(English 우선 → 자동). 아래 "카카오톡 대화로 찾은 문제" 절 참고.
@@ -49,12 +51,12 @@
 
 | 묶음 | 결과 |
 |---|---|
-| `swift test` (debug, `build/spm`) | 48개 묶음의 테스트 514개 통과, 알려진 문제 2개, 실패 0개 (2026-11-08) |
+| `swift test` (debug, `build/spm`) | 51개 묶음의 테스트 604개 통과, 알려진 문제 2개, 실패 0개 (2026-11-09) |
 | `swift test -c release` (`build/spm-rel`) | 48개 묶음의 테스트 514개 통과, 알려진 문제 2개, 실패 0개 (2026-11-08) |
 | 호스트 앱 테스트 (`xcodebuild test -scheme Duo`) | 11개 묶음의 테스트 50개 통과 |
 | live E2E (`make e2e`) | 60/60 (2026-11-08, `make e2e`, 새 모델). 이전: 58/58, 51/51 (2차 수정에서 3번, 리드 점검 뒤 2번, 최신 작업 뒤) |
 | E2E 미러 (`E2ECaseMirrorTests`) | 60개 사례 모두 프로세스 안의 엔진 결과와 같음 |
-| 문자열 카탈로그 (`Duo/Tools/check-strings.py`) | 206/206개 키 통과 |
+| 문자열 카탈로그 (`Duo/Tools/check-strings.py`) | 216/216개 키 통과 (2026-11-09) |
 | 벤치마크, release (단독 실행) | 접두 p99 18.5 µs, 최종 p99 20.2 µs, 접두 + 최종 p99 39.3 µs, 예산 300 µs (2026-11-08, 초성 줄임말 조각 규칙 뒤). 2차 수정 기록: 15.6 / 17.1 / 32.7 µs |
 | DET 골든 벡터 | 모두 통과 (비트 단위로 같음, 모델 해시 `ff05a9602f67b6f7`, 2026-11-08에 다시 만듦: final 1117, incremental 672) |
 
@@ -63,6 +65,42 @@
 
 환경은 macOS 26.6.2, Xcode 27.2, Swift 6.4.2(Swift 6 언어 모드, 엄격한 동시성 검사), XcodeGen 2.46.0이에요.
 모델 빌더(`Tools/ModelBuilder`)는 표준 라이브러리만 쓰는 Python 3로 돌아요.
+
+## 보안 키보드 입력 (2026-11-09)
+
+사용자 보고예요. Orca에서 입력 메뉴의 Duo가 흐리게 보이고 고를 수 없었어요. 사용자는 Safari와 Chrome에서는
+된다고 보았어요.
+
+확인한 것:
+
+- 원인은 Chrome이었음. Chrome의 로그인 페이지가 보안 키보드 입력을 쥐고 있었음
+  - `ioreg -l -w 0`의 `kCGSSessionSecureInputPID`가 Chrome의 pid였음
+  - `IsSecureEventInputEnabled()`는 Safari, Chrome, Orca 어느 앱이 앞에 있어도 true였음. 전역 값임
+- Duo 로그(`ime` 범주)에서 macOS가 Duo를 바로 내렸음
+  - 10:45:59 Chrome에서 `activate … secure=true` 뒤 1 ms 만에 `deactivate`
+  - 10:46:03 Orca에서도 같았음
+- 그동안 입력 메뉴에서 Duo만 흐렸음. ABC와 두벌식(2-Set Korean)은 고를 수 있었음
+  - Duo는 `asciiCapable=true`, 두벌식은 `false`임. 그래서 막는 기준은 ASCII 입력 가능 여부가 아님
+  - TIS의 `IsSelectCapable`은 그동안에도 true였음. TIS 속성으로는 막힌 상태를 알 수 없음
+- 사용자가 로그인을 마친 뒤 보안 키보드 입력이 풀렸음. 11:13:50 Orca에서 Duo가 `secure=false`로 다시 켜졌음
+- critique V2와 imk-platform 4.6절은 보안 입력 중에도 Duo가 켜진 채 남는다고 적었음. 두 문서를 고쳤음
+
+바뀐 것:
+
+- `SecureInputOwner`(DuoKit)가 레지스트리 루트 `IOConsoleUsers`에서 현재 사용자 세션의
+  `kCGSSessionSecureInputPID`를 읽고 앱 이름을 얻음. `InputMethodState.secureInputAppName`에 담음
+  - 이 키는 공개 API가 아님. 키가 없거나 값이 이상하면 이름을 모르는 것으로 다룸
+- 설정 ▸ 일반 ▸ 상태의 안내가 실제 동작을 알려 줌. macOS가 Duo를 끄고 입력 메뉴에서도 고를 수 없다고 씀
+- 안내 아래에 "켠 앱: <앱 이름>"을 보여 줌. 이름을 모르면 이 줄을 숨김
+- 입력기의 보안 입력 통과 처리(R5)는 그대로 둠. macOS가 Duo를 내리기 전에 `activate`가 먼저 오기 때문임
+
+확인하지 않은 것:
+
+- 이번에 본 빌드는 ad-hoc 서명 빌드임. Developer ID로 서명하고 공증한 빌드도 같은지는 모름
+- 보안 키보드 입력이 풀린 뒤 macOS가 저절로 Duo로 돌아오는지는 모름. 11:13:50의 재선택이 사용자 동작인지
+  로그로 구분하지 못했음
+- "켠 앱" 줄은 스냅샷 장면(`pane-general-secure-input-*`)과 단위 테스트로만 확인했음. 실제 보안 입력 중의
+  설정 창은 보지 않았음
 
 ## 카카오톡 대화로 찾은 문제 (2026-11-09)
 
@@ -735,6 +773,10 @@ contenteditable, Terminal(zsh 줄 편집기), VS Code였어요. 호스트 앱 �
 - **연구 문서는 아직 입력 소스 아이콘 글자를 "가A"로, 언어 배지를 "가"/"A"로 적음** (critique.md,
   imk-platform.md, ui-design.md). 지금 입력 소스 아이콘과 `TISIconLabels`는 "한A"임. HUD와 호스트 앱의
   언어 배지는 "한"/"A"를 텍스트로 그림.
+- **보안 키보드 입력이 켜져 있으면 Duo를 쓸 수 없음** (2026-11-09). macOS가 막는 것이라 Duo가 피할 수 없음.
+  - 보안 입력 중에는 상태 요약이 "Duo가 켜져 있어요"와 "Duo로 전환" 단추를 보여 줌. 눌러도 macOS가 막음.
+    요약이 보안 입력을 먼저 알려 주게 고치는 일이 남았음
+  - 쥔 프로세스가 앱 이름이 없는 도우미 프로세스면 "켠 앱" 줄이 보이지 않음
 - **Orca 말고 다른 xterm.js 터미널은 확인하지 않았음.** 그래서 `xtermTerminals`에는 Orca만 있음.
 - **재설치 뒤 다시 연결.** `make install`이나 `install-ime.sh` 뒤에는, Duo를 쓰던 앱이 평범한 ABC로 입력함.
   - 그 앱이 맨 앞에 있을 때 Duo를 다시 고르면(⌃Space 두 번, 또는 메뉴 막대) 풀림. 스크립트가 이 안내를 출력함.

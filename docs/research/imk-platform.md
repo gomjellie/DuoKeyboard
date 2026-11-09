@@ -464,9 +464,10 @@ let level = NSWindow.Level(rawValue: Int(client.windowLevel()) + 1)        // pl
 - `client.bundleIdentifier()`는 nil일 수 있음(예: Android 에뮬레이터). 클라이언트 객체마다 캐시함: XPC 왕복이고, 포커스는 클라이언트 사이를 오감. [REF macSKK, DKST]
 - **암호 필드:**
   - `NSSecureTextField`와 웹 암호 필드는 컨텍스트를 로마자 입력 소스로 제한함(`NSTextInputContext.allowedInputSourceLocales = [NSAllRomanInputSourcesLocaleIdentifier]`). TSM은 ASCII 레이아웃으로 바꾸고, Duo는 ASCII 가능 입력 소스가 아니므로 **Duo는 호출되지 않음**. [SDK][INFERRED]
+    - **[2026-11-09 확인함]** Duo는 ASCII 가능 입력 소스임(critique V2). 그래도 보안 입력이 켜지면 macOS가 Duo를 끄고 입력 메뉴에서 흐리게 보여 줌. 같은 때 2-Set Korean(ASCII 불가)은 고를 수 있었음. 막는 기준은 ASCII 가능 여부가 아님
   - 다층 방어: 활성화될 때마다, 그리고 첫 키마다 `IsSecureEventInputEnabled()`(Carbon, `CarbonEventsCore.h`)를 확인함. true를 반환하면 모든 입력을 그대로 넘기고 **학습 저장소에 절대 넣지 않음**.
   - 클라이언트 래퍼는 비공개 `isSecureMode`에도 응답함; `responds(to:)`로 확인함.
-  - `IsSecureEventInputEnabled()`는 전역 값이라 Terminal의 "Secure Keyboard Entry"(보안 키보드 입력)를 켜도 true가 됨. 괜찮음: 개인정보 보호 쪽으로 보수적인 동작임.
+  - `IsSecureEventInputEnabled()`는 전역 값이라 Terminal의 "Secure Keyboard Entry"(보안 키보드 입력)를 켜도 true가 됨. 처음에는 개인정보 보호 쪽으로 보수적인 동작이라 괜찮다고 보았음. **[2026-11-09 확인함]** 실제로는 보안 입력을 쥔 앱이 뒤에 있어도 모든 앱에서 Duo를 쓸 수 없음. 쥔 프로세스는 레지스트리 루트 `IOConsoleUsers`의 `kCGSSessionSecureInputPID`에 있음(비공개 키).
 - **검색 필드**(Spotlight, Finder, Alfred, Raycast, Safari 주소 막대)는 확정 전까지 조합 문자열로 검색하지 않음. Gureum #180에서는 검색 결과가 "마지막 음절이 빠진" 상태로 나옴. 비공개 `isIncrementalSearchInputContext`로 이런 필드를 감지함. 정책은 6절 참고.
 
 ### 4.7 마우스와 포커스
