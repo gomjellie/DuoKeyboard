@@ -54,7 +54,7 @@
 
 | 묶음 | 결과 |
 |---|---|
-| `swift test` (debug, `build/spm`) | 60개 묶음의 테스트 660개 통과(건너뛴 `DemoFramesTests` 포함), 알려진 문제 2개, 실패 0개 (2026-11-10) |
+| `swift test` (debug, `build/spm`) | 60개 묶음의 테스트 662개 통과(건너뛴 `DemoFramesTests` 포함), 알려진 문제 2개, 실패 0개 (2026-11-10) |
 | `swift test -c release` (`build/spm-rel`) | 48개 묶음의 테스트 514개 통과, 알려진 문제 2개, 실패 0개 (2026-11-08) |
 | 호스트 앱 테스트 (`xcodebuild test -scheme Duo`) | 11개 묶음의 테스트 51개 통과 (2026-11-10) |
 | live E2E (`make e2e`) | 60/60 (2026-11-08, `make e2e`, 새 모델). 이전: 58/58, 51/51 (2차 수정에서 3번, 리드 점검 뒤 2번, 최신 작업 뒤) |

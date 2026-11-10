@@ -372,7 +372,7 @@ cd Packages/DuoCore && DUO_DEMO_FRAMES_OUT=$PWD/../../Tools/dist/demo-frames.jso
 | `showHints` | `true` | 켬/끔 | 일반 ▸ 입력 ▸ 입력 중 힌트 보기, 입력 메뉴 ▸ 힌트 표시 | 치는 중 후보 막대. 꺼도 실패 안내와 배지는 뜸 |
 | `alwaysShowChoices` | `false` | 켬/끔 | 일반 ▸ 입력 ▸ 후보 늘 보기, 입력 메뉴 ▸ 후보 늘 보기 | 켜면 단어마다 첫 키부터 후보 막대가 뜸. 끄면 다른 읽기가 그럴듯할 때나 바꾸기 키를 누를 때만 뜸 |
 | `offerUndoAfterCommit` | `true` | 켬/끔 | 일반 ▸ 입력 ▸ 확정 후 바꾸기 제안 | 마지막 단어의 후보 막대. 애매하거나 보이던 것과 다르게 확정한 단어에 뜸 |
-| `backspaceUnit` | `jaso` | `jaso`(자소), `gulja`(글자) | 일반 ▸ 입력 ▸ 백스페이스 단위 | 조합 중 Backspace가 지우는 단위 |
+| `backspaceUnit` | `jaso` | `jaso`(자소), `gulja`(글자) | 일반 ▸ 입력 ▸ 백스페이스 단위 | 조합 중 Backspace가 지우는 단위. `jaso`는 치던 글자만 자소씩 지우고 그 앞 글자는 통째로 지움 |
 | `graveTypesWon` | `false` | 켬/끔 | 일반 ▸ 입력 ▸ `` ` `` 키로 ₩ 입력 | `` ` `` 키로 ₩를 입력함 |
 | `languageBias` | `0` | −1000(English)–+1000(한국어). 슬라이더는 100 단위 | 일반 ▸ 언어 감지 ▸ 자주 쓰는 언어 | 모든 앱에서 한국어 쪽 점수에 더함 |
 | `eagerEnglishCommit` | `true` | 켬/끔 | 일반 ▸ 고급 ▸ 확실한 영어는 바로 확정 | 확실한 영어를 치는 동안 확정함 |
@@ -580,7 +580,7 @@ Duo의 언어 판별(DET)은 단어의 키 입력을 ABC 자판이 만들었을 
 
 | 검사 | 명령 | 결과 |
 |---|---|---|
-| 패키지 단위 테스트(debug) | `make test` | 60개 묶음, 660개 테스트 통과(환경 변수가 있어야 도는 묶음 포함). 알려진 문제 2개 |
+| 패키지 단위 테스트(debug) | `make test` | 60개 묶음, 662개 테스트 통과(환경 변수가 있어야 도는 묶음 포함). 알려진 문제 2개 |
 | 호스트 앱 테스트 | `xcodebuild test -scheme Duo` | 11개 묶음, 51개 테스트 통과 |
 | 실제 IMK E2E | `make e2e` | 70/70 |
 | E2E 미러(`E2ECaseMirrorTests`) | `make test`에 들어 있음 | 70개 사례를 프로세스 안에서 실제 모델로 다시 돌림 |
