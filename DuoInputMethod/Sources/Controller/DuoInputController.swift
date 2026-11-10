@@ -147,6 +147,8 @@ final class DuoInputController: IMKInputController {
         }
         runtime.activeController = self
         runtime.checkInputMenuListOnce()
+        // The input method never goes online: Duo.app checks, at most once a day.
+        if runtime.settings.autoUpdate { HostRequest.checkForUpdatesIfDue() }
         wasSecure = IsSecureEventInputEnabled()
         #if DEBUG
         // The end-to-end hook types only into DuoHarness's own text view (DebugInjector checks again
