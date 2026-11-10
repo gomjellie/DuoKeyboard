@@ -315,6 +315,12 @@ public enum InputMethodInstaller {
         CFPreferencesCopyAppValue(thirdPartyKey, thirdPartyDomain) as? [[String: Any]] ?? []
     }
 
+    /// `isAllowListed` after picking up what other processes wrote.
+    static var isAllowListedNow: Bool {
+        CFPreferencesAppSynchronize(thirdPartyDomain)
+        return isAllowListed
+    }
+
     /// Duo is listed in `AppleEnabledThirdPartyInputSources`.
     public static var isAllowListed: Bool {
         readAllowList().contains { ($0["Bundle ID"] as? String) == InputSourceManager.inputMethodBundleID }

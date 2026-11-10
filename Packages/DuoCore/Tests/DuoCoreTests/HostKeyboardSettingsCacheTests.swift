@@ -54,3 +54,29 @@ struct HostKeyboardSettingsCacheTests {
         #expect(url.path.hasPrefix("/private/var/folders/") || url.path.hasPrefix("/var/folders/"))
     }
 }
+
+/// TIS here can miss that System Settings turned Duo on; the reload request repeats while the lists
+/// disagree, but not forever.
+@Suite("Host · TIS catch-up")
+struct HostTISCatchUpTests {
+    @Test("asks to reload every 2 s while behind, at most 5 times, and starts over once in step")
+    func pacing() {
+        var catchUp = InputSourceManager.CatchUp()
+        func post(_ behind: Bool, at seconds: Double) -> Bool {
+            catchUp.shouldPost(behind: behind, now: Date(timeIntervalSince1970: seconds))
+        }
+        #expect(!post(false, at: 0))
+        #expect(post(true, at: 0))
+        #expect(!post(true, at: 1))
+        #expect(post(true, at: 2))
+        let more = (3...5).map { post(true, at: Double($0) * 2) }
+        #expect(more == [true, true, true])
+        #expect(!post(true, at: 20), "no sixth request in a row")
+        #expect(!post(false, at: 21))
+        #expect(post(true, at: 22), "a new disagreement asks again")
+
+        var waiting = InputSourceManager.CatchUp()
+        let asks = (0..<8).map { waiting.shouldPost(behind: true, unlimited: true, now: Date(timeIntervalSince1970: Double($0) * 2)) }
+        #expect(asks == Array(repeating: true, count: 8), "a turn-on waiting for the user keeps asking")
+    }
+}

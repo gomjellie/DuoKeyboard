@@ -113,6 +113,7 @@ public struct InputMethodState: Sendable, Equatable {
 
     /// Reads TIS, the allow-list, the installed bundle and the process list. Read-only.
     public static func read() -> InputMethodState {
+        InputSourceManager.catchUpWithSystemList()
         let selected = InputSourceManager.isSelected
         let secure = IsSecureEventInputEnabled()
         return InputMethodState(

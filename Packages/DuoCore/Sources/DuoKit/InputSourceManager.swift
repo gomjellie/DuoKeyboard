@@ -68,6 +68,51 @@ public enum InputSourceManager {
     public static var isEnabled: Bool {
         onMain { primaryDuoSource().map { boolProperty($0, kTISPropertyInputSourceIsEnabled) } ?? false }
     }
+    /// TIS in a process that started before Duo was registered does not learn that System Settings
+    /// turned Duo on: its list keeps Duo off while macOS's own list
+    /// (`AppleEnabledThirdPartyInputSources`) already has it (seen on macOS 26.6.2). The turn-on then
+    /// waits until it times out although the user allowed Duo. TIS reloads on
+    /// `AppleEnabledInputSourcesChangedNotification`; post it when the two lists disagree.
+    /// Call before reading `isEnabled`; the post reaches this process on its main run loop, so the
+    /// next read sees the change.
+    ///
+    /// - Parameter waiting: the turn-on is waiting for the user, so keep asking. Status polls stop
+    ///   after a few requests: allow-list entries can outlive a removal and never come true.
+    public static func catchUpWithSystemList(waiting: Bool = false, now: Date = Date()) {
+        onMain {
+            let behind = primaryDuoSource().map { !boolProperty($0, kTISPropertyInputSourceIsEnabled) } ?? false
+                && InputMethodInstaller.isAllowListedNow
+            guard catchUp.shouldPost(behind: behind, unlimited: waiting, now: now) else { return }
+            DistributedNotificationCenter.default().postNotificationName(
+                enabledSourcesChanged, object: nil, userInfo: nil, deliverImmediately: true)
+        }
+    }
+
+    static let enabledSourcesChanged = Notification.Name("AppleEnabledInputSourcesChangedNotification")
+    nonisolated(unsafe) static var catchUp = CatchUp()
+
+    /// When to ask TIS to reload: while it disagrees with macOS's list, every `interval`; at most
+    /// `limit` times in a row unless `unlimited`.
+    struct CatchUp {
+        static let interval: TimeInterval = 2
+        static let limit = 5
+        private(set) var lastPost: Date?
+        private(set) var posts = 0
+
+        mutating func shouldPost(behind: Bool, unlimited: Bool = false, now: Date) -> Bool {
+            guard behind else {
+                lastPost = nil
+                posts = 0
+                return false
+            }
+            if posts >= Self.limit && !unlimited { return false }
+            if let lastPost, now.timeIntervalSince(lastPost) < Self.interval { return false }
+            lastPost = now
+            posts += 1
+            return true
+        }
+    }
+
     /// Duo is the current keyboard input source.
     public static var isSelected: Bool {
         onMain { primaryDuoSource().map { boolProperty($0, kTISPropertyInputSourceIsSelected) } ?? false }
