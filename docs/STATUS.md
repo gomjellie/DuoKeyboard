@@ -51,9 +51,9 @@
 
 | 묶음 | 결과 |
 |---|---|
-| `swift test` (debug, `build/spm`) | 54개 묶음의 테스트 615개 통과(건너뛴 `DemoFramesTests` 포함), 알려진 문제 2개, 실패 0개 (2026-11-10) |
+| `swift test` (debug, `build/spm`) | 56개 묶음의 테스트 621개 통과(건너뛴 `DemoFramesTests` 포함), 알려진 문제 2개, 실패 0개 (2026-11-10) |
 | `swift test -c release` (`build/spm-rel`) | 48개 묶음의 테스트 514개 통과, 알려진 문제 2개, 실패 0개 (2026-11-08) |
-| 호스트 앱 테스트 (`xcodebuild test -scheme Duo`) | 11개 묶음의 테스트 50개 통과 |
+| 호스트 앱 테스트 (`xcodebuild test -scheme Duo`) | 11개 묶음의 테스트 51개 통과 (2026-11-10) |
 | live E2E (`make e2e`) | 60/60 (2026-11-08, `make e2e`, 새 모델). 이전: 58/58, 51/51 (2차 수정에서 3번, 리드 점검 뒤 2번, 최신 작업 뒤) |
 | E2E 미러 (`E2ECaseMirrorTests`) | 60개 사례 모두 프로세스 안의 엔진 결과와 같음 |
 | 문자열 카탈로그 (`Duo/Tools/check-strings.py`) | 231/231개 키 통과 (2026-11-10) |
@@ -65,6 +65,42 @@
 
 환경은 macOS 26.6.2, Xcode 27.2, Swift 6.4.2(Swift 6 언어 모드, 엄격한 동시성 검사), XcodeGen 2.46.0이에요.
 모델 빌더(`Tools/ModelBuilder`)는 표준 라이브러리만 쓰는 Python 3로 돌아요.
+
+## 제거 뒤 다시 설치하면 키보드 설정에 Duo가 없던 문제 (2026-11-10)
+
+사용자 보고: 업데이트하려고 정보 ▸ Duo 제거를 누르고 설치 명령을 실행했더니, 키보드 설정에 Duo가 보이지 않았음.
+Duo 켜기는 허용 창 없이 60초 기다렸고, + 목록 한국어에도 Duo가 없었음.
+
+원인 세 가지(macOS 26.6.2에서 확인):
+- 시스템 설정 ▸ 키보드는 샌드박스 확장(`com.apple.Keyboard-Settings.extension`)이고 입력 소스 캐시를 따로 둠
+  - 위치: `$DARWIN_USER_CACHE_DIR/com.apple.Keyboard-Settings.extension/com.apple.IntlDataCache.le*`
+  - Duo를 제거한 사이에 이 캐시가 Duo 없이 다시 만들어지고 그 뒤로 갱신되지 않았음
+  - `TISEnableInputSource`가 보내는 허용 요청을 키보드 설정이 버림. 로그: "Invalid value on inputSourceToBeEnabled"
+    (요청 속 입력 소스를 `_CreateUnflattenedInputSource`로 되살리지 못함)
+  - 처음 설치하는 사용자도 전에 키보드 설정을 연 적이 있으면 같은 일이 생길 수 있음
+- Duo가 등록되기 전에 시작한 프로세스의 TIS는 시스템 설정이 켠 Duo를 알아채지 못함
+  - 그래서 허용해도 호스트 앱은 "꺼짐"으로 보고 60초 뒤 실패를 알렸음
+  - `AppleEnabledInputSourcesChangedNotification`을 보내면 다시 읽음(lldb로 프로세스 안에서 확인)
+- Duo를 제거한 프로세스의 TIS는 그 뒤로 Duo를 따라가지 못함. 위 알림으로도 갱신되지 않음
+
+고친 것:
+- 켜기 전에 키보드 설정 캐시에 Duo가 없으면 캐시를 지우고 실행 중인 시스템 설정을 끝냄(`KeyboardSettingsCache`).
+  앱을 열 때도 낡은 캐시를 지움
+- 허용을 기다리는 동안 TIS와 macOS의 목록이 어긋나면 위 알림을 보냄(`catchUpWithSystemList`)
+- 허용 뒤 앱을 앞으로 가져와 선택하고, 실제로 선택됐는지 확인해 한 번 더 고름
+- 제거한 뒤 호스트 앱이 한 번 다시 열림
+- 제거할 때 `AppleEnabledThirdPartyInputSources`를 직접 쓰지 않음. 직접 써도 실제로는 남았음
+- 설정의 상태 줄이 허용을 기다리는 동안 "macOS가 확인을 요청하면 허용을 눌러 주세요."를 보여 줌
+
+확인한 것(Release 빌드, 실제 앱을 orca computer로 조작):
+- 다른 앱 세션에서 제거 → 키보드 설정을 열어 둠 → Duo 켜기: 허용 창이 3초 안에 뜨고, 허용 뒤 2초 안에
+  "켜짐", Duo가 선택됨
+- 같은 세션에서 제거: 앱이 다시 열리고, Duo 켜기 뒤 "Duo를 쓰고 있어요", 키보드 설정에 "ABC 및 Duo"
+- 입력 모드는 필요 없었음. 모드를 넣어 시험했지만, 캐시를 새로 만들면 모드 없는 빌드도 허용 창이 뜸
+
+확인하지 않은 것:
+- macOS 15에서 같은 캐시 문제가 있는지
+- 키보드 설정 캐시가 언제 다시 만들어지는지(macOS 내부 규칙). 그래서 켤 때마다 확인함
 
 ## 써보기 키보드 힌트와 늘 밝은 내려받기 페이지 (2026-11-10)
 
