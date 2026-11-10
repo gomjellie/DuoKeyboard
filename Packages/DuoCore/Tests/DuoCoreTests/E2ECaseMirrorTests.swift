@@ -60,6 +60,20 @@ struct E2ECaseMirrorTests {
         }
         #expect(!mirror.capsLockOn, "cases leave Caps Lock off (the live injector keeps its state)")
     }
+
+    /// "Enter로 바로 보내기" (SPEC.md 4.10절): every case types the same document, and nothing is
+    /// ever left marked, so a Return always reaches the app with no composition.
+    @Test func everyCaseTypesTheSameTextInline() throws {
+        let cases = try JSONDecoder().decode([Case].self, from: Data(contentsOf: Self.casesURL))
+        let mirror = try #require(HarnessMirror(inline: true))
+        for c in cases {
+            let (text, marked) = mirror.run(c.keys)
+            if let expect = c.expect {
+                #expect(text == expect, "\(c.name): text")
+            }
+            #expect(marked.isEmpty, "\(c.name): nothing marked")
+        }
+    }
 }
 
 /// One IMK controller's engine plus the harness's text view, driven like the live E2E run.
@@ -67,30 +81,45 @@ struct E2ECaseMirrorTests {
 final class HarnessMirror {
     let engine: CompositionEngine
     private var field = BufferTextClient(bundleIdentifier: DuoIDs.harnessBundleID)
+    /// The engine's client: the field, or ``InlineTextClient`` over it.
+    private var client: any TextClient
+    private let inline: Bool
     /// `DebugInjector` keeps Caps Lock state across scripts, like the real toggle.
     private(set) var capsLockOn = false
 
-    init?() {
+    /// - Parameter inline: type through ``InlineTextClient`` ("Enter로 바로 보내기").
+    init?(inline: Bool = false) {
         guard let detector = RealModel.detector else { return nil }
         engine = CompositionEngine(detector: detector, learning: LearningStore(), settings: .default,
                                    bundleIdentifier: DuoIDs.harnessBundleID)
         engine.setClient(bundleIdentifier: DuoIDs.harnessBundleID)
+        self.inline = inline
+        client = field
+        client = makeClient()
+    }
+
+    private func makeClient() -> any TextClient {
+        guard inline else { return field }
+        let adapter = InlineTextClient(base: field)
+        adapter.wantsInline = true
+        return adapter
     }
 
     /// Runs one case: reset click, fresh field, then the keys. Returns the field's text and marked text.
     func run(_ keys: String) -> (text: String, marked: String) {
-        engine.commit(.mouse, client: field)
+        engine.commit(.mouse, client: client)
         field = BufferTextClient(bundleIdentifier: DuoIDs.harnessBundleID)
+        client = makeClient()
         for key in KeyScript.parse(keys) {
             switch key.kind {
             case .wait:
                 Thread.sleep(forTimeInterval: Double(key.milliseconds) / 1000)
             case .click:
-                engine.commit(.mouse, client: field)
+                engine.commit(.mouse, client: client)
             case .modifierTap, .modifierPress, .modifierRelease:
                 for event in flagsEvents(for: key) {
                     if let modifier = KeyEventMapper.modifierEvent(from: event, pressedMouseButtons: 0) {
-                        engine.handleModifier(modifier, client: field)
+                        engine.handleModifier(modifier, client: client)
                     }
                 }
             case .key:
@@ -99,7 +128,7 @@ final class HarnessMirror {
                     Issue.record("unmapped key \(key)")
                     continue
                 }
-                if !engine.handle(mapped, client: field) {
+                if !engine.handle(mapped, client: client) {
                     field.applyPassedKey(mapped, characters: key.characters)
                 }
             }

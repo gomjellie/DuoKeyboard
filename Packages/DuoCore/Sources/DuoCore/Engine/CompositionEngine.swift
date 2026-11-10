@@ -452,6 +452,12 @@ public final class CompositionEngine {
         context.resetToSentenceStart()
     }
 
+    /// The app changed the text around the word without the engine seeing it (SPEC.md 4.9절): forget
+    /// the word silently, as a resync does. The word typed inline stays in the document as it is.
+    public func dropComposition() {
+        if token != nil { dropToken() }
+    }
+
     // MARK: - Shared helpers
 
     var biasKO: Int { clientProfile.biasKO(settings) }
