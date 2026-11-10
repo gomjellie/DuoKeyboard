@@ -166,6 +166,7 @@ public enum InputMethodInstaller {
         if !InputSourceManager.isEnabled { throw InstallError.enableFailed(en) }
         complete(.allowListed)
         complete(.enabled)
+        InputMenuList.addDuoIfMissing()
         let reconnect = source != nil && InputSourceManager.isSelected
         if select {
             let sel = reconnect ? InputSourceManager.reselect() : InputSourceManager.select()
