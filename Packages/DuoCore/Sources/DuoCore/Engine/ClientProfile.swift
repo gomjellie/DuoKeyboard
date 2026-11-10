@@ -68,6 +68,18 @@ public struct ClientProfile: Sendable, Hashable {
         settings.appProfiles[bundleIdentifier] ?? defaultAppProfile
     }
 
+    /// Whether the word being typed can go straight into the document ("Enter로 바로 보내기",
+    /// SPEC.md 4.10절): every key then replaces the word's range, so the client must honour
+    /// replacement ranges and let committed text change. Terminals and Java clients keep marked text.
+    public var supportsInline: Bool {
+        replacement == .full && canReplaceCommittedText && !isTerminal && !needsMarkBeforeInsert
+    }
+
+    /// The user turned "Enter로 바로 보내기" on for this app and the app supports it.
+    public func usesInline(_ settings: DuoSettings) -> Bool {
+        supportsInline && settings.inlineApps.contains(bundleIdentifier)
+    }
+
     /// `biasKO` for this client (critique R8): the profile prior plus the global language bias,
     /// clamped to ±1500 millinats.
     public func biasKO(_ settings: DuoSettings) -> Int {

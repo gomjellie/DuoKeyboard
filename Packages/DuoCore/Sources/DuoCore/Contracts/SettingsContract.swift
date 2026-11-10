@@ -70,6 +70,10 @@ public struct DuoSettings: Sendable, Hashable, Codable {
     public var learningPaused: Bool = false
     /// User overrides by bundle identifier; apps not listed use `ClientProfile` defaults.
     public var appProfiles: [String: AppProfile] = [:]
+    /// Apps (bundle identifiers) where the word being typed goes straight into the document
+    /// instead of as marked text ("Enter로 바로 보내기", SPEC.md 4.10절). Only apps whose
+    /// `ClientProfile.supportsInline` is true use it.
+    public var inlineApps: Set<String> = []
     public var hasCompletedOnboarding: Bool = false
 
     public init() {}
@@ -78,7 +82,7 @@ public struct DuoSettings: Sendable, Hashable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case flipKey, flipTapWindowMs, showHints, alwaysShowChoices, offerUndoAfterCommit, backspaceUnit, graveTypesWon,
-             languageBias, eagerEnglishCommit, learningEnabled, learningPaused, appProfiles,
+             languageBias, eagerEnglishCommit, learningEnabled, learningPaused, appProfiles, inlineApps,
              hasCompletedOnboarding
     }
 
@@ -97,6 +101,7 @@ public struct DuoSettings: Sendable, Hashable, Codable {
         learningEnabled = (try? c.decodeIfPresent(Bool.self, forKey: .learningEnabled)) ?? d.learningEnabled
         learningPaused = (try? c.decodeIfPresent(Bool.self, forKey: .learningPaused)) ?? d.learningPaused
         appProfiles = Self.decodeProfiles(c) ?? d.appProfiles
+        inlineApps = (try? c.decodeIfPresent([String].self, forKey: .inlineApps)).map { Set($0) } ?? d.inlineApps
         hasCompletedOnboarding = (try? c.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)) ?? d.hasCompletedOnboarding
         flipTapWindowMs = min(500, max(200, flipTapWindowMs))
         languageBias = min(1000, max(-1000, languageBias))
@@ -135,6 +140,7 @@ public struct DuoSettings: Sendable, Hashable, Codable {
         try c.encode(learningEnabled, forKey: .learningEnabled)
         try c.encode(learningPaused, forKey: .learningPaused)
         try c.encode(appProfiles, forKey: .appProfiles)
+        try c.encode(inlineApps.sorted(), forKey: .inlineApps)
         try c.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
     }
 }

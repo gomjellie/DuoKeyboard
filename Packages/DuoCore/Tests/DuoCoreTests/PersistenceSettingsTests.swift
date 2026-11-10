@@ -41,6 +41,22 @@ struct PersistenceSettingsTests {
         #expect(back.alwaysShowChoices)
     }
 
+    @Test func inlineAppsDefaultToNoneAndRoundTripSorted() throws {
+        let older = try JSONDecoder().decode(DuoSettings.self, from: Data(#"{"showHints":true}"#.utf8))
+        #expect(older.inlineApps.isEmpty, "a blob from before the setting types marked text everywhere")
+        var on = DuoSettings()
+        on.inlineApps = ["ru.keepcoder.Telegram", "com.apple.TextEdit"]
+        let data = try JSONEncoder().encode(on)
+        #expect(try Self.object(data)["inlineApps"] as? [String] == ["com.apple.TextEdit", "ru.keepcoder.Telegram"])
+        #expect(try JSONDecoder().decode(DuoSettings.self, from: data).inlineApps == on.inlineApps)
+    }
+
+    @Test func inlineAppsThatAreNotAListOfStringsFallBackToNone() throws {
+        let settings = try JSONDecoder().decode(DuoSettings.self, from: Data(#"{"inlineApps":{"a":1},"showHints":false}"#.utf8))
+        #expect(settings.inlineApps.isEmpty)
+        #expect(settings.showHints == false)
+    }
+
     /// The IME's input menu (`SettingsStore.update`) toggling 힌트 표시 on a newer host's blob.
     @Test func anUpdateWritesOnlyWhatChanged() throws {
         let before = SettingsStore.decode(Self.newer)
