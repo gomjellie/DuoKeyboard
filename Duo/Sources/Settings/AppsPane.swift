@@ -27,6 +27,15 @@ struct AppsPane: View {
                 Text("코드 편집기는 처음부터 English 우선이에요.")
             }
 
+            Section {
+                LabeledContent {
+                    EmptyView()
+                } label: {
+                    Text("Enter로 바로 보내기")
+                    Text(AppsPane.sendWithReturnExplanation)
+                }
+            }
+
             Section("Duo로 입력한 앱") {
                 if seen.isEmpty {
                     Text("아직 Duo로 입력한 앱이 없어요. Duo로 입력하면 여기에 나타나요.")
@@ -45,7 +54,7 @@ struct AppsPane: View {
                 HStack {
                     Spacer()
                     Button("기본값 복원…") { confirmReset = true }
-                        .disabled(app.settings.value.appProfiles.isEmpty)
+                        .disabled(app.settings.value.appProfiles.isEmpty && app.settings.value.inlineApps.isEmpty)
                 }
             }
         }
@@ -54,11 +63,21 @@ struct AppsPane: View {
         .onDisappear { app.apps.endObserving() }
         .confirmationDialog("모든 앱을 기본값으로 되돌릴까요?", isPresented: $confirmReset) {
             Button("기본값 복원", role: .destructive) {
-                app.settings.update { $0.appProfiles = [:] }
+                app.settings.update {
+                    $0.appProfiles = [:]
+                    $0.inlineApps = []
+                }
             }
         } message: {
             Text("직접 고른 앱별 설정이 모두 지워지고, Duo가 정한 기본값으로 돌아가요.")
         }
+    }
+}
+
+extension AppsPane {
+    /// What "Enter로 바로 보내기" is for (SPEC.md 4.10절), in the legend and on each app's checkbox.
+    static var sendWithReturnExplanation: String {
+        String(localized: "Enter를 눌렀는데 보내지지 않고 줄이 바뀌는 앱에서 켜세요. 치는 단어에 밑줄이 생기지 않아요.")
     }
 }
 
@@ -74,7 +93,8 @@ extension AppProfile {
     }
 }
 
-/// One app: icon, name, and a profile menu that marks the built-in default.
+/// One app: icon, name, a profile menu that marks the built-in default, and the
+/// "Enter로 바로 보내기" checkbox.
 private struct AppProfileRow: View {
     let app: AppsModel.App
     @Environment(AppModel.self) private var model
@@ -104,6 +124,19 @@ private struct AppProfileRow: View {
             .labelsHidden()
             .pickerStyle(.menu)
             .fixedSize()
+            // Last in the row: the profile menus differ in width, the checkboxes line up at the edge.
+            Toggle("Enter로 바로 보내기", isOn: Binding(
+                get: { app.supportsInline && model.settings.value.inlineApps.contains(app.bundleID) },
+                set: { on in
+                    model.settings.update {
+                        if on { $0.inlineApps.insert(app.bundleID) } else { $0.inlineApps.remove(app.bundleID) }
+                    }
+                })
+            )
+            .toggleStyle(.checkbox)
+            .disabled(!app.supportsInline)
+            .help(app.supportsInline ? AppsPane.sendWithReturnExplanation
+                                     : String(localized: "이 앱은 치는 단어를 바꿀 수 없어서 켤 수 없어요."))
         } label: {
             HStack(spacing: 10) {
                 Image(nsImage: app.icon)
@@ -121,6 +154,7 @@ private struct AppProfileRow: View {
                 }
             }
         }
-        .accessibilityElement(children: .combine)
+        // Two controls per row: each must stay reachable on its own.
+        .accessibilityElement(children: .contain)
     }
 }

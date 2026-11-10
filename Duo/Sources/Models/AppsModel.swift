@@ -17,6 +17,8 @@ final class AppsModel {
         var isRunning: Bool
         /// The built-in profile for this app (used when the user has no override).
         var defaultProfile: AppProfile
+        /// "Enter로 바로 보내기" can be turned on for this app (`ClientProfile.supportsInline`).
+        var supportsInline: Bool
         var id: String { bundleID }
     }
 
@@ -74,9 +76,10 @@ final class AppsModel {
         var others: [App] = []
         for entry in entries {
             let (name, icon) = describe(entry.bundleID, running: runningByID[entry.bundleID])
+            let profile = ClientProfile.forBundleIdentifier(entry.bundleID)
             let app = App(bundleID: entry.bundleID, name: name, icon: icon, isSeen: entry.isSeen,
-                          isRunning: entry.isRunning,
-                          defaultProfile: ClientProfile.forBundleIdentifier(entry.bundleID).defaultAppProfile)
+                          isRunning: entry.isRunning, defaultProfile: profile.defaultAppProfile,
+                          supportsInline: profile.supportsInline)
             if entry.isSeen { seen.append(app) } else { others.append(app) }
         }
         others.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
