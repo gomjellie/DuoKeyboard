@@ -43,6 +43,7 @@ final class DuoRuntime {
     /// A command since the last such write changed the store.
     private var commandsChangedLearning = false
     private var terminationSignal: (any DispatchSourceSignal)?
+    private var checkedInputMenuList = false
 
     private init() {
         detector = Self.loadDetector()
@@ -50,6 +51,20 @@ final class DuoRuntime {
         settings = SettingsStore.load()
         hud = CompositionHUDController(flipKey: settings.flipKey)
         keyboardLayoutID = Self.resolveKeyboardLayout()
+    }
+
+    /// macOS can leave Duo out of the list the menu bar's input menu reads (DuoKit `InputMenuList`).
+    /// A client activates Duo only while Duo is on, so the first activation in this process is the
+    /// time to put Duo back. The pasteboard work stays off the main thread.
+    func checkInputMenuListOnce() {
+        guard !checkedInputMenuList else { return }
+        checkedInputMenuList = true
+        let isEnabled = InputSourceManager.isEnabled
+        DispatchQueue.global(qos: .utility).async {
+            if InputMenuList.addDuoIfMissing(isEnabled: isEnabled) {
+                Log.runtime.info("added Duo to the input menu's list")
+            }
+        }
     }
 
     /// Installs observers. Call once, before `NSApp.run()`.

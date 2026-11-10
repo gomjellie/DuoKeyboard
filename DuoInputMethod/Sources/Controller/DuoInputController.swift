@@ -146,6 +146,7 @@ final class DuoInputController: IMKInputController {
             SettingsStore.recordSeenApp(bundleIdentifier)
         }
         runtime.activeController = self
+        runtime.checkInputMenuListOnce()
         wasSecure = IsSecureEventInputEnabled()
         #if DEBUG
         // The end-to-end hook types only into DuoHarness's own text view (DebugInjector checks again
