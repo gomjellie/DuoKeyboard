@@ -81,9 +81,14 @@ struct AboutPane: View {
         .formStyle(.grouped)
         .task { license = app.status.embedded?.modelLicenseText().map(Self.reflow) }
         .confirmationDialog("Duo 입력기를 제거할까요?", isPresented: $confirmUninstall) {
-            Button("제거", role: .destructive) { Task { await app.status.uninstall() } }
+            Button("제거", role: .destructive) {
+                Task {
+                    await app.status.uninstall()
+                    app.relaunchAfterRemoval()
+                }
+            }
         } message: {
-            Text("Duo가 지금 쓰는 입력 소스라면 ABC로 바꾼 다음 제거해요. 언제든 Duo 켜기로 다시 설치할 수 있어요.")
+            Text("Duo가 지금 쓰는 입력 소스라면 ABC로 바꾼 다음 제거해요. 제거한 뒤 Duo 설정이 한 번 다시 열려요. 언제든 Duo 켜기로 다시 설치할 수 있어요.")
         }
     }
 

@@ -154,6 +154,21 @@ final class AppModel {
         settings.update { $0.hasCompletedOnboarding = true }
     }
 
+    /// After 정보 ▸ Duo 제거, start over in a new process on Settings. TIS in a process that removed
+    /// Duo stops following it: a later Duo 켜기 in the same process never sees the user allow Duo in
+    /// System Settings and times out (seen on macOS 26.6.2), while a new process sees it at once.
+    func relaunchAfterRemoval() {
+        let relaunch = Process()
+        relaunch.executableURL = URL(fileURLWithPath: "/bin/sh")
+        // The bundle path is "$0": it is never parsed as shell code.
+        relaunch.arguments = ["-c",
+                              "while kill -0 \(ProcessInfo.processInfo.processIdentifier) 2>/dev/null; do sleep 0.1; done; " +
+                              "exec /usr/bin/open -n \"$0\" --args \(HostRequest.showSettingsArgument)",
+                              Bundle.main.bundleURL.path]
+        guard (try? relaunch.run()) != nil else { return }
+        NSApp.terminate(nil)
+    }
+
     /// Dock click or `open` with no visible window. A minimized onboarding window comes back on the
     /// step the user left it at.
     func reopen() {

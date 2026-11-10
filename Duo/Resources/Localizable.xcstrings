@@ -271,12 +271,12 @@
         }
       }
     },
-    "Duo가 지금 쓰는 입력 소스라면 ABC로 바꾼 다음 제거해요. 언제든 Duo 켜기로 다시 설치할 수 있어요." : {
+    "Duo가 지금 쓰는 입력 소스라면 ABC로 바꾼 다음 제거해요. 제거한 뒤 Duo 설정이 한 번 다시 열려요. 언제든 Duo 켜기로 다시 설치할 수 있어요." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "If Duo is your current input source, Duo switches to ABC first. You can reinstall it anytime with Turn On Duo."
+            "value" : "If Duo is your current input source, Duo switches to ABC first. Duo Settings opens again after removal. You can reinstall it anytime with Turn On Duo."
           }
         }
       }
