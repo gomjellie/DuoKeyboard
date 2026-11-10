@@ -185,8 +185,16 @@ final class InputMethodStatus {
             activity = .installing(step: error.step)
             if let remaining = await InstallRecovery.resume(
                 after: error, select: true,
-                isEnabled: { InputSourceManager.isEnabled },
-                selectSource: { InputSourceManager.select() },
+                isEnabled: {
+                    InputSourceManager.catchUpWithSystemList(waiting: true)
+                    return InputSourceManager.isEnabled
+                },
+                selectSource: {
+                    // Selecting while System Settings is frontmost does not stick: come back first.
+                    NSApplication.shared.activate()
+                    return InputSourceManager.select()
+                },
+                isSelected: { InputSourceManager.isSelected },
                 onStep: { didFinish($0) },
                 reenable: settingsWasRunning ? nil : { _ = InputSourceManager.enable() }) {
                 failure = Self.failure(for: remaining, during: remaining.step)

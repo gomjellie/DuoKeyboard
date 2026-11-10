@@ -77,6 +77,14 @@ struct StatusSection: View {
             }
             Spacer(minLength: 8)
             if status.isBusy {
+                // The turn-on waits for macOS's prompt in System Settings: say what to press there.
+                if case .installing = status.activity {
+                    Text("macOS가 확인을 요청하면 허용을 눌러 주세요.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: 180, alignment: .trailing)
+                }
                 ProgressView().controlSize(.small)
             } else if let action = content.action {
                 Button(action.title) { Task { await action.run(status) } }
