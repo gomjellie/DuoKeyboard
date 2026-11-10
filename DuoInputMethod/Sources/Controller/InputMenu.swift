@@ -25,7 +25,8 @@ extension DuoInputController {
         let header = NSMenuItem(title: String(localized: "현재 앱: \(appDisplayName)"), action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
-        let current = ClientProfile.forBundleIdentifier(bundleIdentifier).effectiveProfile(settings)
+        let clientProfile = ClientProfile.forBundleIdentifier(bundleIdentifier)
+        let current = clientProfile.effectiveProfile(settings)
         for (index, profile) in AppProfile.allCases.enumerated() {
             let entry = item(profile.menuTitle, #selector(selectAppProfile(_:)))
             entry.tag = index
@@ -34,6 +35,11 @@ extension DuoInputController {
             entry.indentationLevel = 1
             menu.addItem(entry)
         }
+        let sendWithReturn = item(String(localized: "Enter로 바로 보내기"), #selector(toggleSendWithReturn(_:)))
+        sendWithReturn.state = hasApp && clientProfile.usesInline(settings) ? .on : .off
+        sendWithReturn.isEnabled = hasApp && clientProfile.supportsInline
+        sendWithReturn.indentationLevel = 1
+        menu.addItem(sendWithReturn)
         menu.addItem(.separator())
 
         menu.addItem(item(String(localized: "선택한 텍스트 한↔A 변환"), #selector(convertSelection(_:))))
@@ -96,6 +102,11 @@ extension DuoInputController {
         onMain { $0.setAppProfile(tag: tag, clientHint: client) }
     }
 
+    @objc nonisolated func toggleSendWithReturn(_ sender: Any?) {
+        nonisolated(unsafe) let client = MenuSender.client(sender)
+        onMain { $0.switchSendWithReturn(clientHint: client) }
+    }
+
     @objc nonisolated func toggleHints(_ sender: Any?) {
         onMain { _ in
             DuoRuntime.shared.updateSettings { $0.showHints.toggle() }
@@ -138,6 +149,24 @@ extension DuoInputController {
         let bundleID = bundleIdentifier
         DuoRuntime.shared.updateSettings { $0.appProfiles[bundleID] = profile }
         Log.menu.info("profile for \(bundleID, privacy: .public) = \(profile.rawValue, privacy: .public)")
+    }
+
+    /// "Enter로 바로 보내기" for the current app (SPEC.md 4.10절): `settings.inlineApps`.
+    private func switchSendWithReturn(clientHint: (any IMKTextInput & NSObjectProtocol)?) {
+        guard !bundleIdentifier.isEmpty, ClientProfile.forBundleIdentifier(bundleIdentifier).supportsInline else { return }
+        // As for a profile: the word being typed ends first, so the next word starts in the new mode.
+        if let proxy = clientHint ?? client() {
+            withEngineClient(proxy) { engine, client in
+                if engine.isComposing { engine.commit(.commitComposition, client: client) }
+            }
+        }
+        DuoRuntime.shared.hud.forceHide()
+        let bundleID = bundleIdentifier
+        DuoRuntime.shared.updateSettings { settings in
+            if settings.inlineApps.remove(bundleID) == nil { settings.inlineApps.insert(bundleID) }
+        }
+        let on = DuoRuntime.shared.settings.inlineApps.contains(bundleID)
+        Log.menu.info("send with Return for \(bundleID, privacy: .public) \(on ? "on" : "off", privacy: .public)")
     }
 
     /// "선택한 텍스트 한↔A 변환" (ux-spec §5.2): converts the selection with `SelectionConverter` and

@@ -19,6 +19,13 @@ final class DuoInputController: IMKInputController {
     /// `nil` in pass-through mode (no model) or before the first activation.
     private(set) var engine: CompositionEngine?
     private var textClient: IMKTextClient?
+    /// The engine's client: `textClient`, or the word typed straight into the document for apps with
+    /// "Enter로 바로 보내기" (SPEC.md 4.10절).
+    private var inlineClient: InlineTextClient?
+    /// Keys and clicks the app handled without us, while a word is typed inline (SPEC.md 4.9절).
+    private var unseenInput = UnseenInputCounter(count: 0)
+    /// Timestamp of the last event handled for an inline session (the 1 s resync rule).
+    private var lastInlineEventAt: TimeInterval?
     /// Cached `client.bundleIdentifier()`, fetched once per activation (critique R15).
     private(set) var bundleIdentifier = ""
     /// The client app's process, looked up once per activation, only for clients whose HUD
@@ -120,6 +127,11 @@ final class DuoInputController: IMKInputController {
         let textClient = self.textClient ?? IMKTextClient(controller: self)
         self.textClient = textClient
         textClient.resetMarkedState()
+        let inlineClient = self.inlineClient ?? InlineTextClient(base: textClient)
+        self.inlineClient = inlineClient
+        inlineClient.reset()
+        unseenInput = UnseenInputCounter(count: ModifierRouter.currentInputCount())
+        lastInlineEventAt = nil
 
         if let detector = runtime.detector {
             let engine = self.engine ?? makeEngine(detector: detector, learning: runtime.learning)
@@ -127,6 +139,7 @@ final class DuoInputController: IMKInputController {
             engine.setClient(bundleIdentifier: bundleIdentifier)
             syncSettings(engine)
             textClient.needsMarkBeforeInsert = engine.clientProfile.needsMarkBeforeInsert
+            inlineClient.wantsInline = engine.clientProfile.usesInline(runtime.settings)
         }
         focusedElementGeneration &+= 1
         focusedElementCaretRect = nil
@@ -155,6 +168,7 @@ final class DuoInputController: IMKInputController {
         Log.ime.info("""
             activate \(self.bundleIdentifier, privacy: .public) \
             profile=\(self.engine?.clientProfile.effectiveProfile(runtime.settings).rawValue ?? "pass-through", privacy: .public) \
+            inline=\(self.inlineClient?.wantsInline ?? false, privacy: .public) \
             secure=\(self.wasSecure, privacy: .public)
             """)
     }
@@ -169,6 +183,7 @@ final class DuoInputController: IMKInputController {
     private func willClose() {
         engine?.reset()
         textClient?.resetMarkedState()
+        inlineClient?.reset()
         let runtime = DuoRuntime.shared
         if runtime.activeController === self {
             runtime.activeController = nil
@@ -193,7 +208,7 @@ final class DuoInputController: IMKInputController {
 
     private func handleEvent(_ event: NSEvent?, sender: Any?) -> Bool {
         guard let event, let proxy = sender as? Proxy else { return false }
-        guard let engine, let textClient else { return false }   // pass-through mode
+        guard let engine, let textClient, let inlineClient else { return false }   // pass-through mode
         let runtime = DuoRuntime.shared
         syncSettings(engine)
         textClient.bind(proxy, bundleIdentifier: bundleIdentifier)
@@ -206,7 +221,7 @@ final class DuoInputController: IMKInputController {
             Log.ime.info("secure event input \(secure ? "on" : "off", privacy: .public)")
         }
         if secure {
-            if engine.isComposing { engine.commit(.secureInput, client: textClient) }
+            if engine.isComposing { engine.commit(.secureInput, client: inlineClient) }
             runtime.hud.forceHide()
             return false
         }
@@ -218,13 +233,15 @@ final class DuoInputController: IMKInputController {
         switch event.type {
         case .leftMouseDown, .rightMouseDown, .otherMouseDown:
             // R4: IMK no longer commits on click for us. Commit, and let the click move the caret.
-            engine.commit(.mouse, client: textClient)
+            confirmInlineWord(event, own: 1, engine: engine, client: inlineClient)
+            engine.commit(.mouse, client: inlineClient)
             consumed = false
             trigger = .other
         case .flagsChanged:
             // Flip-key taps and Caps Lock. Never consumed: the app must see modifier state.
             runtime.modifierRouter.noteForwarded(by: self)
-            routeModifier(event, engine: engine, client: textClient)
+            confirmInlineWord(event, own: 0, engine: engine, client: inlineClient)
+            routeModifier(event, engine: engine, client: inlineClient)
             if HUDAnnouncement.isFlipKey(modifierKeyCode: event.keyCode, flipKey: engine.settings.flipKey) {
                 flipPress = .modifier
             }
@@ -232,6 +249,7 @@ final class DuoInputController: IMKInputController {
             trigger = .other
         case .keyDown:
             guard let key = KeyEventMapper.keyEvent(from: event) else { return false }
+            confirmInlineWord(event, own: 1, engine: engine, client: inlineClient)
             // A word may start with this key: read where it will be drawn, before the HUD asks.
             if !engine.isComposing { startFocusedElementRead() }
             // ⌘3 with the flip key held chooses like a flip, so a refusal is spoken like one.
@@ -245,12 +263,12 @@ final class DuoInputController: IMKInputController {
                HUDPresentation(shown.content, flipKey: engine.settings.flipKey).isNumbered {
                 // A digit while numbered readings are on screen chooses one (SPEC.md 4.11절);
                 // a refused choice is not text either, and keeps its message.
-                choice = engine.selectReading(at: index, on: shown, client: textClient)
+                choice = engine.selectReading(at: index, on: shown, client: inlineClient)
                 if choice == .refused, engine.hud?.content == .cannotChange {
                     Task { @MainActor in VoiceOverAnnouncer.announce(.cannotChange) }
                 }
             }
-            consumed = choice == .notOnBar ? engine.handle(key, client: textClient) : true
+            consumed = choice == .notOnBar ? engine.handle(key, client: inlineClient) : true
             trigger = .keystroke
             Log.ime.debug("""
                 key \(event.keyCode, privacy: .private) repeat=\(event.isARepeat, privacy: .public) \
@@ -266,7 +284,7 @@ final class DuoInputController: IMKInputController {
     }
 
     /// One `flagsChanged`, from IMK or from ``ModifierRouter``'s monitor; copies are dropped.
-    private func routeModifier(_ event: NSEvent, engine: CompositionEngine, client: IMKTextClient) {
+    private func routeModifier(_ event: NSEvent, engine: CompositionEngine, client: any TextClient) {
         let router = DuoRuntime.shared.modifierRouter
         guard router.isNewChange(event), let modifier = KeyEventMapper.modifierEvent(from: event) else { return }
         if router.otherInputBefore(event) { engine.noteKeyActivity() }
@@ -276,13 +294,13 @@ final class DuoInputController: IMKInputController {
     /// A `flagsChanged` from ``ModifierRouter``'s global monitor, for a session whose client has not
     /// forwarded any modifier event through IMK.
     func handleMonitoredModifier(_ event: NSEvent) {
-        guard let engine, let textClient, let proxy = client() as Proxy? else { return }
+        guard let engine, let textClient, let inlineClient, let proxy = client() as Proxy? else { return }
         guard !IsSecureEventInputEnabled() else { return }
         syncSettings(engine)
         textClient.bind(proxy, bundleIdentifier: bundleIdentifier, outsideCallback: true)
         defer { textClient.unbind() }
         let hudBefore = engine.hud
-        routeModifier(event, engine: engine, client: textClient)
+        routeModifier(event, engine: engine, client: inlineClient)
         DuoRuntime.shared.hud.present(engine.hud, from: self, trigger: .other)
         let isFlipKey = HUDAnnouncement.isFlipKey(modifierKeyCode: event.keyCode, flipKey: engine.settings.flipKey)
         announce(isFlipKey ? .modifier : nil, hudBefore: hudBefore, hudAfter: engine.hud)
@@ -290,10 +308,10 @@ final class DuoInputController: IMKInputController {
 
     private func commit(_ reason: CommitReason, sender: Any?, outsideCallback: Bool = false) {
         defer { DuoRuntime.shared.hud.forceHide() }
-        guard let engine, let textClient, let proxy = (sender as? Proxy) ?? client() else { return }
+        guard let engine, let textClient, let inlineClient, let proxy = (sender as? Proxy) ?? client() else { return }
         textClient.bind(proxy, bundleIdentifier: bundleIdentifier, outsideCallback: outsideCallback)
         defer { textClient.unbind() }
-        engine.commit(reason, client: textClient)
+        engine.commit(reason, client: inlineClient)
     }
 
     private func syncSettings(_ engine: CompositionEngine) {
@@ -301,6 +319,27 @@ final class DuoInputController: IMKInputController {
         guard settingsGeneration != runtime.settingsGeneration else { return }
         engine.settings = runtime.settings
         settingsGeneration = runtime.settingsGeneration
+        // A word keeps the mode it started in; the next word follows the setting.
+        inlineClient?.wantsInline = engine.clientProfile.usesInline(runtime.settings)
+    }
+
+    /// SPEC.md 4.9절: with "Enter로 바로 보내기" nothing is marked, so the app may send or edit the
+    /// word on a key or click it handles itself (Telegram sends on such a Return and clears the
+    /// field). After one, or after a pause, check the document before the engine writes over the
+    /// word again; if the word is gone, the engine forgets it.
+    ///
+    /// - Parameter own: 1 for a key-down or click (the window server counts it), 0 for a modifier.
+    private func confirmInlineWord(_ event: NSEvent, own: UInt32, engine: CompositionEngine,
+                                   client: InlineTextClient) {
+        guard client.wantsInline || client.wordRange != nil else { return }
+        let unseen = unseenInput.unseenBefore(own: own, count: ModifierRouter.currentInputCount(),
+                                              eventTimestamp: event.timestamp,
+                                              lastInputUptime: ModifierRouter.lastInputUptime)
+        let paused = lastInlineEventAt.map { event.timestamp - $0 > 1 } ?? true
+        lastInlineEventAt = event.timestamp
+        guard client.wordRange != nil, unseen || paused, !client.confirmWord() else { return }
+        engine.dropComposition()
+        Log.ime.info("the word typed inline is no longer in the document (unseen=\(unseen, privacy: .public)); dropped")
     }
 
     // MARK: Engine notifications
@@ -349,11 +388,11 @@ final class DuoInputController: IMKInputController {
 
     /// Binds `proxy` to the engine's client for a one-off action (menu commands, which IMK does not
     /// send inside a `handle` callback, so the client's answers may be stale).
-    func withEngineClient(_ proxy: Proxy, _ body: (CompositionEngine, IMKTextClient) -> Void) {
-        guard let engine, let textClient else { return }
+    func withEngineClient(_ proxy: Proxy, _ body: (CompositionEngine, any TextClient) -> Void) {
+        guard let engine, let textClient, let inlineClient else { return }
         textClient.bind(proxy, bundleIdentifier: bundleIdentifier, outsideCallback: true)
         defer { textClient.unbind() }
-        body(engine, textClient)
+        body(engine, inlineClient)
     }
 }
 
@@ -365,28 +404,35 @@ extension DuoInputController: HUDAnchorProvider {
         switch anchor {
         case .markedText:
             if let rect = focusedElementCaret() { return rect }
+            // Typed inline, the word is document text: nothing is marked to anchor to.
+            if let word = inlineClient?.wordRange { return wordRect(proxy, at: word.location) }
             return lineRectAtSessionStart(proxy) ?? firstRect(proxy, of: proxy.markedRange())
         case .caret:
             if let rect = focusedElementCaret() { return rect }
             if let rect = lineRectAtSessionStart(proxy) { return rect }
             return firstRect(proxy, of: NSRange(location: proxy.selectedRange().location, length: 0))
         case .location(let location):
-            // The word ends at the caret: its line is the caret's (TextEdit answers a line off
-            // right after a commit), unless a Return put the caret on the next line.
-            return HUDGeometry.wordRect(word: firstRect(proxy, of: NSRange(location: location, length: 1)),
-                                        caretLine: lineRectAtSessionStart(proxy),
-                                        caretFollowsNewline: caretFollowsNewline(proxy))
+            return wordRect(proxy, at: location)
         }
     }
 
+    /// The rect of a word that starts at `location` and ends at the caret.
+    private func wordRect(_ proxy: Proxy, at location: Int) -> CGRect? {
+        // The word ends at the caret: its line is the caret's (TextEdit answers a line off right
+        // after a commit), unless a Return put the caret on the next line.
+        HUDGeometry.wordRect(word: firstRect(proxy, of: NSRange(location: location, length: 1)),
+                             caretLine: lineRectAtSessionStart(proxy),
+                             caretFollowsNewline: caretFollowsNewline(proxy))
+    }
+
     func hudChooseReading(at index: Int, on shown: HUDRequest) {
-        guard let engine, let textClient, let proxy = client() as Proxy? else { return }
+        guard let engine, let textClient, let inlineClient, let proxy = client() as Proxy? else { return }
         guard !IsSecureEventInputEnabled() else { return }
         syncSettings(engine)
         // A click reaches us outside any IMK callback: the client's answers may be stale.
         textClient.bind(proxy, bundleIdentifier: bundleIdentifier, outsideCallback: true)
         defer { textClient.unbind() }
-        let changed = engine.selectReading(at: index, on: shown, client: textClient) == .chosen
+        let changed = engine.selectReading(at: index, on: shown, client: inlineClient) == .chosen
         DuoRuntime.shared.hud.present(engine.hud, from: self, trigger: .other)
         if changed {
             announcePendingFlip()
