@@ -142,7 +142,7 @@ public enum InstallRecovery {
     ///   second one (verified live), so the user still answers once.
     @MainActor
     public static func resume(after error: InputMethodInstaller.InstallError, select: Bool,
-                              isEnabled: () -> Bool, selectSource: () -> OSStatus,
+                              isEnabled: () -> Bool, selectSource: () -> OSStatus, isSelected: () -> Bool = { true },
                               onStep: (InputMethodInstaller.Step) -> Void,
                               reenable: (() -> Void)? = nil, reenableAfter: Duration = reenableAfter,
                               enableTimeout: Duration = enableTimeout, pollInterval: Duration = pollInterval,
@@ -173,14 +173,20 @@ public enum InstallRecovery {
         case .bundleMissing, .copyFailed, .registerFailed:
             return error
         }
+        // A select right after the user answered in System Settings can report success and still
+        // leave the old source selected: look, and try once more.
         var status = selectSource()
-        if status != noErr {
+        if status == noErr {
             await sleep(selectRetryDelay)
-            status = selectSource()
+            if isSelected() { onStep(.selected); return nil }
         }
-        guard status == noErr else { return .selectFailed(status) }
-        onStep(.selected)
-        return nil
+        await sleep(selectRetryDelay)
+        status = selectSource()
+        if status == noErr {
+            await sleep(selectRetryDelay)
+            if isSelected() { onStep(.selected); return nil }
+        }
+        return .selectFailed(status)
     }
 }
 

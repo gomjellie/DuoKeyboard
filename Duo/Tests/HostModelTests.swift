@@ -572,11 +572,17 @@ struct InstallChecklistTests {
             selects += 1
             return selectResults.isEmpty ? noErr : selectResults.removeFirst()
         }
+
+        /// Selected once this many selects reported success (nil: the first one sticks).
+        var selectedAfterSelects: Int?
+
+        func isSelected() -> Bool { selectedAfterSelects.map { selects >= $0 } ?? true }
     }
 
     private func resume(_ error: InputMethodInstaller.InstallError, _ fake: Fake) async -> InputMethodInstaller.InstallError? {
         await InstallRecovery.resume(after: error, select: true, isEnabled: fake.isEnabled, selectSource: fake.select,
-                                     onStep: { fake.steps.append($0) }, sleep: { fake.slept += $0 })
+                                     isSelected: fake.isSelected, onStep: { fake.steps.append($0) },
+                                     sleep: { fake.slept += $0 })
     }
 
     @Test func waitsForTheUserToAllowTheSourceThenSelects() async {
@@ -584,7 +590,25 @@ struct InstallChecklistTests {
         fake.enabledAfterPolls = 6
         #expect(await resume(.enableFailed(noErr), fake) == nil)
         #expect(fake.steps == [.allowListed, .enabled, .selected], "Allow approves and enables at once")
-        #expect(fake.slept == InstallRecovery.pollInterval * 6)
+        #expect(fake.slept == InstallRecovery.pollInterval * 6 + InstallRecovery.selectRetryDelay,
+                "it looks once that the select took")
+    }
+
+    @Test func selectsAgainWhenTheFirstSelectDidNotTake() async {
+        // Right after the user answers in System Settings, a select can report success and still
+        // leave the old source selected.
+        let fake = Fake()
+        fake.enabledAfterPolls = 1
+        fake.selectedAfterSelects = 2
+        #expect(await resume(.enableFailed(noErr), fake) == nil)
+        #expect(fake.selects == 2)
+        #expect(fake.steps == [.allowListed, .enabled, .selected])
+
+        let never = Fake()
+        never.enabledAfterPolls = 1
+        never.selectedAfterSelects = 3
+        #expect(await resume(.enableFailed(noErr), never) == .selectFailed(noErr))
+        #expect(never.selects == 2, "two tries, then the error shows")
     }
 
     @Test func givesUpOnEnablingAfterTheTimeout() async {
