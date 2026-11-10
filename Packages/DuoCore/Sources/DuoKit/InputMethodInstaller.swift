@@ -156,12 +156,12 @@ public enum InputMethodInstaller {
         let reg = InputSourceManager.register()
         if reg != noErr && !InputSourceManager.isRegistered { throw InstallError.registerFailed(reg) }
         complete(.registered)
-        // Not yet approved: macOS shows its prompt and `isEnabled` turns true on Allow. System Settings
-        // shows it only if its own input source cache lists Duo (KeyboardSettingsCache).
-        if !isAllowListed, !InputSourceManager.isEnabled {
-            if KeyboardSettingsCache.removeIfStale() { KeyboardSettingsCache.quitSystemSettings() }
-            openSettingsForApproval()
-        }
+        // System Settings lists Duo, and shows macOS's prompt for it, only if its own input source
+        // cache knows Duo (KeyboardSettingsCache). Allow-list entries that outlived a removal turn Duo
+        // on without a prompt, but a stale cache would still hide it from the list.
+        if KeyboardSettingsCache.removeIfStale() { KeyboardSettingsCache.quitSystemSettings() }
+        // Not yet approved: macOS shows its prompt and `isEnabled` turns true on Allow.
+        if !isAllowListed, !InputSourceManager.isEnabled { openSettingsForApproval() }
         let en = InputSourceManager.enable()
         if !InputSourceManager.isEnabled { throw InstallError.enableFailed(en) }
         complete(.allowListed)
