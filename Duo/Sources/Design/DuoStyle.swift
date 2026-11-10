@@ -18,7 +18,7 @@ enum DuoStyle {
     static let cardRadius: CGFloat = 14
 
     /// Onboarding window content size (fixed, `.windowResizability(.contentSize)`).
-    static let onboardingSize = CGSize(width: 640, height: 600)
+    static let onboardingSize = CGSize(width: 640, height: 650)
     /// Settings window default and minimum sizes.
     static let settingsDefaultSize = CGSize(width: 780, height: 600)
     static let settingsMinimumSize = CGSize(width: 700, height: 480)

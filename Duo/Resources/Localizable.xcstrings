@@ -91,6 +91,16 @@
         }
       }
     },
+    "Caps Lock 톡!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap Caps Lock!"
+          }
+        }
+      }
+    },
     "Duo" : {
       "localizations" : {
         "en" : {
@@ -481,6 +491,26 @@
         }
       }
     },
+    "Space 다음에 바꿔 보세요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flip after Space"
+          }
+        }
+      }
+    },
+    "Space를 누른 다음에 바꾸기 키를 눌러도 바뀌어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The flip key works after Space, too."
+          }
+        }
+      }
+    },
     "` 키로 ₩ 입력" : {
       "localizations" : {
         "en" : {
@@ -601,6 +631,16 @@
         }
       }
     },
+    "⇧ 두 번!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⇧ twice!"
+          }
+        }
+      }
+    },
     "가운데" : {
       "localizations" : {
         "en" : {
@@ -637,6 +677,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continue"
+          }
+        }
+      }
+    },
+    "계속을 눌러 마무리하세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Continue to finish."
           }
         }
       }
@@ -697,6 +747,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Later"
+          }
+        }
+      }
+    },
+    "다 해냈어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All done"
           }
         }
       }
@@ -803,16 +863,6 @@
         }
       }
     },
-    "단어가 잘못 나오면 이렇게 바꾸면 돼요. 바꾼 단어는 Duo가 기억해요." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "That’s how you fix a word that comes out wrong. Duo remembers the fix."
-          }
-        }
-      }
-    },
     "단어를 쓰고 Space를 누른 다음, 그 단어 바꾸기" : {
       "localizations" : {
         "en" : {
@@ -859,6 +909,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Back"
+          }
+        }
+      }
+    },
+    "따라 쳐 보세요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type along"
           }
         }
       }
@@ -989,16 +1049,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duo remembers words you fixed with the flip key, and ambiguous ones, and gets them right next time."
-          }
-        }
-      }
-    },
-    "바꾸기 키를 눌러 보세요" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Try the flip key"
           }
         }
       }
@@ -1253,6 +1303,16 @@
         }
       }
     },
+    "쓰는 중에 바꿔 보세요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flip while typing"
+          }
+        }
+      }
+    },
     "아래 칸에 직접 입력해 보세요. 해낸 일은 바로 체크돼요." : {
       "localizations" : {
         "en" : {
@@ -1499,6 +1559,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap the right Option key."
+          }
+        }
+      }
+    },
+    "오른쪽 ⌘ 톡!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap right ⌘!"
+          }
+        }
+      }
+    },
+    "오른쪽 ⌥ 톡!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap right ⌥!"
           }
         }
       }
@@ -2073,6 +2153,16 @@
         }
       }
     },
+    "한/영 키는 누르지 않아도 돼요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No need to press the 한/영 key."
+          }
+        }
+      }
+    },
     "한국어" : {
       "localizations" : {
         "en" : {
@@ -2139,6 +2229,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Just type. No more switching."
+          }
+        }
+      }
+    },
+    "해로 나오면 다 치기 전에 바꾸기 키를 눌러요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If it comes out as 해, press the flip key before the word ends."
           }
         }
       }

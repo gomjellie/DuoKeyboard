@@ -117,6 +117,12 @@ struct SnapshotRenderer {
         result.append(("onboarding-3-try-alternatives", onboardingScene(.tryIt, tryAlt,
                        TryItStep(playground: altPlayground, coach: waitingCoach, progress: PracticeProgress()))))
 
+        let tryFlip = await model(state: enabledOnly)
+        let flipPlayground = await playground(tryFlip, text: "안녕하세요 Duo를 써봐요. macOS 26 업데이트 ", marked: "")
+        let flipCoach = FlipKeyCoachModel(fixtureFlipKey: .rightCommand, detected: false, offersAlternatives: false)
+        result.append(("onboarding-3-try-flip", onboardingScene(.tryIt, tryFlip,
+                       TryItStep(playground: flipPlayground, coach: flipCoach, progress: PracticeProgress(greeting: true, numbers: true)))))
+
         // 3 써보기, driven end to end: synthetic key-downs → KeyEventMapper → CompositionEngine → BufferTextClient.
         let live = await model(state: enabledOnly)
         let livePlayground = await playground(live, text: "", marked: "")

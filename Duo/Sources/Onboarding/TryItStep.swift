@@ -2,8 +2,8 @@ import DuoCore
 import DuoKit
 import SwiftUI
 
-/// Step 3 — 써보기: four practice tasks checked live in the playground (ux-spec §8.1 #6), plus
-/// flip-key coaching.
+/// Step 3 — 써보기: four practice tasks checked live in the playground (ux-spec §8.1 #6), with a
+/// keyboard hint that plays the next task and coaches the flip key.
 struct TryItStep: View {
     @Environment(AppModel.self) private var app
     @State private var playground: PlaygroundModel?
@@ -22,8 +22,8 @@ struct TryItStep: View {
                         if let flip { progress.note(flip: flip) }
                     }
             }
+            TypingHintCard(progress: progress, coach: coach)
             tasks
-            if let coach { FlipKeyCoach(coach: coach) }
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
