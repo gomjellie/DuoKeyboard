@@ -608,7 +608,7 @@ struct EngineChoiceTests {
         #expect(h.text == "중간에")
         #expect(h.marked == "중간에", "the start is composing again")
         h.press(.backspace)
-        #expect(h.marked == "중간ㅇ")
+        #expect(h.marked == "중간", "a reopened word is not being typed: its syllables go whole")
     }
 
     @Test func whereCommittedTextCannotChangeTheEndStaysAWordOfItsOwn() {

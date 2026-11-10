@@ -25,7 +25,8 @@ public enum FlipKey: String, Sendable, Codable, CaseIterable, Hashable {
 
 /// What Backspace removes while composing Korean (Apple's 자소/글자 setting).
 public enum BackspaceUnit: String, Sendable, Codable, CaseIterable, Hashable {
-    /// One keystroke (닭 → 달 → 다 → ㄷ). Default.
+    /// The syllable being typed goes one keystroke at a time (닭 → 달 → 다 → ㄷ); the syllables
+    /// before it go whole. Default.
     case jaso
     /// One whole syllable block.
     case gulja

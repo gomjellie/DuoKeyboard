@@ -61,6 +61,7 @@ extension CompositionEngine {
 
         let wasFullyCommitted = t.isFullyCommitted
         t.raw.append(key.latin)
+        t.jasoBackspacesLeft = nil
         t.count += 1
         t.lastKeyAt = event.timestamp
 
@@ -200,6 +201,8 @@ extension CompositionEngine {
               client.string(in: NSRange(location: anchor - length, length: length)) == head.text else { return nil }
         var t = head.token
         t.raw += raw
+        // Reopened by a Backspace, the word is not being typed: its syllables go whole.
+        t.jasoBackspacesLeft = raw.isEmpty ? 0 : nil
         t.count = t.raw.count
         t.committed = 0
         t.lastKeyAt = tail.lastKeyAt
@@ -432,7 +435,12 @@ extension CompositionEngine {
             token = t.count == 0 ? nil : t
             return false
         }
-        let unit = settings.backspaceUnit == .gulja ? syllableKeyCount(t) : 1
+        // 자소 takes the syllable being typed apart key by key. Once that syllable is gone, the
+        // ones before it go whole, as on macOS's Korean keyboard (안녕 → 안녀 → 안ㄴ → 안 → empty).
+        let syllable = syllableKeyCount(t)
+        let left = t.jasoBackspacesLeft ?? syllable
+        let unit = settings.backspaceUnit == .gulja || left == 0 ? syllable : 1
+        t.jasoBackspacesLeft = max(0, left - 1)
         let n = min(t.count - t.committed, unit)
         t.raw.removeLast(n)
         t.count -= n

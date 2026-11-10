@@ -30,6 +30,36 @@ struct EngineBackspaceTests {
         #expect(more.calls.isEmpty)
     }
 
+    @Test func jasoDeletesEarlierSyllablesWhole() {
+        // Like macOS's Korean keyboard: only the syllable being typed comes apart.
+        let h = EngineHarness()
+        h.detector.korean("dkssudgktpdy")
+        h.type("dkssudgktpdy")
+        #expect(h.marked == "안녕하세요")
+        // 요 comes apart (its ㅇ joins 세 for a moment, since the word is composed again from its
+        // keys); 세, 하, 녕, 안 go whole.
+        for expected in ["안녕하셍", "안녕하세", "안녕하", "안녕", "안"] {
+            #expect(h.press(.backspace).calls == [.mark(expected, nil)])
+        }
+        #expect(h.press(.backspace).calls == [.mark("", nil)])
+        #expect(!h.engine.isComposing)
+    }
+
+    @Test func jasoTakesANewlyTypedSyllableApartAgain() {
+        let h = EngineHarness()
+        h.detector.korean("dkssud")
+        h.detector.korean("dksgk")
+        h.type("dkssud")
+        for expected in ["안녀", "안ㄴ", "안"] {
+            #expect(h.press(.backspace).calls == [.mark(expected, nil)])
+        }
+        h.type("gk")
+        #expect(h.marked == "안하")
+        #expect(h.press(.backspace).calls == [.mark("않", nil)])
+        #expect(h.press(.backspace).calls == [.mark("안", nil)])
+        #expect(h.press(.backspace).calls == [.mark("", nil)])
+    }
+
     @Test func guljaDeletesTheLastSyllableBlock() {
         var settings = DuoSettings()
         settings.backspaceUnit = .gulja

@@ -13,6 +13,10 @@ struct Token {
     let context: LanguageContext
     /// `c`: leading raw characters already committed as Latin by eager E (0 if none).
     var committed = 0
+    /// Keys of the syllable being typed that Backspace still removes one at a time (unit 자소), set
+    /// by the first Backspace after a key. At zero, Backspace removes whole syllable blocks, like
+    /// macOS's Korean keyboard. `nil` after a typed key.
+    var jasoBackspacesLeft: Int?
     /// The reading on screen.
     var shown: Hypothesis
     /// Set by a flip: the commit uses it and hysteresis is off (R11).
