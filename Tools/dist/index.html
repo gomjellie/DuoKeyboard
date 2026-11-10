@@ -5,14 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Duo — 한/영 전환 없이</title>
 <meta name="description" content="한/영 키 없이 한국어와 영어를 치는 macOS 입력기 Duo를 설치해요.">
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
 <link rel="icon" href="icon.png">
 <script>addEventListener("load", () => setTimeout(() => document.documentElement.classList.add("ready"), 300));</script>
 <style>
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
     --bg: #ffffff;
     --bg-alt: #f5f5f7;
     --text: #1d1d1f;
@@ -21,11 +20,11 @@
     --text-tab: #58585d;
     --line: rgba(0, 0, 0, 0.1);
     --hair: rgba(0, 0, 0, 0.07);
-    --tile: #f5f5f7;
+    --tile: #ffffff;
     --tile-alt: #ffffff;
-    --accent: #0a66d8;
-    --accent-fill: #0a66d8;
-    --accent-fill-hover: #0857b9;
+    --accent: #0066cc;
+    --accent-fill: #0071e3;
+    --accent-fill-hover: #0077ed;
     --stroke: #1a7cf0;
     --focus: #0a66d8;
     --ko: #e8740f;
@@ -39,15 +38,12 @@
     --red: #c4242b;
     --green: #137333;
     --nav-bg: rgba(255, 255, 255, 0.74);
-    --stage:
-      radial-gradient(70% 55% at 50% 0%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 72%),
-      radial-gradient(60% 65% at 4% 96%, rgba(168, 202, 255, 0.55) 0%, rgba(168, 202, 255, 0) 72%),
-      radial-gradient(55% 60% at 98% 90%, rgba(196, 210, 255, 0.6) 0%, rgba(196, 210, 255, 0) 72%),
-      linear-gradient(180deg, #f5f6f9 0%, #e9edf5 100%);
+    /* Orange to blue, like the app icon's 가 and A, through a warm pink. */
+    --grad: linear-gradient(90deg, #f07a12 0%, #e2457a 48%, #3f63e6 82%, #0a66d8 100%);
     --win: #ffffff;
     --win-bar: #f7f7f9;
     --win-edge: rgba(0, 0, 0, 0.08);
-    --win-shadow: 0 30px 60px -24px rgba(24, 38, 72, 0.3), 0 10px 24px -10px rgba(24, 38, 72, 0.12);
+    --win-shadow: 0 28px 56px -26px rgba(24, 38, 72, 0.26), 0 8px 20px -10px rgba(24, 38, 72, 0.1);
     --pane-edge: rgba(0, 0, 0, 0.08);
     --duo-edge-a: rgba(232, 116, 15, 0.7);
     --duo-edge-b: rgba(10, 102, 216, 0.7);
@@ -70,65 +66,6 @@
     --figure: #1d1d1f;
     --mono: ui-monospace, "SF Mono", Menlo, monospace;
     --wrap: 1080px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #000000;
-      --bg-alt: #0e0e10;
-      --text: #f5f5f7;
-      --text-2: #a1a1a6;
-      --text-fn: #d2d2d7;
-      --text-tab: #b4b4b9;
-      --line: rgba(255, 255, 255, 0.14);
-      --hair: rgba(255, 255, 255, 0.08);
-      --tile: #1c1c1e;
-      --tile-alt: #1c1c1e;
-      --accent: #4da3ff;
-      --accent-fill: #0a6cdf;
-      --accent-fill-hover: #1a7af0;
-      --stroke: #4da3ff;
-      --focus: #4da3ff;
-      --ko: #ff9a3c;
-      --ko-big: #ff9a3c;
-      --ko-text: #ffa95e;
-      --ko-fill: #c45300;
-      --en: #4da3ff;
-      --ko-ink: #ffa95e;
-      --en-ink: #4da3ff;
-      --red: #ff6961;
-      --green: #30d158;
-      --nav-bg: rgba(18, 18, 20, 0.72);
-      --stage:
-        radial-gradient(70% 50% at 50% 0%, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0) 72%),
-        radial-gradient(60% 55% at 4% 100%, rgba(10, 108, 223, 0.16) 0%, rgba(10, 108, 223, 0) 72%),
-        radial-gradient(55% 50% at 98% 100%, rgba(90, 120, 255, 0.12) 0%, rgba(90, 120, 255, 0) 72%),
-        linear-gradient(180deg, #0d0d10 0%, #111216 100%);
-      --win: #1c1c1e;
-      --win-bar: #232326;
-      --win-edge: rgba(255, 255, 255, 0.1);
-      --win-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.9), 0 10px 24px -10px rgba(0, 0, 0, 0.6);
-      --pane-edge: rgba(255, 255, 255, 0.09);
-      --duo-edge-a: rgba(255, 154, 60, 0.75);
-      --duo-edge-b: rgba(77, 163, 255, 0.8);
-      --seg-bg: rgba(118, 118, 128, 0.24);
-      --seg-on: #636366;
-      --code-bg: #1c1c1e;
-      --code-text: #f5f5f7;
-      --keycap: #2c2c2e;
-      --kb-bg: #18181b;
-      --kb-edge: #2c2c30;
-      --key: #2c2c2e;
-      --key-edge: #3d3d41;
-      --key-text: #e5e5ea;
-      --jamo: #ffa95e;
-      --key-down: #0d3f78;
-      --hand-fill: #4b515d;
-      --hand-line: #aab3c5;
-      --nail: #6d7483;
-      --hand-opacity: 0.58;
-      --figure: linear-gradient(180deg, #ffffff 30%, #aab8cc 100%);
-      --figure-pct: linear-gradient(180deg, #ffffff 20%, #d6dde8 100%);
-    }
   }
 
   * { box-sizing: border-box; }
@@ -187,7 +124,7 @@
   .pill:hover { background: var(--accent-fill-hover); }
   .pill-sm { position: relative; font-size: 13px; padding: 5px 14px; min-height: 28px; }
   .pill-sm::after { content: ""; position: absolute; inset: -8px -4px; }
-  .pill-lg { font-size: 17px; padding: 12px 26px; min-height: 48px; }
+  .pill-lg { font-size: 17px; padding: 12px 26px; min-height: 48px; min-width: 132px; }
 
   /* hero */
   .hero {
@@ -197,16 +134,13 @@
     /* Each glow ellipse ends at or below the section's top edge, so no glow is cut by it. */
     --glow-ry: min(104px, var(--icon-y));
     --glow-rx: calc(var(--glow-ry) * 1.44);
-    padding: var(--pad-top) 22px clamp(44px, 5vw, 64px); text-align: center;
+    padding: var(--pad-top) 22px clamp(56px, 6vw, 88px); text-align: center;
+    background:
+      radial-gradient(38% 72% at 32% 0%, rgba(255, 168, 92, 0.2), rgba(255, 168, 92, 0) 72%),
+      radial-gradient(38% 72% at 68% 0%, rgba(88, 150, 255, 0.18), rgba(88, 150, 255, 0) 72%),
+      var(--bg);
   }
-  @media (prefers-color-scheme: dark) {
-    .hero {
-      background:
-        radial-gradient(var(--glow-rx) var(--glow-ry) at calc(50% - var(--glow-dx)) var(--icon-y), rgba(255, 146, 40, 0.46), rgba(255, 140, 34, 0.17) 50%, rgba(255, 136, 32, 0) 100%),
-        radial-gradient(var(--glow-rx) var(--glow-ry) at calc(50% + var(--glow-dx)) var(--icon-y), rgba(40, 132, 255, 0.38), rgba(36, 128, 255, 0.15) 50%, rgba(36, 128, 255, 0) 100%),
-        radial-gradient(calc(var(--glow-ry) * 2.7) var(--glow-ry) at 50% var(--icon-y), rgba(120, 130, 255, 0.07), rgba(120, 130, 255, 0) 100%);
-    }
-  }
+  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-box-decoration-break: clone; box-decoration-break: clone; padding-bottom: 0.06em; }
   .hero-icon { width: 84px; height: 84px; margin: 0 auto 22px; }
   .eyebrow {
     display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -223,22 +157,18 @@
     letter-spacing: -0.04em;
   }
   .hero-sub { margin: 22px auto 0; max-width: 30em; font-size: clamp(19px, 1.2vw + 10px, 26px); line-height: 1.4; font-weight: 500; letter-spacing: -0.015em; color: var(--text-2); }
-  .cta-row { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 14px 30px; justify-content: center; align-items: center; }
-  .more { display: inline-block; padding: 10px 0; font-size: 17px; font-weight: 500; text-decoration: none; }
-  .more:hover { text-decoration: underline; }
+  .cta-row { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 14px 16px; justify-content: center; align-items: center; }
+  .pill-line { background: transparent; color: var(--accent-fill); box-shadow: inset 0 0 0 1.5px var(--accent-fill); }
+  .pill-line:hover { background: var(--accent-fill); color: #fff; }
   .hero-meta { margin-top: 26px; font-size: 14px; color: var(--text-2); }
 
   /* demo stage */
-  .demo-band { padding: 0 clamp(8px, 2.4vw, 32px) clamp(72px, 9vw, 120px); scroll-margin-top: 12px; }
-  .stage {
-    max-width: 1180px; margin: 0 auto;
-    border-radius: clamp(26px, 3vw, 40px);
-    background: var(--stage);
-    padding: clamp(22px, 2.4vw, 32px) clamp(10px, 3.2vw, 56px) clamp(20px, 2.4vw, 32px);
-  }
+  .demo-band { background: var(--bg-alt); padding: clamp(36px, 3.4vw, 48px) clamp(10px, 2.4vw, 32px) clamp(32px, 3vw, 44px); }
+  .stage { max-width: 1180px; margin: 0 auto; }
   .section-title { margin: 0; font-size: clamp(36px, 4.6vw + 8px, 72px); line-height: 1.08; font-weight: 700; letter-spacing: -0.035em; }
+  .kicker { margin: 0 0 10px; font-size: clamp(17px, 0.5vw + 13px, 21px); font-weight: 600; letter-spacing: -0.01em; }
   .section-sub { margin-top: 12px; font-size: clamp(18px, 0.8vw + 11px, 22px); line-height: 1.45; font-weight: 500; letter-spacing: -0.01em; color: var(--text-2); }
-  .stage-head { text-align: center; margin: 0 auto clamp(16px, 1.8vw, 24px); max-width: 40em; }
+  .stage-head { margin: 0 auto clamp(18px, 2vw, 26px); max-width: 940px; padding: 0 4px; }
   .stage-head .section-title { font-size: clamp(28px, 2.2vw + 10px, 44px); line-height: 1.1; letter-spacing: -0.03em; }
 
   .window {
@@ -318,10 +248,6 @@
   .verdict.on { opacity: 1; visibility: visible; }
   .verdict.bad { color: var(--red); background: color-mix(in srgb, var(--red) 10%, transparent); }
   .verdict.good { color: var(--green); background: color-mix(in srgb, var(--green) 12%, transparent); }
-  @media (prefers-color-scheme: dark) {
-    .verdict.bad { background: color-mix(in srgb, var(--red) 14%, transparent); }
-    .verdict.good { background: color-mix(in srgb, var(--green) 14%, transparent); }
-  }
   .marked { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; }
   .caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 1px; vertical-align: -0.14em; background: var(--stroke); animation: blink 1.05s steps(1) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
@@ -377,10 +303,6 @@
   .keystream .now:not(.cmdk) { position: relative; z-index: -1; margin: 0 -2px; padding: 0 2px; }
   .keystream .cmdk { margin: 0 2px; padding: 1px 5px; border-radius: 4px; font: 600 11px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; align-self: center; color: var(--win); background: var(--text); }
   .keystream .cmdk.now { background: var(--accent-fill); color: #fff; }
-  @media (prefers-color-scheme: dark) {
-    .keystream .cmdk { color: var(--text); background: color-mix(in srgb, var(--text) 20%, transparent); }
-    .keystream .cmdk.now { color: #fff; background: var(--accent-fill); }
-  }
 
   .kb-wrap { position: relative; isolation: isolate; width: min(100%, 600px + 12.5vw, 800px); margin: clamp(12px, 1.6vw, 20px) auto 0; }
   .kb-wrap::before {
@@ -388,16 +310,6 @@
     background: radial-gradient(50% 50% at 50% 50%, rgba(28, 40, 72, 0.22), rgba(28, 40, 72, 0) 100%);
   }
   /* Dark rim light: each glow is an ellipse that fades out inside its own box, so no edge shows. */
-  @media (prefers-color-scheme: dark) {
-    .kb-wrap::before, .kb-wrap::after {
-      top: 2%; height: 74%; width: 16%; left: -6%; right: auto;
-      background: radial-gradient(closest-side, rgba(255, 138, 40, 0.34), rgba(255, 138, 40, 0.12) 55%, rgba(255, 138, 40, 0));
-    }
-    .kb-wrap::after {
-      content: ""; position: absolute; z-index: -1; left: auto; right: -6%;
-      background: radial-gradient(closest-side, rgba(36, 128, 255, 0.4), rgba(36, 128, 255, 0.14) 55%, rgba(36, 128, 255, 0));
-    }
-  }
   .kb { position: relative; display: block; width: 100%; height: auto; }
   /* The keyboard base ends at 80.3% of the viewBox height; below it only the forearms fade out. */
   .kb { -webkit-mask-image: linear-gradient(#000 80.5%, transparent 94%); mask-image: linear-gradient(#000 80.5%, transparent 94%); }
@@ -447,17 +359,15 @@
   /* Only "99" sits in the box; "%+" hangs to its right, and the shift centres the whole lockup. */
   .figure {
     position: relative; display: inline-block; margin: 0;
-    font-size: clamp(112px, 15vw, 196px); line-height: 0.92; font-weight: 200; letter-spacing: -0.05em;
-    white-space: nowrap; color: var(--text);
+    font-size: clamp(112px, 15vw, 196px); line-height: 0.92; font-weight: 700; letter-spacing: -0.055em;
+    white-space: nowrap;
     padding: 0 0.02em 0.02em 0;
     transform: translateX(-0.22em);
   }
-  .figure .pct { position: absolute; left: 100%; top: 0.12em; margin-left: 0.03em; font-size: 0.38em; line-height: 1; font-weight: 300; letter-spacing: -0.02em; }
+  .figure .pct { position: absolute; left: 100%; top: 0.12em; margin-left: 0.04em; font-size: 0.38em; line-height: 1; font-weight: 600; letter-spacing: -0.02em; }
+  .figure { background: linear-gradient(90deg, #f07a12 0%, #e2457a 70%, #b14fc0 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .figure .pct { background: linear-gradient(90deg, #8a59d8, #0a66d8); -webkit-background-clip: text; background-clip: text; color: transparent; }
   /* WebKit leaves a positioned child out of its parent's background-clip: text, so .pct clips its own. */
-  @media (prefers-color-scheme: dark) {
-    .figure, .figure .pct { background: var(--figure); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .figure .pct { background-image: var(--figure-pct); }
-  }
   .figure-label { margin: 18px 0 0; font-size: clamp(21px, 1vw + 14px, 28px); line-height: 1.3; font-weight: 700; letter-spacing: -0.02em; }
   .figure-label sup { font-size: 0.5em; line-height: 0; }
   .figure-label sup a { position: relative; display: inline-block; min-width: 24px; margin: 0 -7px 0 -5px; line-height: 24px; text-align: center; text-decoration: none; }
@@ -466,7 +376,7 @@
   .acc-text b { font-weight: 600; }
 
   /* features */
-  .features .section-title { margin-bottom: clamp(32px, 4vw, 52px); text-align: center; }
+  .features .section-title { margin-bottom: clamp(32px, 4vw, 52px); }
   /* Every tile shares one side inset so content in a column keeps one left edge. */
   .bento { --tile-x: 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .tile { min-width: 0; border-radius: 28px; background: var(--tile); padding: 32px var(--tile-x) 34px; }
@@ -513,12 +423,12 @@
   .command code { flex: 1; min-width: 0; font: 16px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: break-word; }
   /* Fixed width: the longer "복사했어요" label must not resize the button or squeeze the command. */
   #copy { flex: none; width: 7.4em; min-height: 44px; padding: 10px 12px; font-size: 15px; }
-  .command-note { margin-top: 16px; font-size: 14px; color: var(--text-2); text-align: center; }
+  .command-note { margin-top: 16px; padding-left: 4px; font-size: 14px; color: var(--text-2); }
   .command-note > span { display: inline-block; }
   .list-title { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; color: var(--text-2); }
   .steps-title { margin-top: clamp(48px, 6vw, 72px); }
   .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .steps li { counter-increment: step; border-radius: 24px; background: var(--tile-alt); padding: 24px 28px 28px; font-size: 18px; line-height: 1.45; font-weight: 400; letter-spacing: -0.015em; color: var(--text); }
+  .steps li { counter-increment: step; border-radius: 24px; background: var(--bg-alt); padding: 24px 28px 28px; font-size: 18px; line-height: 1.45; font-weight: 400; letter-spacing: -0.015em; color: var(--text); }
   .steps li::before {
     content: counter(step); display: block; margin-bottom: 14px;
     font-size: 46px; line-height: 1; font-weight: 200; letter-spacing: -0.04em; color: var(--text);
@@ -532,7 +442,7 @@
   /* footer */
   footer { background: var(--bg-alt); color: var(--text-2); font-size: 12px; line-height: 1.65; }
   footer .wrap { padding-top: 0; padding-bottom: 44px; }
-  .foot-inner { border-top: 1px solid var(--line); padding-top: 20px; }
+  .foot-inner { padding-top: 22px; }
   .fn { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--hair); font-size: 13px; color: var(--text-fn); }
   .fn-back { position: relative; display: inline-block; min-width: 24px; line-height: 24px; text-align: center; text-decoration: none; }
   footer code { font: 11.5px/1.6 var(--mono); word-break: break-all; }
@@ -573,10 +483,6 @@
     .keystream { padding: 9px 14px 9px 23px; }
     .keystream .keys { margin-left: 4px; }
     .keystream .keys { font-size: 13px; }
-    @media (prefers-color-scheme: dark) {
-      .kb-wrap::before { left: -3%; }
-      .kb-wrap::after { right: -3%; }
-    }
     .demo-caption { font-size: 15px; padding: 0 4px; }
     .bento { --tile-x: 28px; }
     .tile-wide { min-height: 0; padding: 30px var(--tile-x) 32px; gap: 28px; }
@@ -638,11 +544,11 @@
   <section class="hero" id="top" aria-labelledby="hero-title">
     <img class="hero-icon" src="icon.png" alt="" width="84" height="84">
     <p class="eyebrow"><span class="mark" aria-hidden="true"><i></i><i></i></span>macOS 입력기</p>
-    <h1 id="hero-title">한/영 전환 없이,<br>그냥 쓰세요.</h1>
+    <h1 id="hero-title">한/영 전환 없이,<br><span class="grad">그냥 쓰세요.</span></h1>
     <p class="hero-sub">치는 대로 한국어와 영어가 알아서 나와요.</p>
     <div class="cta-row">
       <a class="pill pill-lg" href="#install">설치하기</a>
-      <a class="more" href="#demo">데모 보기 <span aria-hidden="true">›</span></a>
+      <a class="pill pill-lg pill-line" href="#demo">데모 보기</a>
     </div>
     <p class="hero-meta">macOS 15 이상 · Apple 실리콘과 Intel</p>
   </section>
@@ -680,7 +586,7 @@
     </div>
   </section>
 
-  <section class="band alt accuracy" id="accuracy" aria-labelledby="acc-name">
+  <section class="band accuracy" id="accuracy" aria-labelledby="acc-name">
     <div class="wrap center">
       <p class="figure" aria-hidden="true">99<span class="pct">%+</span></p>
       <h2 class="figure-label"><span id="acc-name">단어 정확도<span class="sr-only"> 99% 이상</span></span><sup><a href="#fn1" id="fnref1" aria-label="각주 1">1</a></sup></h2>
@@ -688,8 +594,9 @@
     </div>
   </section>
 
-  <section class="band features" id="features" aria-labelledby="features-title">
+  <section class="band alt features" id="features" aria-labelledby="features-title">
     <div class="wrap">
+      <p class="kicker">특징</p>
       <h2 class="section-title" id="features-title">알아서, 정확하게.</h2>
       <div class="bento">
         <article class="tile tile-wide">
@@ -728,12 +635,11 @@
     </div>
   </section>
 
-  <section class="band alt install" id="install" aria-labelledby="install-title">
+  <section class="band install" id="install" aria-labelledby="install-title">
     <div class="wrap">
-      <div class="center">
-        <h2 class="section-title" id="install-title">지금 설치하세요.</h2>
-        <p class="section-sub">터미널에 붙여 넣고 Return을 누르세요.</p>
-      </div>
+      <p class="kicker">설치</p>
+      <h2 class="section-title" id="install-title">지금 설치하세요.</h2>
+      <p class="section-sub">터미널에 붙여 넣고 Return을 누르세요.</p>
       <div class="command">
         <div class="cmd-line">
           <span class="prompt" aria-hidden="true">%</span>
@@ -754,7 +660,6 @@
         <ul role="list" aria-labelledby="notes-title">
           <li><b>업데이트:</b> 같은 명령을 다시 실행하고, <span class="nw">Duo 설정 ▸ 일반에서</span> <span class="nw">‘업데이트’를</span> 눌러요.</li>
           <li><b>제거:</b> <span class="nw">Duo 설정 ▸ 정보 ▸ ‘Duo 제거…’를</span> 누른 뒤 ~/Applications/Duo.app을 버려요.</li>
-          <li>공증받지 않은 빌드라 브라우저로 받으면 macOS가 막아요. <span class="nw">위 명령으로</span> 설치하세요.</li>
           <li>커서가 다른 앱의 암호 칸에 있으면 macOS가 <span class="nw">잠시 Duo를 꺼요.</span></li>
           <li>일부 앱에서만 입력이 안 되면 Mac을 재시동해 보세요.</li>
         </ul>
