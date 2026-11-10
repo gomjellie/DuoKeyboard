@@ -1973,12 +1973,12 @@
         }
       }
     },
-    "자소는 닭 → 달 → 다처럼 한 자소씩, 글자는 한 글자를 통째로 지워요." : {
+    "자소는 치던 글자만 닭 → 달 → 다처럼 한 자소씩 지우고, 그 앞 글자는 통째로 지워요. 글자는 늘 한 글자를 통째로 지워요." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jamo deletes one letter at a time (닭 → 달 → 다); Syllable deletes the whole syllable."
+            "value" : "Jamo takes only the syllable you are typing apart, one jamo at a time (닭 → 달 → 다), and deletes earlier syllables whole. Syllable always deletes a whole syllable."
           }
         }
       }

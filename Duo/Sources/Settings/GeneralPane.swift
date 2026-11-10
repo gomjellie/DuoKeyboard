@@ -61,7 +61,7 @@ struct GeneralPane: View {
                     .fixedSize()
                 } label: {
                     Text("백스페이스 단위")
-                    Text("자소는 닭 → 달 → 다처럼 한 자소씩, 글자는 한 글자를 통째로 지워요.")
+                    Text("자소는 치던 글자만 닭 → 달 → 다처럼 한 자소씩 지우고, 그 앞 글자는 통째로 지워요. 글자는 늘 한 글자를 통째로 지워요.")
                 }
                 Toggle(isOn: settings.binding(\.graveTypesWon)) {
                     Text("` 키로 ₩ 입력")
