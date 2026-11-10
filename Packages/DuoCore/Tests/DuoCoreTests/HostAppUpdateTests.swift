@@ -141,7 +141,8 @@ struct HostAppUpdateTests {
         let installed = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: root,
                                                     create: true)
         let target = try Self.makeApp(in: installed, version: "1.0.0", build: "1")
-        let newer = try Self.makeApp(in: root.appending(path: "new"), version: "1.1.0", build: "2")
+        let stage = root.appending(path: "duo-update-test")
+        let newer = try Self.makeApp(in: stage, version: "1.1.0", build: "2")
 
         // A process that has already exited stands in for the quitting app.
         let quitter = Process()
@@ -156,6 +157,7 @@ struct HostAppUpdateTests {
         #expect(AppUpdate.run("/usr/bin/codesign", ["--verify", "--deep", "--strict", target.path]) == 0)
         let leftovers = try FileManager.default.contentsOfDirectory(atPath: installed.path).filter { $0.contains(".old-") }
         #expect(leftovers.isEmpty, "the old bundle is removed after the swap")
+        #expect(!FileManager.default.fileExists(atPath: stage.path), "the unpacked copy is removed after the swap")
         try? FileManager.default.removeItem(at: installed)
     }
 
@@ -169,5 +171,22 @@ struct HostAppUpdateTests {
         let missing = root.appending(path: "missing/Duo.app").path
         #expect(AppUpdate.run("/bin/zsh", [script.path, "99999999", missing, target.path, "none"]) != 0)
         #expect(BundleVersion(bundleURL: target) == BundleVersion(marketing: "1.0.0", build: "1"))
+    }
+
+    @Test("the feed can be overridden in the defaults; a translocated or read-only app is not replaced")
+    func feedOverrideAndReplaceability() throws {
+        let suite = "duo-update-test-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        #expect(AppUpdate.feedURL(in: defaults) == AppUpdate.feedURL)
+        defaults.set("http://127.0.0.1:8123/update.json", forKey: AppUpdate.feedURLDefaultsKey)
+        #expect(AppUpdate.feedURL(in: defaults).absoluteString == "http://127.0.0.1:8123/update.json")
+
+        let folder = FileManager.default.temporaryDirectory.appending(path: "duo-replace-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        #expect(AppUpdate.canReplace(appAt: folder.appending(path: "Duo.app")))
+        #expect(!AppUpdate.canReplace(appAt: URL(fileURLWithPath: "/private/var/folders/x/T/AppTranslocation/ABC/d/Duo.app")))
+        #expect(!AppUpdate.canReplace(appAt: URL(fileURLWithPath: "/System/Applications/Duo.app")))
     }
 }

@@ -39,6 +39,22 @@ public enum AppUpdate {
     /// The feed on the download site.
     public static let feedURL = URL(string: "https://gomjellie.github.io/DuoKeyboard/update.json")!
 
+    /// Shared-defaults key naming another feed, to try a release before it ships. The zip must still
+    /// carry a signature by ``publicKey`` and be newer than the running app.
+    public static let feedURLDefaultsKey = "update.feedURL"
+
+    /// ``feedURL``, or the feed named under ``feedURLDefaultsKey``.
+    public static func feedURL(in defaults: UserDefaults) -> URL {
+        defaults.string(forKey: feedURLDefaultsKey).flatMap(URL.init(string:)) ?? feedURL
+    }
+
+    /// Whether the app at `url` can be swapped in place: its folder is writable, and macOS is not
+    /// running it from a read-only translocated copy (an app opened straight from a download).
+    public static func canReplace(appAt url: URL, fileManager: FileManager = .default) -> Bool {
+        !url.path.contains("/AppTranslocation/")
+            && fileManager.isWritableFile(atPath: url.deletingLastPathComponent().path)
+    }
+
     /// Raw Ed25519 public key (base64) that signs every release zip. Duo.app is ad-hoc signed, so its
     /// code signature cannot say who built an update; this key does. The private half stays with the
     /// maintainer (Tools/scripts/update-sign.swift).
@@ -150,7 +166,8 @@ public enum AppUpdate {
     /// running app cannot replace itself safely, so a detached shell does it.
     ///
     /// Arguments: `<pid> <new app> <target app> <relaunch: none|background|foreground> [launch arguments…]`.
-    /// The old bundle is moved aside first and put back if the copy fails.
+    /// The old bundle is moved aside first and put back if the copy fails. After the swap the folder
+    /// the new app was unpacked into (`duo-update-…`, with this script) is deleted.
     public static let installScript = #"""
         #!/bin/zsh
         pid=$1 new=$2 target=$3 relaunch=$4
@@ -166,6 +183,8 @@ public enum AppUpdate {
         fi
         rm -rf "$backup"
         xattr -dr com.apple.quarantine "$target" 2>/dev/null
+        stage=${new:h}
+        [[ ${stage:t} == duo-update-* ]] && rm -rf "$stage"
         [[ $relaunch == none ]] && exit 0
         /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$target" 2>/dev/null
         if [[ $relaunch == background ]]; then
