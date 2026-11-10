@@ -51,7 +51,7 @@
 
 | 묶음 | 결과 |
 |---|---|
-| `swift test` (debug, `build/spm`) | 56개 묶음의 테스트 621개 통과(건너뛴 `DemoFramesTests` 포함), 알려진 문제 2개, 실패 0개 (2026-11-10) |
+| `swift test` (debug, `build/spm`) | 57개 묶음의 테스트 627개 통과(건너뛴 `DemoFramesTests` 포함), 알려진 문제 2개, 실패 0개 (2026-11-10) |
 | `swift test -c release` (`build/spm-rel`) | 48개 묶음의 테스트 514개 통과, 알려진 문제 2개, 실패 0개 (2026-11-08) |
 | 호스트 앱 테스트 (`xcodebuild test -scheme Duo`) | 11개 묶음의 테스트 51개 통과 (2026-11-10) |
 | live E2E (`make e2e`) | 60/60 (2026-11-08, `make e2e`, 새 모델). 이전: 58/58, 51/51 (2차 수정에서 3번, 리드 점검 뒤 2번, 최신 작업 뒤) |
@@ -101,6 +101,50 @@ Duo 켜기는 허용 창 없이 60초 기다렸고, + 목록 한국어에도 Duo
 확인하지 않은 것:
 - macOS 15에서 같은 캐시 문제가 있는지
 - 키보드 설정 캐시가 언제 다시 만들어지는지(macOS 내부 규칙). 그래서 켤 때마다 확인함
+
+## 다시 설치한 뒤 메뉴 막대 입력 메뉴가 망가지던 문제 (2026-11-10)
+
+사용자 보고: 정보 ▸ Duo 제거 뒤 다시 켰더니 메뉴 막대에 한A 대신 일반 키보드 아이콘이 보였음. 한A로 보이다가도
+눌러서 메뉴를 열면 아이콘이 사라지고(눌린 자리는 검은 원), 메뉴에 입력 소스가 없이 "이모지 및 기호 보기",
+"키보드 뷰어 보기", "키보드 설정 열기…"만 남았음.
+
+원인(macOS 26.6.2에서 확인):
+- 메뉴 막대 입력 메뉴(TextInputMenuAgent)는 TIS에 켜진 소스를 묻지 않음. HIToolbox가 로그인 세션 동안 두는
+  목록을 읽음
+  - 위치: 이름이 `AppleInputSourcesInUIOrderPasteboard`인 페이스트보드. 내용은 메뉴 순서대로 놓은 입력 소스의
+    XML 속성 목록(`AppleInputSourcesInUIOrderFlavor`)
+  - 읽는 함수: `_TSMCopySelectableInputSourcesInUIOrder`. 목록이 있으면 그대로 믿고, 비어 있을 때만 새로 만듦
+  - 쓰는 함수: `UpdatePBInputSourcesInUIOrder`. `TISEnableInputSource`나 `TISDisableInputSource`가 성공한
+    프로세스가 자기가 아는 켜진 소스로 목록을 씀
+- 허용 기록(`AppleEnabledThirdPartyInputSources`)이 제거 뒤에도 남아 있으면 호스트 앱의
+  `TISEnableInputSource`가 바로 성공함. 그런데 호스트 앱의 TIS는 방금 켠 Duo를 아직 목록에 넣지 못해서,
+  Duo가 빠진 목록을 씀. 그 뒤로 목록을 다시 쓰는 프로세스가 없었음
+- 그래서 Duo는 켜져 있고 선택돼 있는데 목록에는 ABC만 있었음. 입력 메뉴는 현재 소스를 목록에서 찾지 못해
+  아이콘을 비우고 소스 목록도 그리지 않았음
+- 처음 설치(허용 기록이 없음)에서는 시스템 설정이 Duo를 켜면서 올바른 목록을 씀. 그래서 처음에는 문제가 없었음
+
+고친 것(`InputMenuList`):
+- Duo가 켜져 있는데 목록에 Duo가 없으면 Duo 항목을 목록 끝에 넣음. 항목은 macOS가 허용 기록에 쓴 것을 그대로 씀
+- 이어서 `AppleEnabledInputSourcesChangedNotification`과
+  `com.apple.Carbon.TISNotifyEnabledKeyboardInputSourcesChanged`를 차례로 보냄. 앞의 알림은 각 프로세스가 켜진
+  소스를 다시 읽게 하고, 뒤의 알림은 입력 메뉴가 목록을 다시 만들게 함. 입력 메뉴를 다시 시작하지 않아도 됨
+- 부르는 때: 켜기에서 Duo가 켜진 직후와 선택 직전, 켜기가 끝날 때, 호스트 앱을 열 때, 입력기 프로세스의
+  첫 활성화. 이미 망가진 Mac은 새 버전의 Duo를 열거나 새 입력기로 한 번 입력하면 고쳐짐
+- Duo가 꺼져 있으면 목록을 건드리지 않음. 목록이 비어 있어도 건드리지 않음(다음에 읽는 프로세스가 만듦)
+
+버린 방법:
+- 입력 메뉴 프로세스를 다시 시작하기(`killall TextInputMenuAgent`). 새 프로세스도 같은 목록을 읽으므로 아이콘만
+  잠깐 한A로 돌아오고, 메뉴를 열면 다시 망가졌음
+
+확인한 것(Release 빌드, 실제 앱을 orca computer로 조작, 입력 메뉴는 다시 시작하지 않음):
+- 제거 → 다시 켜기(허용 기록이 남은 경우): 목록이 "ABC" → "ABC, Duo", 아이콘 한A, 메뉴에 ABC와 Duo(선택됨)와
+  Duo 메뉴 항목이 보임. 메뉴를 닫은 뒤에도 한A
+- 허용 기록을 지우고 제거 → 켜기 → 허용(처음 설치와 같은 경우): 시스템 설정이 "ABC, Duo"를 쓰고 같은 결과
+- 로그로 쓴 순서를 확인함: 호스트 앱의 켜기 호출이 Duo 없는 목록을 쓰고, 13 ms 뒤 `InputMenuList`가 Duo를 넣음
+
+확인하지 않은 것:
+- macOS 15에서 같은 문제가 있는지. 목록 형식이 다르면 `InputMenuList`는 아무것도 하지 않음
+- 입력기 첫 활성화만으로 고쳐지는 경로. 시험에서는 다른 앱(Safari)이 먼저 올바른 목록을 써서 가려졌음
 
 ## 써보기 키보드 힌트와 늘 밝은 내려받기 페이지 (2026-11-10)
 
