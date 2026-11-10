@@ -14,6 +14,10 @@ struct DuoCommands: Commands {
         CommandGroup(replacing: .newItem) {}
         CommandGroup(replacing: .help) {
             Button("Duo 시작하기 안내") { app.showOnboarding(at: .welcome) }
+            Button("업데이트 확인…") {
+                app.showSettings(.general)
+                Task { await app.updater.check() }
+            }
             Divider()
             Button("키보드 설정 열기…") { SystemSettings.openKeyboard() }
         }

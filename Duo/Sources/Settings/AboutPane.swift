@@ -17,7 +17,7 @@ struct AboutPane: View {
         Form {
             Section {
                 Label {
-                    Text("Duo는 모든 판단을 Mac 안에서 해요. 입력한 문장은 저장하지 않고, 학습에는 단어별 횟수만 남아요. Duo는 인터넷에 연결하지 않아요.")
+                    Text("Duo는 모든 판단을 Mac 안에서 해요. 입력한 문장은 저장하지 않고, 학습에는 단어별 횟수만 남아요. 인터넷에는 새 버전을 확인하고 내려받을 때만 연결해요.")
                         .fixedSize(horizontal: false, vertical: true)
                 } icon: {
                     Image(systemName: "lock.shield.fill")

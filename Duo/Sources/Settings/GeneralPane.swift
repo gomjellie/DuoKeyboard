@@ -86,6 +86,8 @@ struct GeneralPane: View {
                 }
             }
 
+            UpdateSection()
+
             TroubleshootingSection()
         }
         .formStyle(.grouped)

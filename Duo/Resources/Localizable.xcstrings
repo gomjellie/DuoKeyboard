@@ -111,6 +111,36 @@
         }
       }
     },
+    "Duo %@ 내려받는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading Duo %@"
+          }
+        }
+      }
+    },
+    "Duo %@ 설치 준비 완료" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo %@ is ready to install"
+          }
+        }
+      }
+    },
+    "Duo %@이 나왔어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo %@ is available"
+          }
+        }
+      }
+    },
     "Duo 다시 시작" : {
       "localizations" : {
         "en" : {
@@ -127,6 +157,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duo Settings"
+          }
+        }
+      }
+    },
+    "Duo 설정을 종료하면 설치해요. 지금 설치하면 Duo 설정이 다시 열려요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It installs when you quit Duo Settings. Install now and Duo Settings opens again."
           }
         }
       }
@@ -157,6 +197,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The input method is missing from the Duo app. Download and install Duo again."
+          }
+        }
+      }
+    },
+    "Duo 업데이트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updates"
           }
         }
       }
@@ -321,12 +371,12 @@
         }
       }
     },
-    "Duo는 모든 판단을 Mac 안에서 해요. 입력한 문장은 저장하지 않고, 학습에는 단어별 횟수만 남아요. Duo는 인터넷에 연결하지 않아요." : {
+    "Duo는 모든 판단을 Mac 안에서 해요. 입력한 문장은 저장하지 않고, 학습에는 단어별 횟수만 남아요. 인터넷에는 새 버전을 확인하고 내려받을 때만 연결해요." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duo makes every decision on your Mac. It never stores what you type; learning keeps only per-word counts. Duo never connects to the internet."
+            "value" : "Duo decides everything on your Mac. It does not store what you type; learning keeps only per-word counts. It goes online only to check for and download a new version."
           }
         }
       }
@@ -537,6 +587,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Typing dkssud gives 안녕; typing hello gives hello."
+          }
+        }
+      }
+    },
+    "macOS %@ 이상에서 설치할 수 있어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It needs macOS %@ or later."
           }
         }
       }
@@ -777,6 +837,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Another input source"
+          }
+        }
+      }
+    },
+    "다시 시도" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Again"
           }
         }
       }
@@ -1163,6 +1233,36 @@
         }
       }
     },
+    "새 버전 확인" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check for a New Version"
+          }
+        }
+      }
+    },
+    "새 버전을 확인하고 있어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking for a new version"
+          }
+        }
+      }
+    },
+    "새 버전을 확인하지 못했어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not check for a new version"
+          }
+        }
+      }
+    },
     "새 버전이 준비됐어요" : {
       "localizations" : {
         "en" : {
@@ -1443,6 +1543,16 @@
         }
       }
     },
+    "업데이트 확인…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check for Updates…"
+          }
+        }
+      }
+    },
     "업데이트하면 Duo 입력기가 다시 시작돼요. 설정과 학습은 그대로예요." : {
       "localizations" : {
         "en" : {
@@ -1609,6 +1719,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Now just type, anywhere."
+          }
+        }
+      }
+    },
+    "인터넷 연결을 확인한 뒤 다시 시도해 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check your internet connection, then try again."
           }
         }
       }
@@ -1803,6 +1923,16 @@
         }
       }
     },
+    "자동으로 업데이트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Automatically"
+          }
+        }
+      }
+    },
     "자소" : {
       "localizations" : {
         "en" : {
@@ -1883,6 +2013,46 @@
         }
       }
     },
+    "지금 버전은 %@이에요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have version %@."
+          }
+        }
+      }
+    },
+    "지금 설치" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install Now"
+          }
+        }
+      }
+    },
+    "지금 위치에서는 Duo를 바꿀 수 없어요. Duo를 응용 프로그램 폴더로 옮긴 뒤 다시 확인해 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo cannot be replaced where it is. Move Duo to the Applications folder, then check again."
+          }
+        }
+      }
+    },
+    "지금 확인" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check Now"
+          }
+        }
+      }
+    },
     "지금은 Duo를 쓸 수 없어요" : {
       "localizations" : {
         "en" : {
@@ -1949,6 +2119,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "In progress"
+          }
+        }
+      }
+    },
+    "최신 버전이에요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duo is up to date"
           }
         }
       }
@@ -2049,6 +2229,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choice bar position in terminals"
+          }
+        }
+      }
+    },
+    "하루에 한 번 새 버전을 확인해서 내려받고, Duo 설정을 종료할 때 설치해요. 입력한 내용은 보내지 않아요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checks for a new version once a day, downloads it, and installs it when you quit Duo Settings. Nothing you type is sent."
           }
         }
       }

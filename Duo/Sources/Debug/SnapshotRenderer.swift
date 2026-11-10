@@ -213,7 +213,8 @@ struct SnapshotRenderer {
                         status: InputMethodStatus(embedded: app.status.embedded, fixedState: state),
                         languageModel: languageModel,
                         learning: LearningModel(fixture: rows, languageModel: languageModel),
-                        apps: AppsModel(fixture: apps ?? Self.sampleApps()))
+                        apps: AppsModel(fixture: apps ?? Self.sampleApps()),
+                        updater: AppUpdater(fixedPhase: .upToDate))
     }
 
     private func playground(_ model: AppModel, text: String, marked: String) async -> PlaygroundModel {

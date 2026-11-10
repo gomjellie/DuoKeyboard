@@ -52,6 +52,7 @@ final class AppModel {
     let languageModel: LanguageModelProvider
     let learning: LearningModel
     let apps: AppsModel
+    let updater: AppUpdater
 
     var selectedPane: SettingsPane = .general
     var onboardingStep: OnboardingStep = .welcome
@@ -65,12 +66,14 @@ final class AppModel {
     @ObservationIgnored private var launchRequest: HostLaunchRequest
 
     init(settings: SettingsModel, status: InputMethodStatus, languageModel: LanguageModelProvider,
-         learning: LearningModel, apps: AppsModel, launchRequest: HostLaunchRequest = .none) {
+         learning: LearningModel, apps: AppsModel, updater: AppUpdater = AppUpdater(),
+         launchRequest: HostLaunchRequest = .none) {
         self.settings = settings
         self.status = status
         self.languageModel = languageModel
         self.learning = learning
         self.apps = apps
+        self.updater = updater
         self.launchRequest = launchRequest
     }
 
@@ -91,6 +94,13 @@ final class AppModel {
             },
             center.addObserver(forName: HostRequest.showSettingsNotification, object: nil, queue: .main) { [weak model] _ in
                 MainActor.assumeIsolated { model?.showSettings() }
+            },
+            // The input method asks once a day; it recorded the attempt, so check without asking again.
+            center.addObserver(forName: HostRequest.checkForUpdatesNotification, object: nil, queue: .main) { [weak model] _ in
+                MainActor.assumeIsolated {
+                    guard let model, model.settings.value.autoUpdate else { return }
+                    Task { await model.updater.check() }
+                }
             },
         ]
         return model
@@ -188,6 +198,8 @@ final class AppModel {
 /// How this process was launched.
 enum LaunchMode: Equatable {
     case normal
+    /// `--duo-update-check`: update in the background — no window, no Dock icon — and quit.
+    case updateCheck
     #if DEBUG
     /// `--duo-render <dir>`: render every onboarding step and Settings pane offscreen, then exit.
     case render(URL)
@@ -200,6 +212,7 @@ enum LaunchMode: Equatable {
             return .render(URL(fileURLWithPath: args[i + 1], isDirectory: true))
         }
         #endif
+        if ProcessInfo.processInfo.arguments.contains(HostRequest.checkForUpdatesArgument) { return .updateCheck }
         return .normal
     }()
 

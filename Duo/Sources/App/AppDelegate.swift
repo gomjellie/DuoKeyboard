@@ -11,6 +11,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch LaunchMode.current {
         case .normal:
             handOffToRunningInstance()
+        case .updateCheck:
+            // Never appear in the Dock, never take the menu bar or focus: the user may be typing.
+            NSApp.setActivationPolicy(.prohibited)
+            // A running Duo.app checks by itself (HostRequest sends it a notification instead).
+            if otherInstance() != nil { exit(0) }
         #if DEBUG
         case .render:
             // Never appear in the Dock, never take the menu bar or focus: the user may be typing.
@@ -27,6 +32,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard FileManager.default.fileExists(atPath: InputSourceManager.installedBundleURL.path) else { return }
                 KeyboardSettingsCache.removeIfStale()
                 InputMenuList.addDuoIfMissing()
+            }
+            if let model = Self.model {
+                Task { @MainActor in
+                    let autoUpdate = model.settings.value.autoUpdate
+                    // A Duo.app that was just replaced brings its input method along.
+                    if autoUpdate, model.status.state.isInstalled, model.status.isUpdateAvailable {
+                        await model.status.update()
+                    }
+                    await model.updater.checkIfDue(autoUpdate: autoUpdate)
+                }
+            }
+        }
+        if LaunchMode.current == .updateCheck {
+            Task { @MainActor in
+                if let model = Self.model, model.settings.value.autoUpdate {
+                    await model.updater.runInBackground(status: model.status)
+                }
+                NSApp.terminate(nil)
             }
         }
         #if DEBUG
@@ -53,15 +76,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // ⌘Q with onboarding still open counts like closing its window.
         if model.isOnboardingWindowOpen { model.onboardingWindowDidClose() }
         model.settings.flush()
+        model.updater.installOnQuit()
     }
 
     /// Duo is a single-instance app: a second copy (say, a build next to /Applications/Duo.app)
     /// activates the first one and quits.
     private func handOffToRunningInstance() {
-        let me = ProcessInfo.processInfo.processIdentifier
-        guard let other = NSRunningApplication.runningApplications(withBundleIdentifier: DuoIDs.hostAppBundleID)
-            .first(where: { $0.processIdentifier != me && !$0.isTerminated }) else { return }
+        guard let other = otherInstance() else { return }
         other.activate()
         exit(0)
+    }
+
+    /// Another Duo.app with windows. One that is updating in the background (`LaunchMode.updateCheck`)
+    /// has no window to come forward, so it does not count.
+    private func otherInstance() -> NSRunningApplication? {
+        let me = ProcessInfo.processInfo.processIdentifier
+        return NSRunningApplication.runningApplications(withBundleIdentifier: DuoIDs.hostAppBundleID)
+            .first { $0.processIdentifier != me && !$0.isTerminated && $0.activationPolicy != .prohibited }
     }
 }
