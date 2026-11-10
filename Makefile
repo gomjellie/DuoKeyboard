@@ -6,7 +6,7 @@ RELEASE_PRODUCTS := $(DD)/Build/Products/Release
 SCRATCH ?= build/spm
 DIST_URL ?= https://gomjellie.github.io/DuoKeyboard
 
-.PHONY: help project build build-release test install e2e app dist run-app clean model
+.PHONY: help project build build-release test install e2e app dist deploy run-app clean model
 
 help:
 	@echo "make project        Regenerate Duo.xcodeproj from project.yml (XcodeGen)"
@@ -46,6 +46,9 @@ app: build-release
 
 dist: project
 	Tools/scripts/dist.sh $(DIST_URL)
+
+deploy: dist
+	Tools/scripts/deploy-pages.sh
 
 model:
 	python3 Tools/ModelBuilder/build_model.py
