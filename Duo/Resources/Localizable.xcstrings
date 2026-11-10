@@ -481,6 +481,26 @@
         }
       }
     },
+    "Enter로 바로 보내기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send with Return"
+          }
+        }
+      }
+    },
+    "Enter를 눌렀는데 보내지지 않고 줄이 바뀌는 앱에서 켜세요. 치는 단어에 밑줄이 생기지 않아요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn this on in apps where Return starts a new line instead of sending. The word you type has no underline."
+          }
+        }
+      }
+    },
     "Finder에서 보기" : {
       "localizations" : {
         "en" : {
@@ -1699,6 +1719,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Done"
+          }
+        }
+      }
+    },
+    "이 앱은 치는 단어를 바꿀 수 없어서 켤 수 없어요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not available: this app can't replace the word you're typing."
           }
         }
       }

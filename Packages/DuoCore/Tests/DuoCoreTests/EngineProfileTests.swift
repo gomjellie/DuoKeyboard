@@ -65,6 +65,31 @@ struct EngineProfileTests {
         #expect(h.hud?.content == .cannotChange)
     }
 
+    /// "Enter로 바로 보내기" rewrites the word on every key: only clients that honour replacement
+    /// ranges and let committed text change can have it (SPEC.md 4.10절).
+    @Test(arguments: [
+        ("ru.keepcoder.Telegram", true),
+        ("com.apple.TextEdit", true),
+        ("com.kakao.KakaoTalkMac", true),
+        ("com.anthropic.claudefordesktop", true),
+        ("com.apple.Terminal", false),
+        ("com.googlecode.iterm2", false),
+        ("com.stablyai.orca", false),
+        ("com.mitchellh.ghostty", false),
+        ("com.microsoft.VSCode", false),
+        ("com.vscodium", false),
+        ("com.jetbrains.intellij", false),
+        ("com.google.android.studio", false),
+    ])
+    func inlineSupport(_ id: String, _ supported: Bool) {
+        let p = ClientProfile.forBundleIdentifier(id)
+        #expect(p.supportsInline == supported)
+        var settings = DuoSettings()
+        #expect(!p.usesInline(settings), "off until the user turns it on")
+        settings.inlineApps = [id]
+        #expect(p.usesInline(settings) == supported)
+    }
+
     @Test func onlyXtermTerminalsPlaceTheHUDAtTheFocusedElement() {
         #expect(ClientProfile.forBundleIdentifier("com.stablyai.orca").compositionAtFocusedElement)
         for id in ["com.apple.Terminal", "com.googlecode.iterm2", "com.apple.TextEdit", "com.microsoft.VSCode",

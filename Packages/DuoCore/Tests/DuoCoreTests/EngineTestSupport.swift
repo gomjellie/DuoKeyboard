@@ -232,13 +232,26 @@ final class EngineHarness {
     private(set) var notifications: [EngineNotification] = []
 
     /// - Parameter scorer: a real detector to use instead of `detector` (scenario tests).
+    /// The "Enter로 바로 보내기" adapter between the engine and `client`, when the harness types inline.
+    let inline: InlineTextClient?
+    /// What the engine talks to: `inline` if any, else `client`. `client` records what reaches the app.
+    var engineClient: any TextClient { inline ?? client }
+
+    /// - Parameter inline: type the word straight into the document (``InlineTextClient``).
     init(settings: DuoSettings = .default, bundleIdentifier: String = "com.apple.TextEdit",
          replacement: ReplacementSupport? = nil, detector: FakeDetector = FakeDetector(),
-         scorer: (any LanguageDetector)? = nil, snapshot: LearningSnapshot = LearningSnapshot()) {
+         scorer: (any LanguageDetector)? = nil, snapshot: LearningSnapshot = LearningSnapshot(), inline: Bool = false) {
         self.detector = detector
         let profile = ClientProfile.forBundleIdentifier(bundleIdentifier)
         buffer = BufferTextClient(bundleIdentifier: bundleIdentifier, replacementSupport: replacement ?? profile.replacement)
         client = RecordingClient(buffer)
+        if inline {
+            let adapter = InlineTextClient(base: client)
+            adapter.wantsInline = true
+            self.inline = adapter
+        } else {
+            self.inline = nil
+        }
         var dateBox: () -> Date = { Date() }
         var nowBox: () -> TimeInterval = { 0 }
         let store = LearningStore(snapshot: snapshot, now: { dateBox() })
@@ -262,7 +275,7 @@ final class EngineHarness {
         var e = event
         e.timestamp = now
         _ = client.take()
-        let consumed = engine.handle(e, client: client)
+        let consumed = engine.handle(e, client: engineClient)
         let calls = client.take()
         if !consumed { buffer.applyPassedKey(e, characters: characters) }
         return Step(consumed: consumed, calls: calls)
@@ -285,9 +298,9 @@ final class EngineHarness {
              device: UInt = FlipTapDetector.Flags.rightCommandDevice, hold: TimeInterval = 0.08) -> [RecordingClient.Call] {
         now += 0.05
         _ = client.take()
-        engine.handleModifier(ModifierEvent(keyCode: keyCode, flags: flag | device, timestamp: now), client: client)
+        engine.handleModifier(ModifierEvent(keyCode: keyCode, flags: flag | device, timestamp: now), client: engineClient)
         now += hold
-        engine.handleModifier(ModifierEvent(keyCode: keyCode, flags: 0, timestamp: now), client: client)
+        engine.handleModifier(ModifierEvent(keyCode: keyCode, flags: 0, timestamp: now), client: engineClient)
         return client.take()
     }
 
@@ -301,12 +314,12 @@ final class EngineHarness {
                   device: UInt = FlipTapDetector.Flags.rightCommandDevice, after dt: TimeInterval = 0.05) {
         now += dt
         engine.handleModifier(ModifierEvent(keyCode: keyCode, flags: down ? flag | device : 0, timestamp: now),
-                              client: client)
+                              client: engineClient)
     }
 
     func commit(_ reason: CommitReason) -> [RecordingClient.Call] {
         _ = client.take()
-        engine.commit(reason, client: client)
+        engine.commit(reason, client: engineClient)
         return client.take()
     }
 

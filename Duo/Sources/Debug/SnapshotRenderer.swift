@@ -256,7 +256,8 @@ struct SnapshotRenderer {
             let name = url.map { FileManager.default.displayName(atPath: $0.path).replacingOccurrences(of: ".app", with: "") }
                 ?? (id == "com.kakao.KakaoTalkMac" ? "카카오톡" : id)
             let icon = url.map { NSWorkspace.shared.icon(forFile: $0.path) } ?? NSWorkspace.shared.icon(for: .application)
-            return AppsModel.App(bundleID: id, name: name, icon: icon, isSeen: seen, isRunning: true, defaultProfile: profile)
+            return AppsModel.App(bundleID: id, name: name, icon: icon, isSeen: seen, isRunning: true, defaultProfile: profile,
+                                 supportsInline: ClientProfile.forBundleIdentifier(id).supportsInline)
         }
     }
 

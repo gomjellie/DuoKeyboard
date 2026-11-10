@@ -63,12 +63,12 @@ final class ModifierRouter {
 
     private static let inputTypes: [CGEventType] = [.keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown]
 
-    private static func currentInputCount() -> UInt32 {
+    static func currentInputCount() -> UInt32 {
         inputTypes.reduce(0) { $0 &+ CGEventSource.counterForEventType(.combinedSessionState, eventType: $1) }
     }
 
     /// System uptime of the most recent key-down or click.
-    private static func lastInputUptime() -> TimeInterval {
+    static func lastInputUptime() -> TimeInterval {
         let since = inputTypes.map {
             CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: $0)
         }.min() ?? .infinity

@@ -603,6 +603,7 @@ final class DuoInputController: IMKInputController {
 | 함정 | 원인 | 대응 |
 |---|---|---|
 | 웹 채팅 앱과 검색 막대에서 **Enter가 마지막 음절을 잃거나 중복함**; Terminal이 Return을 삼킴 | Gureum의 Terminal 버그: 입력기가 확정하면서 Return을 *소비함*(#1). 조합 중에 `keydown` Enter를 처리하는 웹 페이지(`isComposing`/`keyCode 229`)는 자기 핸들러가 돈 뒤에야 확정을 봄. | Return, Tab, Esc, 화살표, ⌘/⌃ 조합, 기능 키에서는 **먼저 `insertText`로 확정한 뒤 `false`를 반환함**. 그러면 앱이 `compositionend` 뒤에 진짜 키를 받음. "\n"을 직접 삽입하지 않음. |
+| 텔레그램(AppKit)에서 **조합 중인 단어 뒤의 Enter가 전송 대신 줄바꿈이 됨** (2026-11-10 사용자 보고) | 텔레그램은 Enter 키 이벤트가 시작될 때 조합 문자열이 있으면 보내지 않는 것으로 보임(소스 미확인). 확정 후 `false`를 반환해도 판단은 이미 끝났음. Apple 두벌식은 이 앱에 밑줄 없이 바로 넣어서 문제가 없음 | 앱마다 켜는 "Enter로 바로 보내기"(SPEC.md 4.10절): 단어를 조합 문자열 대신 본문에 바로 넣고 키마다 범위를 바꿈. Claude 데스크톱(Chromium)과 카카오톡은 지금 방식으로도 전송됨 |
 | ⌘A, ⌘X, 검색이 확정을 보지 못함(Finder, Alfred, Spotlight가 "구름입력"을 마지막 음절 없이 검색함) | 단축키가 실행되거나 검색이 필드를 읽을 때 텍스트가 아직 조합 중임. [REF Gureum #924, #180] | 수정 키 조합을 넘기기 전에 확정함. 검색 컨텍스트(`isIncrementalSearchInputContext`, 또는 번들 ID `com.apple.Spotlight`, `com.runningwithcrayons.Alfred`, `com.raycast.macos`)에서는 키 입력마다 확정하는 방식("직접 모드", 아래 참고)을 고려함. |
 | 조합 중인 텍스트 위의 Chromium "파란 상자" | 조합 문자열 안의 선택 범위나 선택된 절 스타일. [REF Gureum #880] | `selectionRange = (len, 0)`, 절 하나, `kTSMHiliteConvertedText`(밑줄 한 줄)나 raw 스타일. |
 | Chromium/Electron 조합 타이밍 버그; 실행 직후 첫 글자가 자모나 라틴 문자로 쪼개짐 | 웹 뷰와 입력기의 런 루프가 비동기로 동기화됨; 첫 포커스는 분류하기 어려움. [REF DKST] | `handle` 안에서 동기로 `setMarkedText`. 실행할 때 엔진을 미리 데움. 키 이벤트당 `setMarkedText` 하나. |
@@ -625,7 +626,8 @@ final class DuoInputController: IMKInputController {
 **직접 조합 대 조합 문자열 방식 (전략적 선택):**
 
 - Apple(macOS 26)과 DKST는 Cocoa와 WebKit 클라이언트에서 대체 범위를 써서 밑줄 없이 **직접** 조합함. Chromium/Electron, Java, 터미널, 그리고 `selectedRange()`가 `NSNotFound`를 반환하는 클라이언트에서는 **조합 문자열**로 물러남. [RUNTIME][REF DKST `shouldUseMarkedTextForClient`]
-- Duo v1은 **어디서나 조합 문자열**을 씀: 튼튼하고 단순하며, 단어가 "대기 중"임이 눈에 보여서 바꾸기 UX에 잘 맞음.
+- Duo v1은 **기본으로 어디서나 조합 문자열**을 씀: 튼튼하고 단순하며, 단어가 "대기 중"임이 눈에 보여서 바꾸기 UX에 잘 맞음.
+- 사용자가 앱마다 켜는 "Enter로 바로 보내기"(SPEC.md 4.10절)는 Apple처럼 단어를 본문에 바로 넣음. 텔레그램이 조합 중인 단어 뒤의 Enter를 줄바꿈으로 처리해서 더했음(2026-11-10). Apple 두벌식이 텔레그램에서 밑줄 없이 입력하는 것은 사용자가 확인했음. Apple이 Chromium·Electron에서 조합 문자열로 물러난다는 위 기록은 그 뒤 다시 확인하지 않았음.
 - v2에서는 같은 클라이언트 정책 표를 바탕으로 검색 필드와 Cocoa/WebKit용 직접 모드를 더할 수 있음. 증분 검색에서 더 잘 동작하게 하려는 것임.
 
 ---

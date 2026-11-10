@@ -56,6 +56,16 @@
         }
       }
     },
+    "Enter로 바로 보내기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send with Return"
+          }
+        }
+      }
+    },
     "다음 단어 언어 지정 취소": {
       "comment": "VoiceOver announcement: a second flip-key press cancelled the next word's language.",
       "localizations": {

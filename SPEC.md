@@ -113,7 +113,7 @@ Packages/DuoCore (SwiftPM, macOS 15, Swift 6 언어 모드)
     Detection/   DuoDetector, DuoModel (DUOM v1 mmap), 문자 LM, 사전, 점수     [A]
     Engine/      CompositionEngine (+Typing, +Flip, +Commit, +Choice),
                  EngineState, FlipTapDetector, LearningStore, ClientProfile,
-                 BufferTextClient, SelectionConverter                         [B]
+                 BufferTextClient, InlineTextClient, SelectionConverter       [B]
   DuoKit   (입력기와 호스트 앱이 함께 쓰는 AppKit/Carbon 통합)
     DuoIDs, SettingsStore                          리드만 고침               [lead]
     InputSourceManager, InputMethodInstaller       (처음부터 있었음, D가 넓힐 수 있음)
@@ -122,6 +122,7 @@ Packages/DuoCore (SwiftPM, macOS 15, Swift 6 언어 모드)
     HUD/         HUDGeometry, HUDTimeline, HUDPresentation, HUDSizing,
                  HUDAnnouncement, SelectionConversionCheck                     [C]
     ModifierRouting (입력기의 수정 키 규칙. 단위 테스트를 위해 DuoKit에 둠)       [C]
+    UnseenInputCounter (입력기가 보지 못한 키와 클릭, 4.9절)                    [C]
     Host/        HostFlow, HostRequest, InputMethodState, AppCatalog,
                  LearnedWords, LearningEditor, PlaygroundSession              [D]
 DuoInputMethod/   IMK 앱: 컨트롤러 어댑터, HUD, 입력 메뉴, plist               [C]
@@ -139,7 +140,7 @@ project.yml, Package.swift, Makefile, Tools/scripts                          [le
 - HUD 컨트롤러(`CompositionHUDController`) 하나와 `ModifierRouter` 하나.
 - 강제할 자판 ID: `com.apple.keylayout.ABC`, 없으면 `com.apple.keylayout.US`(R16).
 
-`DuoInputController`는 클라이언트 세션마다 하나씩 생겨요. 컨트롤러마다 `CompositionEngine` 하나와 `IMKTextClient` 하나를 가져요(R14). 감지기, 학습 저장소, 설정은 함께 써요.
+`DuoInputController`는 클라이언트 세션마다 하나씩 생겨요. 컨트롤러마다 `CompositionEngine` 하나와 `IMKTextClient` 하나를 가져요(R14). 엔진은 `IMKTextClient`를 감싼 `InlineTextClient`와 말해요. "Enter로 바로 보내기"를 켜지 않은 앱에서는 호출이 그대로 지나가요(4.10절). 감지기, 학습 저장소, 설정은 함께 써요.
 
 **호스트 앱.** DuoCore와 DuoKit을 링크하고, `DuoInputMethod.app`을 `Contents/Library/Input Methods/`에 넣어요(`project.yml`). 연습장은 그 번들에서 모델을 불러와요(R21). Duo가 선택된 입력 소스가 아니면 연습장은 `BufferTextClient`를 상대로 `CompositionEngine`을 돌려요(`PlaygroundSession`).
 
@@ -162,7 +163,7 @@ project.yml, Package.swift, Makefile, Tools/scripts                          [le
 |---|---|
 | `DuoCore/Contracts/DetectionContract.swift` | `Hypothesis`(K/E/M(b), `.key` "K"/"E"/"M3", `.language`), `ScriptLanguage`, `LanguageContext`(START/KO/EN/NUM), `Terminator`(S/D/H/P), `ScoredHypothesis`, `HypothesisScores`(`best`는 DET의 동점 규칙), `UserCounts`, `protocol LanguageDetector`(`finalScores`, `prefixScores`, `choiceScores`, `render`, `canAttachKorean`, `parameters`), `Margins` |
 | `DuoCore/Contracts/EngineContract.swift` | `KeyEvent`(글자는 ANSI 위치, `Modifiers`, `isRepeat`, `isDeadKey`, `timestamp`, 테스트용 `KeyEvent.typing("…")`), `ModifierEvent`, `@MainActor protocol TextClient`, `ReplacementSupport`, `HUDRequest`(content/anchor/immediate/lifetime/pulse), `HUDReading`, `HUDChoice`(readings/selected/alternate), `CommitReason`, `EngineNotification` |
-| `DuoCore/Contracts/SettingsContract.swift` | `FlipKey`, `BackspaceUnit`, `AppProfile`, `DuoSettings`(너그러운 Codable: 키마다, `appProfiles`는 앱마다 기본값으로 물러남), `LearningEntry`, `LearningSnapshot`(디스크 JSON 형식) |
+| `DuoCore/Contracts/SettingsContract.swift` | `FlipKey`, `BackspaceUnit`, `AppProfile`, `DuoSettings`(너그러운 Codable: 키마다, `appProfiles`는 앱마다 기본값으로 물러남. `inlineApps`는 문자열 목록이 아니면 비움), `LearningEntry`, `LearningSnapshot`(디스크 JSON 형식) |
 | `DuoKit/DuoIDs.swift` | 번들 ID, 공유 설정 이름, 알림 이름, 파일 위치(R6) |
 | `DuoKit/SettingsStore.swift` | 설정 읽기·저장·관찰, 본 앱 목록. 이 빌드가 모르는 키와 프로필은 저장된 그대로 둠 |
 
@@ -180,7 +181,7 @@ project.yml, Package.swift, Makefile, Tools/scripts                          [le
 계약을 구현하는 타입은 아래와 같아요.
 
 - `DuoDetector` [A]
-- `CompositionEngine`, `ClientProfile`, `LearningStore`, `BufferTextClient`, `SelectionConverter`, `KeyEventMapper`, `LearningFile`/`LearningWriter` [B]
+- `CompositionEngine`, `ClientProfile`, `LearningStore`, `BufferTextClient`, `InlineTextClient`, `SelectionConverter`, `KeyEventMapper`, `LearningFile`/`LearningWriter` [B]
 
 구현하는 쪽은 **본문을 채우고** API를 더할 수 있어요. 하지만 이미 선언한 시그니처는 모두 지켜야 해요. 계약 타입은 고정이에요. 꼭 바꿔야 하면 자기 파일에 shim을 두고 "계약 변경 요청"으로 보고해요.
 
@@ -491,6 +492,12 @@ L 안에서는 바꾸기 키가 점 단어 경계 바로 뒤가 아니면 아무
 ### 4.9 견고성
 
 - **다시 맞추기(R18 #7).** 단어가 조합 중이고 마지막 키에서 1 s 넘게 지났으면 키를 적용하기 전에 `client.markedRange()`를 확인함. `nil`이면 단어를 조용히 버림(넣지 않음). Caps Lock과 fn 확정도 먼저 같은 방법으로 맞춤.
+- **바로 넣은 단어 확인(Enter로 바로 보내기, 4.10절).** 조합 문자열이 없으므로 앱이 Return이나 클릭을 입력기 없이 처리할 수 있음. 텔레그램은 이때 메시지를 보내고 입력 칸을 비울 수 있음.
+  - 입력기는 키다운, 클릭, 수정 키 변화를 엔진에 넘기기 전에 `UnseenInputCounter`를 봄. 윈도 서버의 키다운·마우스다운 카운터로, 입력기가 보지 못한 키나 클릭이 그 사이에 있었는지 알려 줌(권한 불필요). 처리 중인 이벤트 몫(키다운과 클릭은 1, 수정 키는 0)을 빼고, 바로 뒤에 친 키가 이미 세어졌으면 다음 이벤트로 넘김.
+  - 그런 입력이 있었거나 1 s가 지났으면 `InlineTextClient.confirmWord()`로 본문을 확인함. 캐럿이 단어 바로 뒤에 빈 선택으로 있고, 그 범위의 글이 넣은 단어와 같아야 함.
+  - 아니면 `engine.dropComposition()`으로 단어를 조용히 버림. 단어는 본문에 있는 그대로 남음.
+  - `InlineTextClient.markedRange()`는 기록한 범위로 답하고 본문을 확인하지 않음. 엔진은 라틴이나 앞 단어를 다시 열 때 `nil`을 받으면 캐럿으로 물러나고 단어를 그대로 둠. 거기서 범위를 잊으면 엔진과 기록이 어긋남.
+  - 전역 수정 키 모니터 경로는 IMK 콜백 밖이라 확인하지 않음.
 - **Caps Lock과 fn.**
   - `flipKey != .capsLock`일 때 Caps Lock을 켜면 단어를 먼저 확정함(영어 잠금, D9, Apple 한국어 입력기와 같음).
   - 단어가 있을 때 fn(지구본)을 누르면 확정함. 이모지 선택기나 받아쓰기가 넣는 글자보다 단어가 앞에 옴.
@@ -545,6 +552,19 @@ Direct는 기본값이 아니에요. 입력 메뉴나 설정에서 직접 골라
 - `replacement != .none`이면 영어 즉시 확정은 그대로 함. IntelliSense가 실제 글자를 봐야 하기 때문임.
 
 Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙었어요(사용자 보고: 이상하게dltkdgkrp). 조합 문자열은 잘 동작해요. Orca 말고 다른 xterm.js 터미널은 확인하지 않았어요. 그래서 `xtermTerminals`에는 Orca만 있어요. Monaco 편집기 가운데 기본값이 영어 우선인 앱은 VS Code와 Cursor뿐이에요. 나머지는 `.automatic`이에요.
+
+**Enter로 바로 보내기**(`settings.inlineApps`, `ClientProfile.usesInline`):
+
+- 텔레그램은 Enter 키 이벤트가 시작될 때 조합 문자열이 있으면 메시지를 보내지 않고 줄을 바꿈. Apple 한국어 입력기는 이 앱에 밑줄 없이 글자를 바로 넣어서 문제가 없음(2026-11-10 사용자 확인). Claude 데스크톱과 카카오톡은 조합 문자열이 있어도 Enter로 보냄.
+- 켠 앱에서는 엔진과 `IMKTextClient` 사이의 `InlineTextClient`가 조합 문자열 호출을 본문 바꾸기로 옮김. 엔진은 그대로 조합 문자열로 말함.
+  - `setMarkedText(x)`: 첫 호출은 `selectedRange()`를 기록하고 `insertText(x)`로 캐럿(선택 영역 위)에 넣음. 다음부터는 `insertText(x, replacementRange: 단어 범위)`. `""`는 단어를 지움. 교체 범위가 있으면 그 범위를 바꿈;
+  - `insertText(x)`(확정): x가 본문의 단어와 다를 때만 단어 범위를 바꿈. 같으면 호출하지 않음;
+  - `markedRange()`: 기록한 범위(XPC 호출 없음). 본문 확인은 4.9절;
+  - `selectedRange()`가 없으면 그 단어는 조합 문자열로 둠.
+- 켤 수 있는 앱(`supportsInline`): `replacement == .full`, `canReplaceCommittedText`, 터미널도 Java도 아님. 목록에 있어도 지원하지 않는 앱은 조합 문자열을 씀.
+- 단어는 시작한 방식을 끝까지 지킴. 설정을 바꾸면 다음 단어부터 적용됨.
+- 기본값은 모든 앱에서 꺼짐. 코드에 고정한 앱 목록은 없고, 입력 메뉴와 설정 ▸ 앱별 설정에서 켬.
+- E2E 사례 70개를 이 방식으로 쳐도 문서는 같고 조합 문자열은 남지 않음(`E2ECaseMirrorTests`).
 
 ### 4.11 후보 막대 (`HUDChoice`)
 
@@ -751,6 +771,7 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
      - 쉬는 동안 빈 mark나 insert를 보내지 않음(R18 #3);
      - Java 클라이언트는 insert 바로 앞에 같은 글로 mark함(R17);
      - 조합 범위 확인과 콜백 밖 묶기(4.9절);
+   - 엔진과 `IMKTextClient` 사이에 `InlineTextClient`를 둠. Enter로 바로 보내기 앱에서 조합 문자열 호출을 본문 바꾸기로 옮김(4.10절). 키, 클릭, 수정 키 앞에서 바로 넣은 단어를 확인함(4.9절). HUD의 `.markedText` 앵커는 바로 넣은 단어의 범위를 씀;
    - 바꾸기 때 VoiceOver 알림(UX 7.5절). 단어를 바꾸지 못한 바꾸기 키 누름도 그 결과를 읽음: 바꿀 수 없음, 다음 단어 언어, 다음 단어 언어 취소, Bilingual 켬과 끔.
 2. **HUD**(UI 2절, R12):
    - 키 창이 되지 않는 유리 캡슐 패널. 프로세스에 하나만 둠;
@@ -765,6 +786,7 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
 3. **입력 메뉴**(R13): 평평하게, 한국어 이름표, 동작을 연결함:
    - "Duo 설정…": `HostRequest.showSettings()`. 실행 중인 Duo.app에는 `com.inkyuoh.Duo.host.showSettings`를 보내고, 아니면 `--duo-show-settings`로 실행함. 온보딩을 마치지 않았어도 설정이 열림;
    - "현재 앱: …" 머리 아래 앱별 프로필 네 항목(자동, 한국어 우선, English 우선, 직접 입력)이 `settings.appProfiles`에 씀. 프로필을 고르면 조합 중인 단어를 먼저 확정함;
+   - 그 아래 "Enter로 바로 보내기"(체크 표시)가 `settings.inlineApps`에 씀(4.10절). 켤 수 없는 앱에서는 비활성. 고르면 조합 중인 단어를 먼저 확정함;
    - "선택한 텍스트 한↔A 변환": 바꿀 것이 없으면 경고음, 앱이 글자를 바꿀 수 없으면 "여기서는 바꿀 수 없어요";
    - "힌트 표시"와 "학습 일시 정지"(학습을 끄면 비활성);
    - "Duo 도움말": `HostRequest.showGuide()`.
@@ -802,7 +824,7 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
      4. 끝.
    - **설정**(사이드바):
      - 일반: 연습장 칸(‘써보기’), 상태와 문제 해결 줄, 바꾸기 키, 힌트, 확정 후 바꾸기 제안, Backspace 단위, ₩ 토글, 언어 편향 슬라이더, ‘탭 인식 시간’(바꾸기 키의 톡 창), 영어 즉시 확정 토글;
-     - 앱별 설정: 본 앱 목록과 프로필 고르기;
+     - 앱별 설정: 본 앱 목록과 프로필 고르기, 앱마다 "Enter로 바로 보내기" 체크 상자(켤 수 없는 앱은 비활성, 4.10절). 기본값 복원은 둘 다 지움;
      - 학습: 토글, `LearningFile.load()`로 만든 검색 가능한 표(확신도 막대), 학습 명령 알림으로 지우기나 초기화(50개씩 보내고 ping → pong으로 확인), 입력기가 실행 중이 아니면 파일에 직접 씀;
      - 정보: 버전, 개인 정보 문구, `duo-model.LICENSE.txt`와 CC BY-SA 문구를 담은 감사의 글, Duo 제거(입력 소스에서 빼고 입력기를 지움. 설정과 학습한 단어는 남음).
 2. **연습장:**
@@ -852,10 +874,10 @@ Orca에서는 확정한 단어를 바꾸면 새 읽기가 옛 읽기 뒤에 붙�
 
 | 검사 | 명령 | 결과 |
 |---|---|---|
-| DuoCore·DuoKit 단위 테스트 | `make test` (`swift test`, debug) | 50개 묶음의 테스트 600개 통과, 알려진 문제 2개 |
+| DuoCore·DuoKit 단위 테스트 | `make test` (`swift test`, debug) | 52개 묶음의 테스트 624개 통과, 알려진 문제 2개 |
 | 호스트 앱 테스트 | `xcodebuild test -project Duo.xcodeproj -scheme Duo -destination 'platform=macOS' -derivedDataPath build/dd` | 11개 묶음의 테스트 50개 통과 |
 | live E2E | `make e2e` | 70/70 |
-| 문자열 카탈로그 | `Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/Duo.build` | 206/206개 키 |
+| 문자열 카탈로그 | `Duo/Tools/check-strings.py build/dd/Build/Intermediates.noindex/Duo.build/Debug/Duo.build` | 218/218개 키 |
 | DET 골든 벡터 | `make test` | 비트 단위로 같음, 모델 해시 `ce5bb10c9a6c025b` |
 | 점수 계산 시간 | `swift test -c release` (벤치마크, release에서만 300 µs 예산을 검사함) | 2차 수정 때 접두 p99 15.6 µs, 최종 p99 17.1 µs. 최신 작업 뒤에는 다시 재지 않음 |
 
