@@ -50,14 +50,19 @@ struct GeneralPane: View {
                     Text("확정 후 바꾸기 제안")
                     Text("Duo가 확신하지 못한 단어를 확정하면 잠깐 ‘↺ 바꾸기’를 띄워요.")
                 }
-                Picker(selection: settings.binding(\.backspaceUnit)) {
-                    ForEach(BackspaceUnit.allCases) { Text($0.title).tag($0) }
+                // fixedSize goes on the bare control: on the labelled row it also shrinks the row, and
+                // the picker then stops where the detail text ends instead of the trailing edge.
+                LabeledContent {
+                    Picker("백스페이스 단위", selection: settings.binding(\.backspaceUnit)) {
+                        ForEach(BackspaceUnit.allCases) { Text($0.title).tag($0) }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .fixedSize()
                 } label: {
                     Text("백스페이스 단위")
                     Text("자소는 닭 → 달 → 다처럼 한 자소씩, 글자는 한 글자를 통째로 지워요.")
                 }
-                .pickerStyle(.segmented)
-                .fixedSize()
                 Toggle(isOn: settings.binding(\.graveTypesWon)) {
                     Text("` 키로 ₩ 입력")
                     Text("Apple 두벌식처럼 ` 키를 누르면 ₩가 입력돼요.")
