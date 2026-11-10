@@ -156,8 +156,12 @@ public enum InputMethodInstaller {
         let reg = InputSourceManager.register()
         if reg != noErr && !InputSourceManager.isRegistered { throw InstallError.registerFailed(reg) }
         complete(.registered)
-        // Not yet approved: macOS shows its prompt and `isEnabled` turns true on Allow.
-        if !isAllowListed, !InputSourceManager.isEnabled { openSettingsForApproval() }
+        // Not yet approved: macOS shows its prompt and `isEnabled` turns true on Allow. System Settings
+        // shows it only if its own input source cache lists Duo (KeyboardSettingsCache).
+        if !isAllowListed, !InputSourceManager.isEnabled {
+            if KeyboardSettingsCache.removeIfStale() { KeyboardSettingsCache.quitSystemSettings() }
+            openSettingsForApproval()
+        }
         let en = InputSourceManager.enable()
         if !InputSourceManager.isEnabled { throw InstallError.enableFailed(en) }
         complete(.allowListed)
@@ -183,14 +187,15 @@ public enum InputMethodInstaller {
         if InputSourceManager.isSelected { InputSourceManager.reselect() }
     }
 
-    /// Disables the source, removes the allow-list entry and deletes the installed bundle. If Duo is
-    /// the selected source, a fallback keyboard (ABC) is selected first.
+    /// Disables the source and deletes the installed bundle. If Duo is the selected source, a fallback
+    /// keyboard (ABC) is selected first. The allow list stays macOS's to write; System Settings'
+    /// input source cache is dropped so it stops listing the removed bundle.
     public static func uninstall() {
         if InputSourceManager.isSelected { InputSourceManager.selectFallbackSource() }
         InputSourceManager.disable()
-        removeFromThirdPartyAllowList()
         stopRunningServer()
         try? FileManager.default.removeItem(at: InputSourceManager.installedBundleURL)
+        KeyboardSettingsCache.remove()
     }
 
     // MARK: - Approval prompt
@@ -313,19 +318,5 @@ public enum InputMethodInstaller {
     /// Duo is listed in `AppleEnabledThirdPartyInputSources`.
     public static var isAllowListed: Bool {
         readAllowList().contains { ($0["Bundle ID"] as? String) == InputSourceManager.inputMethodBundleID }
-    }
-
-    /// Removes Duo from `AppleEnabledThirdPartyInputSources`.
-    public static func removeFromThirdPartyAllowList() {
-        let list = readAllowList().filter { ($0["Bundle ID"] as? String) != InputSourceManager.inputMethodBundleID }
-        CFPreferencesSetAppValue(thirdPartyKey, list as CFArray, thirdPartyDomain)
-        CFPreferencesAppSynchronize(thirdPartyDomain)
-        postEnabledSourcesChanged()
-    }
-
-    static func postEnabledSourcesChanged() {
-        DistributedNotificationCenter.default().postNotificationName(
-            Notification.Name("com.apple.Carbon.TISNotifyEnabledKeyboardInputSourcesChanged"),
-            object: nil, userInfo: nil, deliverImmediately: true)
     }
 }
