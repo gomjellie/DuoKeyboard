@@ -105,6 +105,20 @@ Duo 켜기는 허용 창 없이 60초 기다렸고, + 목록 한국어에도 Duo
 - macOS 15에서 같은 캐시 문제가 있는지
 - 키보드 설정 캐시가 언제 다시 만들어지는지(macOS 내부 규칙). 그래서 켤 때마다 확인함
 
+## 저장소와 내려받기 사이트를 GitHub로 옮김 (2026-11-10)
+
+사용자 요청: 저장소를 github.com/gomjellie/DuoKeyboard로 옮기고 내려받기 사이트를 GitHub Pages에 올려 달라고 했음.
+
+바뀐 것:
+- 내려받기 주소: <https://gomjellie.github.io/DuoKeyboard/>. `DIST_URL`과 `AppUpdate.feedURL`이 이 주소를 씀
+- `make deploy`(`Tools/scripts/deploy-pages.sh`): `build/dist`를 `gh-pages` 브랜치에 커밋 하나로 올림
+- 빌드 번호를 5로 올림
+- 예시 주소의 도메인을 example.com으로 바꿨음
+
+알아 둘 것:
+- 빌드 4까지 설치한 사용자는 이전 주소의 피드를 봄. 새 설치 명령을 한 번 다시 실행해야 빌드 5 이상을 받음
+- GitHub Pages는 파일을 10분 캐시함. 배포 직후에는 설치 명령이 SHA-256 불일치로 멈출 수 있음
+
 ## 자동 업데이트 (2026-11-10)
 
 사용자 요청: "자동업데이트 기능 만들어줘."
@@ -220,7 +234,7 @@ Duo 켜기는 허용 창 없이 60초 기다렸고, + 목록 한국어에도 Duo
 설계:
 - 이 Mac에는 Developer ID 인증서가 없음(Apple Development만 있음). 그래서 공증을 받을 수 없음
 - 브라우저로 받은 앱은 격리 표시 때문에 Gatekeeper가 막음. `curl`로 받은 파일에는 격리 표시가 붙지 않음
-- private 사이트는 로그인 없는 `curl`에 401을 줌. public 사이트는 200을 줌. 그래서 public으로 만들었음
+- 로그인 없는 `curl`이 파일을 받을 수 있어야 함. 그래서 공개 사이트로 만들었음
 - `install.sh`는 SHA-256을 맞춰 본 뒤 `~/Applications/Duo.app`을 바꿈. 입력기 업데이트는 Duo 설정이 맡음
 
 확인한 것:
@@ -233,7 +247,7 @@ Duo 켜기는 허용 창 없이 60초 기다렸고, + 목록 한국어에도 Duo
 - 맨 위에 입력 데모를 더했음. 같은 키를 한글 모드와 Duo로 친 결과를 나란히 보여 주고, 아래에 키보드와 두 손을 그림
   - 장면: "내일 meeting 몇 시야?", "오늘 PR을 올렸는데 CI가 깨졌네요.", "배포 go 할까요?"(오른쪽 ⌘로 해 → go)
   - 키마다 화면은 `DemoFramesTests`가 실제 엔진으로 만든 `Tools/dist/demo-frames.json`임. 후보 막대도 엔진이 띄운 때만 보임
-- 사이트는 파일을 60초 캐시함(`cache-control: max-age=60`). 배포 직후 1분 동안은 `Duo.zip`과 `install.sh`가 어긋날 수 있음
+- 사이트는 파일을 캐시함. 배포 직후에는 `Duo.zip`과 `install.sh`가 어긋날 수 있음
 - 배포 버전: `1.0.0-1-r2`(문구), `1.0.0-1-r3`(데모)
 
 내려받기 페이지 새 디자인(같은 날, `1.0.0-1-r5`):

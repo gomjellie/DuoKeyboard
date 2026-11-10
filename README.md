@@ -330,7 +330,7 @@ curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh
 - 앱은 ad-hoc 서명이고 Apple 공증을 받지 않았음. 이 Mac에는 Developer ID 인증서가 없음
   - 브라우저로 받은 파일에는 macOS가 격리 표시를 붙여서 Gatekeeper가 막음
   - `curl`로 받은 파일에는 격리 표시가 붙지 않음. 그래서 설치 명령을 기본 경로로 둠
-- 사이트를 private으로 바꾸면 `curl`이 401을 받음. 설치 명령을 쓰려면 public이어야 함
+- GitHub Pages는 저장소 설정의 Pages에서 `gh-pages` 브랜치를 고르면 켜짐. 로그인 없는 `curl`이 파일을 받을 수 있어야 설치 명령과 자동 업데이트가 됨
 
 자동 업데이트(`AppUpdate`, `AppUpdater`):
 
@@ -343,15 +343,15 @@ curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh
   - 공개 키는 `AppUpdate.publicKey`에 있음. 비밀 키는 `~/.config/duo/update-ed25519.key`(권한 600)에 있고 저장소에 넣지 않음
   - 비밀 키를 잃으면 설치된 Duo는 새 버전을 받지 못함. 새 키를 넣은 버전을 설치 명령으로 한 번 다시 설치해야 함. 키를 백업해 둠
 - 설정 ▸ 일반 ▸ Duo 업데이트에서 끌 수 있음. 꺼도 `지금 확인`은 됨
-- 빌드 1(2026-11-10 이전 배포)에는 이 기능이 없음. 그 사용자는 설치 명령을 한 번 다시 실행해야 함
+- 빌드 4까지는 이전 내려받기 주소의 피드를 봄. 그 사용자는 위 설치 명령을 한 번 다시 실행해야 함. 빌드 5부터 이 사이트의 피드를 봄
 - 시험: `defaults write com.inkyuoh.Duo.shared update.feedURL -string <주소>/update.json`으로 다른 피드를 가리킴. 서명과 "지금보다 새 버전" 조건은 그대로임
 
 새 버전을 올리는 순서:
 
 1. `project.yml`의 `CURRENT_PROJECT_VERSION`을 올림. 설치된 Duo는 자기보다 새 버전만 받음
 2. `make dist`. Release 빌드를 만들고 `Tools/dist`의 틀에 버전, 크기, SHA-256, 사이트 주소를 채우고, 서명한 `update.json`을 씀. 주소는 `DIST_URL`(기본 `https://gomjellie.github.io/DuoKeyboard`). 서명 키는 `DUO_UPDATE_KEY`(기본 `~/.config/duo/update-ed25519.key`)
-3. `make deploy --version <버전>-<빌드>`
-4. `curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh`로 설치해 봄. 사이트는 파일을 60초 캐시함. 배포 직후에는 `Duo.zip`과 `install.sh`의 SHA-256이 어긋나 설치가 멈출 수 있음. 1분 뒤 다시 실행함
+3. `make deploy`. `build/dist`를 저장소의 `gh-pages` 브랜치에 커밋 하나로 올림(`Tools/scripts/deploy-pages.sh`). 브랜치를 매번 새로 써서 옛 `Duo.zip`이 저장소에 쌓이지 않음. `make deploy`는 `make dist`를 먼저 실행함
+4. `curl -fsSL https://gomjellie.github.io/DuoKeyboard/install.sh | zsh`로 설치해 봄. GitHub Pages는 올린 뒤 1분쯤 지나야 바뀌고 파일을 10분 캐시함. 그동안에는 `Duo.zip`과 `install.sh`의 SHA-256이 어긋나 설치가 멈출 수 있음. 잠시 뒤 다시 실행함
 
 페이지의 입력 데모(`Tools/dist/demo.js`)는 같은 키를 한글 모드와 Duo로 친 결과를 나란히 보여 줘요. 장면 데이터 `Tools/dist/demo-frames.json`은 `DemoFramesTests`가 실제 엔진과 모델로 만들어요. 엔진이나 모델을 바꾸면 다시 만들어요.
 
