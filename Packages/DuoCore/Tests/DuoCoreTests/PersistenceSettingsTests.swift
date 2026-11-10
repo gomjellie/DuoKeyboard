@@ -32,6 +32,15 @@ struct PersistenceSettingsTests {
         #expect(settings.showHints == false)
     }
 
+    @Test func autoUpdateDefaultsOnAndRoundTrips() throws {
+        let older = try JSONDecoder().decode(DuoSettings.self, from: Data(#"{"showHints":true}"#.utf8))
+        #expect(older.autoUpdate, "a blob from before the setting checks for updates")
+        var off = DuoSettings()
+        off.autoUpdate = false
+        let back = try JSONDecoder().decode(DuoSettings.self, from: JSONEncoder().encode(off))
+        #expect(back.autoUpdate == false)
+    }
+
     @Test func alwaysShowChoicesDefaultsOffAndRoundTrips() throws {
         let older = try JSONDecoder().decode(DuoSettings.self, from: Data(#"{"showHints":true}"#.utf8))
         #expect(older.alwaysShowChoices == false, "a blob from before the setting keeps the bar to likely words")

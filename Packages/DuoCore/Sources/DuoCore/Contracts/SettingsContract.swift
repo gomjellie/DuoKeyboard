@@ -71,6 +71,8 @@ public struct DuoSettings: Sendable, Hashable, Codable {
     /// User overrides by bundle identifier; apps not listed use `ClientProfile` defaults.
     public var appProfiles: [String: AppProfile] = [:]
     public var hasCompletedOnboarding: Bool = false
+    /// Check for a new Duo once a day and install it (host app); the IME only asks the host to check.
+    public var autoUpdate: Bool = true
 
     public init() {}
 
@@ -79,7 +81,7 @@ public struct DuoSettings: Sendable, Hashable, Codable {
     private enum CodingKeys: String, CodingKey {
         case flipKey, flipTapWindowMs, showHints, alwaysShowChoices, offerUndoAfterCommit, backspaceUnit, graveTypesWon,
              languageBias, eagerEnglishCommit, learningEnabled, learningPaused, appProfiles,
-             hasCompletedOnboarding
+             hasCompletedOnboarding, autoUpdate
     }
 
     public init(from decoder: any Decoder) throws {
@@ -98,6 +100,7 @@ public struct DuoSettings: Sendable, Hashable, Codable {
         learningPaused = (try? c.decodeIfPresent(Bool.self, forKey: .learningPaused)) ?? d.learningPaused
         appProfiles = Self.decodeProfiles(c) ?? d.appProfiles
         hasCompletedOnboarding = (try? c.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)) ?? d.hasCompletedOnboarding
+        autoUpdate = (try? c.decodeIfPresent(Bool.self, forKey: .autoUpdate)) ?? d.autoUpdate
         flipTapWindowMs = min(500, max(200, flipTapWindowMs))
         languageBias = min(1000, max(-1000, languageBias))
     }
@@ -136,6 +139,7 @@ public struct DuoSettings: Sendable, Hashable, Codable {
         try c.encode(learningPaused, forKey: .learningPaused)
         try c.encode(appProfiles, forKey: .appProfiles)
         try c.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
+        try c.encode(autoUpdate, forKey: .autoUpdate)
     }
 }
 
