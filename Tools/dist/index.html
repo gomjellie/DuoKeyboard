@@ -116,6 +116,8 @@
   .nav-links { display: flex; gap: 10px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
   .nav-links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 7px; color: var(--text); opacity: 0.82; text-decoration: none; }
   .nav-links a:hover { opacity: 1; color: var(--accent); }
+  .gh { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: 0 -10px; color: var(--text); opacity: 0.82; }
+  .gh:hover { opacity: 1; color: var(--accent); }
   .pill {
     display: inline-flex; align-items: center; justify-content: center;
     border: 0; border-radius: 999px; background: var(--accent-fill); color: #fff;
@@ -535,6 +537,7 @@
         <li><a href="#demo">데모</a></li>
         <li><a href="#features">특징</a></li>
       </ul>
+      <a class="gh" href="https://github.com/gomjellie/DuoKeyboard" aria-label="GitHub에서 소스 보기" title="GitHub"><svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a>
       <a class="pill pill-sm" href="#install">설치하기</a>
     </nav>
   </div>
@@ -674,6 +677,7 @@
       <p class="fn" id="fn1">1. 뉴스, 위키백과, 개발자 채팅, 커뮤니티 댓글로 잰 단어 정확도 <span class="nw">99.3~99.98%. <a class="fn-back" href="#fnref1" aria-label="본문으로 돌아가기">↩&#xFE0E;</a></span></p>
       <p>Duo @VERSION@ (@BUILD@) · @DATE@ · Duo.zip @SIZE@</p>
       <p>SHA-256 <code>@SHA256@</code></p>
+      <p>소스 코드는 <a href="https://github.com/gomjellie/DuoKeyboard">GitHub</a>에 있어요.</p>
       <p>언어 모델 데이터는 CC BY-SA 4.0으로 배포해요. 고지문은 <span class="nw">Duo 설정 ▸ 정보에 있어요.</span></p>
     </div>
   </div>
