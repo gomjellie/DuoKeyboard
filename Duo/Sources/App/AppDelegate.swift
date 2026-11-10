@@ -21,10 +21,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if LaunchMode.current == .normal {
-            // A System Settings cache built while Duo was missing hides Duo from its input source list.
+            // A System Settings cache built while Duo was missing hides Duo from its input source list,
+            // and the list the menu bar's input menu reads can lack Duo while Duo is on.
             Task.detached(priority: .utility) {
                 guard FileManager.default.fileExists(atPath: InputSourceManager.installedBundleURL.path) else { return }
                 KeyboardSettingsCache.removeIfStale()
+                InputMenuList.addDuoIfMissing()
             }
         }
         #if DEBUG

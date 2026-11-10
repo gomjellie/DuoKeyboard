@@ -190,6 +190,8 @@ final class InputMethodStatus {
                     return InputSourceManager.isEnabled
                 },
                 selectSource: {
+                    // System Settings turned Duo on: the input menu's list may not have it yet.
+                    InputMenuList.addDuoIfMissing()
                     // Selecting while System Settings is frontmost does not stick: come back first.
                     NSApplication.shared.activate()
                     return InputSourceManager.select()
@@ -208,6 +210,8 @@ final class InputMethodStatus {
         if removingAppleKorean && failure == nil && InputSourceManager.isEnabled {
             _ = try? await Self.perform { InputSourceManager.removeAppleKorean() }
         }
+        // Every TIS call above can write the input menu's list again from what this process knew.
+        if failure == nil { _ = try? await Self.perform { InputMenuList.addDuoIfMissing() } }
         activity = .idle
         refresh()
     }
