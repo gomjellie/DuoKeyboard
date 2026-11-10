@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "build": "5",
+  "url": "https://gomjellie.github.io/DuoKeyboard/Duo.zip",
+  "size": 9641908,
+  "sha256": "160bdf83c2e6659f883fb875fe980a8453f4d734bc970694521bfd618c59e209",
+  "signature": "GqVaw/90DXceqnky5+hUlJmt9pq5jF18VWwGevg3skletRHqxRsTuNC/KOeJSRqaAM0f4YUmbF73RXfMHInMCA==",
+  "minimumSystemVersion": "15.0"
+}
