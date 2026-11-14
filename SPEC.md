@@ -20,6 +20,7 @@ Duo는 macOS 15 이상의 InputMethodKit 입력기예요. 키보드 하나로 �
 ├─ README.md                 # 제품 소개, 기능 둘러보기, 빠른 시작
 ├─ SPEC.md                   # 이 문서
 ├─ docs/
+│  ├─ DEVELOPMENT.md         # 빌드, 개발용 설치, 테스트, 릴리스, 알려진 제한
 │  ├─ STATUS.md              # v1 진행 상황, 테스트 수치, 실제 앱 QA, 알려진 문제
 │  └─ research/              # critique, detection, ux-spec, imk-platform, ui-design
 ├─ Packages/DuoCore/         # SwiftPM 패키지 (macOS 15, Swift 6 언어 모드)
