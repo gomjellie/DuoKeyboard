@@ -17,7 +17,7 @@ Duo는 macOS 15 이상의 InputMethodKit 입력기예요. 키보드 하나로 �
 ├─ Makefile                  # 개발 작업 (make help)
 ├─ project.yml               # XcodeGen 명세 → Duo.xcodeproj (생성물, git에 넣지 않음)
 ├─ CLAUDE.md                 # 커밋과 문서 규칙
-├─ README.md                 # 제품 소개, 기능 둘러보기, 빠른 시작
+├─ README.md                 # 제품 소개, 설치, 사용법, 자주 묻는 질문
 ├─ SPEC.md                   # 이 문서
 ├─ docs/
 │  ├─ DEVELOPMENT.md         # 빌드, 개발용 설치, 테스트, 릴리스, 알려진 제한
